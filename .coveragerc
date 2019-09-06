@@ -1,2 +1,18 @@
 [run]
-source = .
+source =
+    revenue_app
+    login_app
+    revenue_latam
+
+omit =
+    venv/*
+    env/*
+    */test*
+    settings/*
+    */migrations*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def setUp
+    def test_
