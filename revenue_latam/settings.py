@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'revenue_app',
+    'login_app',
+    'social_django'
 ]
 
 MIDDLEWARE = [
@@ -52,6 +54,11 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'revenue_latam.urls'
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.eventbrite.EventbriteOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
 
 TEMPLATES = [
     {
@@ -121,3 +128,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+LOGIN_URL = '/accounts/login'
+#LOGIN_REDIRECT_URL = 'event-list'
+LOGOUT_REDIRECT_URL = 'login'
