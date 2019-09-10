@@ -1,0 +1,47 @@
+:root {
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  --primary-color: #1E0A3C;
+  --secondary-color: #D1410C;
+}
+
+* {
+  padding:0; margin:0;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.wrapper {
+  margin: 1rem;
+  min-height: 100vh;
+}
+
+
+.navbar {
+  background-color: #1E0A3C;
+  color: #D1410C;
+}
+
+.navbar-brand {
+  font-size: 1.5rem;
+}
+
+footer {
+  background-color: #1E0A3C;
+  color: #FFF;
+  bottom: 0;
+  width: 100%;
+}
+
+footer a {
+  color:  #D1410C;
+  font-size: 1.2rem;
+}
+
+.footer-copyright {
+  font-size: 1rem;
+}
+
+.footer-copyright a {
+  font-size: 1rem;
+}

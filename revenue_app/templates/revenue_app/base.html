@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    {% load bootstrap4 %}
+    {% bootstrap_css %}
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css">
+    <link rel="stylesheet" href="{% static 'revenue_app/css/base.css' %}">
+    {% block head %} {% endblock head %}
+    <title> Revenue Latam </title>
+  </head>
+  <body>
+    {% include 'revenue_app/_navbar.html' %}
+    <div class="wrapper">
+      {% block content %}
+      {% endblock content %}
+    </div>
+    {% include 'revenue_app/_footer.html' %}
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    {% block scripts %}
+      {% bootstrap_javascript jquery='full' %}
+    {% endblock scripts %}
+  </body>
+</html>
