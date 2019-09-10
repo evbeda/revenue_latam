@@ -1,14 +1,32 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 
-from chartjs.views.lines import BaseLineChartView
+from chartjs.views.lines import BaseLineOptionsChartView
 
 
 class Dashboard(LoginRequiredMixin, TemplateView):
     template_name = 'revenue_app/dashboard.html'
 
 
-class ChartJSONDataView(BaseLineChartView):
+class ChartOptionsMixin():
+    def get_options(self):
+        '''
+        Returns a dict of options.
+        Not implemented in parent class.
+        '''
+        options = {
+            'scales': {
+                'yAxes': [{
+                    'ticks': {
+                        'beginAtZero': True
+                    }
+                }]
+            }
+        }
+        return options
+
+
+class ChartJSONDataView(ChartOptionsMixin, BaseLineOptionsChartView):
     def get_providers(self):
         '''
         Return names of dataset.
@@ -32,7 +50,7 @@ class ChartJSONDataView(BaseLineChartView):
         return [[5, 5, 5], [6, 5, 4], [4, 5, 6]]
 
 
-class ChartJSONDataViewAlt(BaseLineChartView):
+class ChartJSONDataViewAlt(ChartOptionsMixin, BaseLineOptionsChartView):
     def get_providers(self):
         '''
         Return names of dataset.
