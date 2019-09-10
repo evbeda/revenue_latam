@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from .views import Dashboard
+from revenue_app.views import Dashboard
 
 
 urlpatterns = [
