@@ -1,4 +1,4 @@
-# import dj_database_url
+import dj_database_url
 from .base import *
 from .utils import get_env_variable
 
@@ -11,16 +11,16 @@ SOCIAL_AUTH_EVENTBRITE_SECRET = get_env_variable(
 )
 
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': 'revenue',
-#         'USER': 'name',
-#         'PASSWORD': '',
-#         'PORT': '',
-#     }
-# }
-#
-# DB_FROM_ENV = dj_database_url.config(conn_max_age=500)
-#
-# DATABASES['default'].update(DB_FROM_ENV)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'revenue',
+        'USER': 'name',
+        'PASSWORD': '',
+        'PORT': '',
+    }
+}
+
+DB_FROM_ENV = dj_database_url.config(conn_max_age=500)
+
+DATABASES['default'].update(DB_FROM_ENV)
