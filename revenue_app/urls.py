@@ -1,7 +1,7 @@
 from django.conf.urls import url
-from .views import Index
+from .views import Dashboard
 
 
 urlpatterns = [
-    url(r'^$', Index.as_view(), name='index'),
+    url(r'^$', Dashboard.as_view(), name='dashboard'),
 ]

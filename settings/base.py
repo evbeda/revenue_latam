@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'revenue_app',
     'login_app',
-    'social_django'
+    'social_django',
+    'bootstrap4',
+
 ]
 
 MIDDLEWARE = [

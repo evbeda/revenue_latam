@@ -1,10 +1,17 @@
+{% extends 'revenue_app/base.html' %}
+{% load static %}
 
 
+{% block content %}
+<br>
 <form method="post">
    <div class="container login-container">
-     <div class="row text-center">
-       <div class="row"style="margin: 10px"> Do you have another account to login?</div>
-       <a class="btn" style="color: #ffffff; background-color: #ffa500" href="{% url "social:begin" "eventbrite" %}">Eventbrite</a>
+
+       <div class="row text-center" style="margin: 10px"> Do you want to login with your Eventbrite account?</div>
+       <br>
+       <div class="row" style="margin: 10px">
+         <a class="btn" style="color: #FFF; background-color: #D1410C" href="{% url 'social:begin' 'eventbrite' %}">Eventbrite</a>
+       </div>
 	  </div>
-  </div>
 </form>
+{% endblock content %}

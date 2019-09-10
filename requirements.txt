@@ -1,10 +1,12 @@
+beautifulsoup4==4.8.0
 certifi==2019.6.16
 chardet==3.0.4
 coverage==4.5.4
 coveralls==1.8.2
-docopt==0.6.2
 defusedxml==0.6.0
 Django==1.11.24
+django-bootstrap4==1.0.1
+docopt==0.6.2
 eventbrite==3.3.3
 idna==2.8
 oauthlib==3.1.0
@@ -16,4 +18,5 @@ requests-oauthlib==1.2.0
 six==1.12.0
 social-auth-app-django==3.1.0
 social-auth-core==3.2.0
+soupsieve==1.9.3
 urllib3==1.25.3
