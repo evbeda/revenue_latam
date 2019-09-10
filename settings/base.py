@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'login_app',
     'social_django',
     'bootstrap4',
-
+    'chartjs',
 ]
 
 MIDDLEWARE = [

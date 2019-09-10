@@ -3,10 +3,62 @@
 {% load static %}
 
 {% block head %}
+  <!--[if lte IE 8]>
+      <script src="{% static 'js/excanvas.js' %}"></script>
+  <![endif]-->
   <link rel="stylesheet" href="{% static 'revenue_app/css/dashboard.css' %}">
 {% endblock head %}
 
 {% block content %}
 <h1>Dashboard</h1>
-<p>Some text</p>
+<p>Option 1</p>
+<div style="width: 500px;">
+  <canvas id="chart1" width="500" height="400"></canvas>
+</div>
+
+<p>Option 2</p>
+<div style="width: 500px;">
+  <canvas id="chart2" width="500" height="400"></canvas>
+</div>
+
 {% endblock content %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script type="text/javascript" src="{% static 'js/Chart.min.js' %}"></script>
+  <script type="text/javascript">
+    $.get('{% url "json_data" %}', function(data) {
+      var ctx = $("#chart1").get(0).getContext("2d");
+      new Chart(ctx, {
+        type: 'bar',
+        data: data,
+        options: {
+          scales: {
+            yAxes: [{
+              ticks: {
+                  beginAtZero: true
+              }
+            }]
+          }
+        }
+      });
+    });
+
+    $.get('{% url "json_data_alt" %}', function(data) {
+      var ctx = $("#chart2").get(0).getContext("2d");
+      new Chart(ctx, {
+        type: 'bar',
+        data: data,
+        options: {
+          scales: {
+            yAxes: [{
+              ticks: {
+                  beginAtZero: true
+              }
+            }]
+          }
+        }
+      });
+    });
+  </script>
+{% endblock scripts %}
