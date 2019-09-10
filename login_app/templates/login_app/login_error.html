@@ -1,0 +1,17 @@
+{% extends 'revenue_app/base.html' %}
+{% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'login_app/css/login.css' %}">
+{% endblock head %}
+
+{% block content %}
+<div class="container login-container">
+    <br>
+    <h3>Error with login</h3>
+    <br>
+    <div class="row ml-3">
+	<a class="btn" href="{% url 'login' %}">Try again</a>
+    </div>
+</div>
+{% endblock content %}

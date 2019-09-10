@@ -1,4 +1,4 @@
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import LoginView, LogoutView, TemplateView
 
 
 class Login(LoginView):
@@ -6,4 +6,7 @@ class Login(LoginView):
 
 
 class Logout(LogoutView):
-        pass
+    pass
+
+class LoginError(TemplateView):
+    template_name = 'login_app/login_error.html'
