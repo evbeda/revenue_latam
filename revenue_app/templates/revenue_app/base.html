@@ -15,11 +15,13 @@
   </head>
   <body>
     {% include 'revenue_app/_navbar.html' %}
-    <div class="wrapper">
-      {% block content %}
-      {% endblock content %}
+    <div class="flex-fill d-flex flex-column overflow-auto">
+      <div class="wrapper">
+        {% block content %}
+        {% endblock content %}
+      </div>
+      {% include 'revenue_app/_footer.html' %}
     </div>
-    {% include 'revenue_app/_footer.html' %}
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     {% block scripts %}
