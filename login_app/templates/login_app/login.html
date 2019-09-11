@@ -9,10 +9,12 @@
 <br>
 <form method="post">
   <div class="container login-container">
-    <div class="row text-center ml-3"> Do you want to login with your Eventbrite account?</div>
+    <div class="row d-flex justify-content-center">
+      <h3>Use an Eventbrite account to login</h3>
+    </div>
     <br>
-    <div class="row ml-3">
-      <a class="btn" href="{% url 'social:begin' 'eventbrite' %}">Eventbrite</a>
+    <div class="row d-flex justify-content-center mt-4">
+      <a class="btn" href="{% url 'social:begin' 'eventbrite' %}">Login with Eventbrite</a>
     </div>
   </div>
 </form>

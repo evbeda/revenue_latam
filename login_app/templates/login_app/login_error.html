@@ -6,12 +6,16 @@
 {% endblock head %}
 
 {% block content %}
-<div class="container login-container">
-    <br>
-    <h3>Error with login</h3>
-    <br>
-    <div class="row ml-3">
-	<a class="btn" href="{% url 'login' %}">Try again</a>
+<br>
+<form method="post">
+  <div class="container login-container">
+    <div class="row d-flex justify-content-center">
+      <h3>Forbidden: Invalid username and password to login</h3>
     </div>
-</div>
+    <br>
+    <div class="row d-flex justify-content-center mt-4">
+  	   <a class="btn" href="{% url 'login' %}">Try again</a>
+    </div>
+  </div>
+</form>
 {% endblock content %}
