@@ -11,13 +11,23 @@
   max-width: 100%;
 }
 
+body {
+  height: 100vh;
+  display: flex;
+  flex-flow: column;
+}
+
 h3 {
   color: #1E0A3C;
 }
 
+.overflow-auto {
+  overflow: auto !important;
+}
+
 .wrapper {
+  flex: 1;
   padding: 3rem;
-  min-height: calc(100vh - 62px - 56px);
 }
 
 .navbar {
