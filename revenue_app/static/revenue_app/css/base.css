@@ -11,11 +11,14 @@
   max-width: 100%;
 }
 
-.wrapper {
-  margin: 1rem;
-  min-height: 100vh;
+h3 {
+  color: #1E0A3C;
 }
 
+.wrapper {
+  margin: 3rem;
+  min-height: 100vh;
+}
 
 .navbar {
   background-color: #1E0A3C;
