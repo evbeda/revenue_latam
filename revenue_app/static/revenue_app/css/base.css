@@ -16,8 +16,8 @@ h3 {
 }
 
 .wrapper {
-  margin: 3rem;
-  min-height: 100vh;
+  padding: 3rem;
+  min-height: calc(100vh - 62px - 56px);
 }
 
 .navbar {
