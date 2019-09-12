@@ -14,40 +14,31 @@
     <title> Revenue Latam </title>
   </head>
   <body>
-    <div class="d-flex flex-fill" id="wrapper">
-      <!-- Sidebar -->
-      {% if user.is_authenticated %}
-      <div class="border-right" id="sidebar-wrapper">
-        <div class="sidebar-heading sticky-top">Menu</div>
-        <div class="list-group list-group-flush bg-light">
-          <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action">Dashboard</a>
-          <a href="#" class="list-group-item list-group-item-action">Organizers</a>
-          <a href="#" class="list-group-item list-group-item-action">Overview</a>
-          <hr class="sidebar-divider my-0">
+    {% include 'revenue_app/_navbar.html' %}
+    <div class="d-flex flex-fill overflow-auto">
+      {% include 'revenue_app/_sidebar.html' %}
+      <div id="content">
+        {% if user.is_authenticated %}
+        <a href="#" class="btn btn-outline-evb" id="sidebar-toggle">
+          <span class="fas fa-chevron-left"></span>
+        </a>
+        {% endif %}
+        <div class="wrapper">
+          {% block content %}
+          {% endblock content %}
         </div>
-      </div>
-      {% endif %}
-      <!-- /#sidebar-wrapper -->
-      <div id="page-content-wrapper" class="flex-fill d-flex flex-column">
-        {% include 'revenue_app/_navbar.html' %}
-        <div class="flex-fill d-flex flex-column overflow-auto">
-          <div class="wrapper">
-            {% block content %}
-            {% endblock content %}
-          </div>
-        </div>
-      </div>
+      {% include 'revenue_app/_footer.html' %}
     </div>
-    {% include 'revenue_app/_footer.html' %}
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <!-- Bootstrap core JavaScript -->
     {% bootstrap_javascript jquery='full' %}
-    <!-- Menu Toggle Script -->
+    <!-- Sidebar Toggle Script -->
     <script>
-      $("#menu-toggle").click(function(e) {
+      $("#sidebar-toggle").click(function(e) {
         e.preventDefault();
-        $("#wrapper").toggleClass("toggled");
+        $("#sidebar-wrapper").toggleClass("toggled");
+        $(this).toggleClass("toggled");
       });
     </script>
     {% block scripts %}

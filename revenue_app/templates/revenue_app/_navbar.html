@@ -1,7 +1,7 @@
 {% load static %}
 <!--Navbar -->
-<nav class="mb-1 navbar navbar-expand-lg navbar-dark info-color sticky-top">
-  <a href="" class="navbar-brand" id="menu-toggle">Revenue</a>
+<nav class="navbar navbar-expand-lg navbar-dark info-color">
+  <a href="" class="navbar-brand">Revenue</a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
@@ -11,13 +11,14 @@
       <li class="nav-item dropdown pull-right">
         <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink-4" data-toggle="dropdown"
           aria-haspopup="true" aria-expanded="false">
-          <i class="fas fa-user mr-2"></i> {{ user.first_name }}</a>
-          <div class="dropdown-menu dropdown-menu-right dropdown-info" aria-labelledby="navbarDropdownMenuLink-4">
-            <a class="dropdown-item" href="{% url 'logout' %}">
-              <i class="fas fa-sign-out-alt mr-2"></i>
-              Log out
-            </a>
-          </div>
+          <i class="fas fa-user mr-2"></i> {{ user.first_name }}
+        </a>
+        <div class="dropdown-menu dropdown-menu-right dropdown-info" aria-labelledby="navbarDropdownMenuLink-4">
+          <a class="dropdown-item" href="{% url 'logout' %}">
+            <i class="fas fa-sign-out-alt mr-2"></i>
+            Log out
+          </a>
+        </div>
       </li>
       {% else %}
       <li class="nav-item">
