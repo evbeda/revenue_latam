@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">  
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     {% load bootstrap4 %}
     {% bootstrap_css %}
     <!-- Font Awesome -->
@@ -14,18 +14,43 @@
     <title> Revenue Latam </title>
   </head>
   <body>
-    {% include 'revenue_app/_navbar.html' %}
-    <div class="flex-fill d-flex flex-column overflow-auto">
-      <div class="wrapper">
-        {% block content %}
-        {% endblock content %}
+    <div class="d-flex flex-fill" id="wrapper">
+      <!-- Sidebar -->
+      {% if user.is_authenticated %}
+      <div class="border-right" id="sidebar-wrapper">
+        <div class="sidebar-heading sticky-top">Menu</div>
+        <div class="list-group list-group-flush bg-light">
+          <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action">Dashboard</a>
+          <a href="#" class="list-group-item list-group-item-action">Organizers</a>
+          <a href="#" class="list-group-item list-group-item-action">Overview</a>
+          <hr class="sidebar-divider my-0">
+        </div>
       </div>
-      {% include 'revenue_app/_footer.html' %}
+      {% endif %}
+      <!-- /#sidebar-wrapper -->
+      <div id="page-content-wrapper" class="flex-fill d-flex flex-column">
+        {% include 'revenue_app/_navbar.html' %}
+        <div class="flex-fill d-flex flex-column overflow-auto">
+          <div class="wrapper">
+            {% block content %}
+            {% endblock content %}
+          </div>
+        </div>
+      </div>
     </div>
+    {% include 'revenue_app/_footer.html' %}
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <!-- Bootstrap core JavaScript -->
+    {% bootstrap_javascript jquery='full' %}
+    <!-- Menu Toggle Script -->
+    <script>
+      $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        $("#wrapper").toggleClass("toggled");
+      });
+    </script>
     {% block scripts %}
-      {% bootstrap_javascript jquery='full' %}
     {% endblock scripts %}
   </body>
 </html>
