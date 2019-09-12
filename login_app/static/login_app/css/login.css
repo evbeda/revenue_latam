@@ -1,8 +1,8 @@
-.btn {
-  color: #FFF;
-  background-color: #D1410C;
-}
 
 a:hover {
   color: rgba(255,255,255,.75);
+}
+
+h3 {
+  color: #1E0A3C;
 }
