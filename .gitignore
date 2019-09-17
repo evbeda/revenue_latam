@@ -108,3 +108,6 @@ venv.bak/
 
 # run with env vars
 run.sh
+
+# datasets
+datasets/
