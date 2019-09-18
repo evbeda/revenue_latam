@@ -10,6 +10,7 @@ from .utils import (
     filter_transactions_by_date,
     get_organizer_sales,
     get_transactions,
+    get_organizer_event_list,
 )
 
 
@@ -54,7 +55,7 @@ class UtilsTestCase(TestCase):
         )
         self.assertEqual(
             len(transactions),
-            5
+            27
         )
 
     def test_get_organizer_sales(self):
@@ -109,3 +110,18 @@ class UtilsTestCase(TestCase):
             len(filtered_transactions),
             expected_length
         )
+
+    @parameterized.expand([
+        (497321858, 5),
+        (696421958, 6),
+        (434444537, 4),
+        (506285738, 5),
+        (634364434, 7),
+        ])
+    def test_organizer_event_list(self, organizer_id, expected_length):
+        with patch(
+            'pandas.read_csv',
+            return_value=read_csv('revenue_app/tests/transactions_example.csv')
+        ):
+            transactions = get_organizer_event_list(organizer_id)
+        self.assertEqual(len(transactions), expected_length) 

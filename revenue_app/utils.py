@@ -27,6 +27,10 @@ def get_organizer_sales():
 def get_organizer_list():
     return []
 
+def get_organizer_event_list(organizer_id):
+    transactions = get_transactions()
+    return transactions[transactions['eventholder_user_id'] == int(organizer_id)]
+
 
 def filter_transactions_by_date(dataframe, start_date, end_date=None):
     start_date = np.datetime64(start_date, 'D')
