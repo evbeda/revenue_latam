@@ -1,0 +1,18 @@
+{% extends 'revenue_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<h1>Organizers transactions</h1>
+<br>
+<div class="row">
+  <form class="form-inline" action="{% url 'organizer-transactions' %}" method="get" accept-charset="utf-8">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input class="form-control form-control-md m-3" name="email" type="text" placeholder="Enter organizer email"
+      aria-label="Search">
+  </form>
+  <br>
+</div>
+<div class="row">
+  {{ organizers_transactions | safe }}
+</div>
+{% endblock content %}
