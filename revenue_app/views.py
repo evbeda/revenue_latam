@@ -1,8 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from .utils import (
-        get_organizer_list, 
-        get_organizer_event_list
+        get_organizer_event_list,
+        get_organizers_transactions,
+        get_organizer_transactions,
         )
 
 from chartjs.views.lines import BaseLineOptionsChartView
@@ -12,12 +13,22 @@ class Dashboard(LoginRequiredMixin, TemplateView):
     template_name = 'revenue_app/dashboard.html'
 
 
-class OrganizerList(LoginRequiredMixin, TemplateView):
-    template_name = 'revenue_app/organizer_list.html'
+class OrganizersTransactions(LoginRequiredMixin, TemplateView):
+    template_name = 'revenue_app/organizers_transactions.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['organizers'] = get_organizer_list()
+        context['organizers_transactions'] = get_organizers_transactions().to_html(index=False, classes='table')
+        return context
+
+
+class OrganizerTransactions(LoginRequiredMixin, TemplateView):
+    template_name = 'revenue_app/organizer_transactions.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        email = self.request.GET.get('email')
+        context['organizer_transactions'] = get_organizer_transactions(email).to_html(index=False, classes='table')
         return context
 
 class OrganizerEventList(LoginRequiredMixin, TemplateView):
