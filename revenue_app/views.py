@@ -1,6 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
-from .utils import get_organizer_list
+from .utils import (
+        get_organizer_list, 
+        get_organizer_event_list
+        )
 
 from chartjs.views.lines import BaseLineOptionsChartView
 
@@ -17,6 +20,13 @@ class OrganizerList(LoginRequiredMixin, TemplateView):
         context['organizers'] = get_organizer_list()
         return context
 
+class OrganizerEventList(LoginRequiredMixin, TemplateView):
+    template_name = 'revenue_app/organizer_event_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['events'] = get_organizer_event_list(self.kwargs['organizer_id'])
+        return context
 
 class ChartOptionsMixin():
     def get_options(self):
