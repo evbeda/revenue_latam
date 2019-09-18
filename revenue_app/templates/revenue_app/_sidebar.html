@@ -7,6 +7,25 @@
         <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action">Dashboard</a>
         <a href="{% url 'organizers-transactions' %}" class="list-group-item list-group-item-action">Organizers Transactions</a>
         <a href="#" class="list-group-item list-group-item-action">Events</a>
+        <a href="#" class="list-group-item list-group-item-action flex-column cursor-default">
+            Filter by date
+            <form method="get" action="{% url 'transactions-by-dates' %}">
+                <select name="start_date">
+                    <option value=""></option>
+                    {% for date in dates_list %}
+                    <option value="{{ date }}">{{ date }}</option>
+                    {% endfor %}
+                </select>
+                <select name="end_date">
+                    <option value=""></option>
+                    {% for date in dates_list %}
+                    <option value="{{ date }}">{{ date }}</option>
+                    {% endfor %}
+                </select>
+                {% csrf_token %}
+                <button type="submit" class="btn btn-evb-orange btn-sm">Apply</button>
+            </form>
+        </a>
         <hr class="sidebar-divider my-0">
     </div>
 </nav>

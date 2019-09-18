@@ -1,43 +1,76 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from .utils import (
-        get_organizer_event_list,
-        get_organizers_transactions,
-        get_organizer_transactions,
-        )
+    DATE_FILTER_COLUMNS,
+    get_dates,
+    get_organizer_event_list,
+    get_organizer_transactions,
+    get_organizers_transactions,
+    get_transactions_by_date,
+)
 
 from chartjs.views.lines import BaseLineOptionsChartView
 
 
-class Dashboard(LoginRequiredMixin, TemplateView):
+class TransactionsView(TemplateView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dates_list'] = get_dates()
+        return context
+
+
+class Dashboard(LoginRequiredMixin, TransactionsView):
     template_name = 'revenue_app/dashboard.html'
 
 
-class OrganizersTransactions(LoginRequiredMixin, TemplateView):
+class OrganizersTransactions(LoginRequiredMixin, TransactionsView):
     template_name = 'revenue_app/organizers_transactions.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['organizers_transactions'] = get_organizers_transactions().to_html(index=False, classes='table')
+        context['organizers_transactions'] = get_organizers_transactions().to_html(
+            index=False,
+            classes='table table-sm table-hover table-bordered text-right',
+        ).replace(' border="1"', '').replace(' style="text-align: right;"', '')
         return context
 
 
-class OrganizerTransactions(LoginRequiredMixin, TemplateView):
+class OrganizerTransactions(LoginRequiredMixin, TransactionsView):
     template_name = 'revenue_app/organizer_transactions.html'
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         email = self.request.GET.get('email')
-        context['organizer_transactions'] = get_organizer_transactions(email).to_html(index=False, classes='table')
+        context['organizer_transactions'] = get_organizer_transactions(email).to_html(
+            index=False,
+            classes='table table-sm table-hover table-bordered text-right',
+        ).replace(' border="1"', '').replace(' style="text-align: right;"', '')
         return context
 
-class OrganizerEventList(LoginRequiredMixin, TemplateView):
+
+class OrganizerEventList(LoginRequiredMixin, TransactionsView):
     template_name = 'revenue_app/organizer_event_list.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['events'] = get_organizer_event_list(self.kwargs['organizer_id'])
         return context
+
+
+class TransactionsByDate(LoginRequiredMixin, TransactionsView):
+    template_name = 'revenue_app/organizers_transactions.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+        context['organizers_transactions'] = get_transactions_by_date(start_date, end_date).to_html(
+            columns=DATE_FILTER_COLUMNS,
+            index=False,
+            classes='table table-sm table-hover table-bordered text-right',
+        ).replace(' border="1"', '').replace(' style="text-align: right;"', '')
+        return context
+
 
 class ChartOptionsMixin():
     def get_options(self):

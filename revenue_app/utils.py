@@ -1,6 +1,68 @@
 import numpy as np
 import pandas as pd
 
+FULL_COLUMNS = [
+    'transaction_created_date',
+    'email',
+    'sales_flag',
+    'payment_processor',
+    'currency',
+    # Vertical (not found yet)
+    # Subvertical (not found yet)
+    'event_id',
+    'eb_perc_take_rate',
+    'sale__payment_amount__epp',
+    'sale__gtf_esf__epp',
+    'sale__eb_tax__epp',
+    'sale__ap_organizer__gts__epp',
+    'sale__ap_organizer__royalty__epp',
+    'sale__gtf_esf__offline',
+    'refund__payment_amount__epp',
+    'refund__gtf_epp__gtf_esf__epp',
+    'refund__eb_tax__epp',
+    'refund__ap_organizer__gts__epp',
+    # 'refund__ap_organizer__royalty__epp', (not found yet)
+]
+
+ORGANIZER_FILTER_COLUMNS = [
+    'transaction_created_date',
+    'payment_processor',
+    'currency',
+    'event_id',
+    'eb_perc_take_rate',
+    'sale__payment_amount__epp',
+    'sale__gtf_esf__epp',
+    'sale__eb_tax__epp',
+    'sale__ap_organizer__gts__epp',
+    'sale__ap_organizer__royalty__epp',
+    'sale__gtf_esf__offline',
+    'refund__payment_amount__epp',
+    'refund__gtf_epp__gtf_esf__epp',
+    'refund__eb_tax__epp',
+    'refund__ap_organizer__gts__epp',
+]
+
+DATE_FILTER_COLUMNS = [
+    'transaction_created_date',
+    'email',
+    'sales_flag',
+    'payment_processor',
+    'currency',
+    'event_id',
+    'eb_perc_take_rate',
+    'sale__payment_amount__epp',
+    'sale__gtf_esf__epp',
+    'sale__eb_tax__epp',
+    'sale__ap_organizer__gts__epp',
+    'sale__ap_organizer__royalty__epp',
+    'sale__gtf_esf__offline',
+    'refund__payment_amount__epp',
+    'refund__gtf_epp__gtf_esf__epp',
+    'refund__eb_tax__epp',
+    'refund__ap_organizer__gts__epp',
+    # 'refund__ap_organizer__royalty__epp', (not found yet)
+]
+
 
 def get_rollups():
     return pd.read_excel('datasets/Revenue Queries.xlsx', sheet_name=0, header=1, usecols=range(0, 53))
@@ -39,17 +101,13 @@ def filter_transactions_by_date(dataframe, start_date, end_date=None):
     return dataframe[filter_condition]
 
 
-def merge_transactions():
-    transactions = get_transactions()
-    organizer_sales = get_organizer_sales()
+def merge_transactions(transactions, organizer_sales):
     merged = transactions.merge(
         organizer_sales[['email', 'sales_flag']].drop_duplicates(),
         on=['email'],
         how='left',
-        )
-    merged['eb_perc_take_rate'] = merged['sale__gtf_esf__epp'] / merged['sale__payment_amount__epp'] * 100
+    )
     merged.replace(np.nan, 'unknown', regex=True, inplace=True)
-    merged.eb_perc_take_rate.replace('unknown', 0, regex=True, inplace=True)
     merged.sort_values(
         by=['transaction_created_date', 'eventholder_user_id', 'event_id'],
         inplace=True,
@@ -57,48 +115,44 @@ def merge_transactions():
     return merged
 
 
+def calc_perc_take_rate(transactions):
+    transactions['eb_perc_take_rate'] = \
+        transactions['sale__gtf_esf__epp'] / transactions['sale__payment_amount__epp'] * 100
+    transactions.eb_perc_take_rate.replace('unknown', 0, regex=True, inplace=True)
+    return transactions
+
+
 def get_organizers_transactions():
-    merged = merge_transactions()
-    organizers_transactions = merged[[
-        'transaction_created_date',
-        'email',
-        'sales_flag',
-        'payment_processor',
-        'currency',
-        'event_id',
-        'eb_perc_take_rate',
-        'sale__payment_amount__epp',
-        'sale__gtf_esf__epp',
-        'sale__eb_tax__epp',
-        'sale__ap_organizer__gts__epp',
-        'sale__ap_organizer__royalty__epp',
-        'sale__gtf_esf__offline',
-        'refund__payment_amount__epp',
-        'refund__gtf_epp__gtf_esf__epp',
-        'refund__eb_tax__epp',
-        'refund__ap_organizer__gts__epp',
-    ]]
-    return organizers_transactions
+    transactions = get_transactions()
+    organizers_sales = get_organizer_sales()
+    merged = merge_transactions(transactions, organizers_sales)
+    merged = calc_perc_take_rate(merged)
+    return merged[FULL_COLUMNS]
 
 
 def get_organizer_transactions(email):
-    merged = merge_transactions()
-    organizer_transactions = merged[merged['email']==email]
-    organizer_transactions = organizer_transactions[[
-        'transaction_created_date',
-        'payment_processor',
-        'currency',
-        'event_id',
-        'eb_perc_take_rate',
-        'sale__payment_amount__epp',
-        'sale__gtf_esf__epp',
-        'sale__eb_tax__epp',
-        'sale__ap_organizer__gts__epp',
-        'sale__ap_organizer__royalty__epp',
-        'sale__gtf_esf__offline',
-        'refund__payment_amount__epp',
-        'refund__gtf_epp__gtf_esf__epp',
-        'refund__eb_tax__epp',
-        'refund__ap_organizer__gts__epp',
-    ]]
-    return organizer_transactions
+    transactions = get_transactions()
+    organizers_sales = get_organizer_sales()
+    merged = merge_transactions(transactions, organizers_sales)
+    merged = calc_perc_take_rate(merged)
+    organizer_transactions = merged[merged['email'] == email]
+    return organizer_transactions[ORGANIZER_FILTER_COLUMNS]
+
+
+def get_transactions_by_date(start_date, end_date):
+    transactions = get_transactions()
+    organizers_sales = get_organizer_sales()
+    merged = merge_transactions(transactions, organizers_sales)
+    merged = calc_perc_take_rate(merged)
+    return filter_transactions_by_date(merged, start_date, end_date)
+
+
+def get_dates():
+    transactions = get_transactions()
+    return np.datetime_as_string(
+        pd.to_datetime(
+            transactions['transaction_created_date'],
+            format="%m/%d/%Y",
+        ).sort_values().unique(),
+        unit='D',
+    ).tolist()
