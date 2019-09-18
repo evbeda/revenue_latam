@@ -1,0 +1,6 @@
+eventholder_user_id,transaction_created_date,payment_processor,currency,event_id,email,sale__payment_amount__epp,sale__eb_tax__epp,sale__ap_organizer__gts__epp,sale__ap_organizer__royalty__epp,sale__gtf_esf__epp,sale__gtf_esf__offline,sale__eb_tax__epp__1,refund__payment_amount__epp,refund__gtf_epp__gtf_esf__epp,refund__ap_organizer__gts__epp,refund__eb_tax__epp
+497321858,8/3/2018,ADYEN,ARS,66220941,some_fake_mail@gmail.com,911.06,12.34,840,0,58.72,0,12.34,0,0,0,0
+696421958,8/5/2018,MERCADO_PAGO,BRL,98415193,another_fake_mail@gmail.com,1045,0,971.95,0,73.05,0,0,0,0,0,0
+434444537,8/16/2018,ADYEN,BRL,17471621,wow_fake_mail@hotmail.com,297,0,270,0,27,0,0,0,0,0,0
+506285738,8/30/2018,PAYPAL,BRL,35210860,personalized_domain@wowdomain.com.br,3630,0,3339.6,0,290.4,0,0,0,0,0,0
+634364434,8/5/2018,ADYEN,ARS,88128252,arg_domain@superdomain.org.ar,4229.85,57.24,3900,0,272.61,0,57.24,0,0,0,0
