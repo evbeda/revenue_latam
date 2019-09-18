@@ -22,6 +22,10 @@ body {
   overflow: auto !important;
 }
 
+.cursor-default {
+  cursor: default;
+}
+
 /* Navbar */
 .navbar {
   background-color: #1E0A3C;
@@ -154,4 +158,9 @@ footer a {
   color: #fff;
   background-color: #c73c0a;
   border-color: #c73c0a;
+}
+
+.btn-evb-orange:focus,
+.btn-evb-orange:active {
+  box-shadow: 0 0 0 0.2rem rgba(209, 65, 12, 0.5);
 }
