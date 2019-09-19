@@ -22,6 +22,7 @@ from .utils import (
     merge_transactions,
     transactions_search,
     get_transactions_event,
+    get_top_organizers,
 )
 
 
@@ -341,6 +342,19 @@ class UtilsTestCase(TestCase):
         self.assertIsInstance(transactions_event, DataFrame)
         self.assertEqual(len(transactions_event), transactions_qty)
 
+    def test_get_top_ten_organizers(self):
+        with patch('pandas.read_csv', side_effect=(
+            read_csv('revenue_app/tests/transactions_example.csv'),
+            read_csv('revenue_app/tests/organizer_sales_example.csv'),
+        )):
+             transactions = get_organizers_transactions()
+        top_ars = get_top_organizers(transactions[transactions['currency']=='ARS'])
+        top_brl = get_top_organizers(transactions[transactions['currency']=='BRL'])
+        self.assertIsInstance(top_ars, DataFrame)
+        self.assertIsInstance(top_brl, DataFrame)
+        self.assertEqual(len(top_ars), 2)
+        self.assertEqual(len(top_brl), 3)
+
 
 class ViewsTest(TestCase):
     def setUp(self):
@@ -370,4 +384,10 @@ class ViewsTest(TestCase):
         URL = '/transactions/search/'
         client = Client()
         response = client.get(URL, {'email': email})
+        self.assertEqual(response.status_code, 302)
+
+    def test_top_organizers_view_returns_302_when_not_logged(self):
+        URL = '/organizers/top/'
+        client = Client()
+        response = client.get(URL)
         self.assertEqual(response.status_code, 302)

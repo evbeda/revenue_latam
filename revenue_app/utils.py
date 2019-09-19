@@ -175,3 +175,11 @@ def transactions_search(email):
     merged = calc_perc_take_rate(merged)
     filtered_transactions = merged[merged['email']==email]
     return filtered_transactions[ORGANIZER_FILTER_COLUMNS]
+
+def get_top_organizers(filtered_transactions):
+    ordered = filtered_transactions.groupby(
+        ['eventholder_user_id', 'email'],
+    ).agg({'sale__payment_amount__epp': sum}).sort_values(
+    by='sale__payment_amount__epp', ascending=False)
+    top = ordered.head(10)
+    return top.reset_index(level=[0,1])

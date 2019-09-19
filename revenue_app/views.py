@@ -1,7 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from .utils import (
-    DATE_FILTER_COLUMNS,
     get_dates,
     get_organizer_event_list,
     get_organizer_transactions,
@@ -9,6 +8,7 @@ from .utils import (
     get_transactions_by_date,
     transactions_search,
     get_transactions_event,
+    get_top_organizers,
 )
 
 from chartjs.views.lines import BaseLineOptionsChartView
@@ -59,13 +59,14 @@ class TransactionsSearch(LoginRequiredMixin, TransactionsView):
         ).replace(' border="1"', '').replace(' style="text-align: right;"', '')
         return context
 
-
-class OrganizerEventList(LoginRequiredMixin, TransactionsView):
-    template_name = 'revenue_app/organizer_event_list.html'
+class TopOrganizersLatam(LoginRequiredMixin, TransactionsView):
+    template_name = 'revenue_app/top_organizers.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['events'] = get_organizer_event_list(self.kwargs['organizer_id'])
+        transactions = get_organizers_transactions()
+        context['top_ars'] = get_top_organizers(transactions[transactions['currency']=='ARS'])
+        context['top_brl'] = get_top_organizers(transactions[transactions['currency']=='BRL'])
         return context
 
 
