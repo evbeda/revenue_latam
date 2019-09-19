@@ -20,6 +20,7 @@ from .utils import (
     get_transactions,
     get_transactions_by_date,
     merge_transactions,
+    transactions_search,
 )
 
 
@@ -211,12 +212,12 @@ class UtilsTestCase(TestCase):
             (696421958, 6),
             (506285738, 5),
     ])
-    def test_get_organizer_transactions(self, email, expected_length):
+    def test_get_organizer_transactions(self, eventholder_user_id, expected_length):
         with patch('pandas.read_csv', side_effect=(
             read_csv('revenue_app/tests/transactions_example.csv'),
             read_csv('revenue_app/tests/organizer_sales_example.csv'),
         )):
-            organizer_transactions = get_organizer_transactions(email)
+            organizer_transactions = get_organizer_transactions(eventholder_user_id)
         self.assertIsInstance(organizer_transactions, DataFrame)
         self.assertListEqual(
             organizer_transactions.columns.tolist(),
@@ -287,6 +288,42 @@ class UtilsTestCase(TestCase):
         self.assertIsInstance(dates, list)
         self.assertEqual(len(dates), 12)
 
+    @parameterized.expand([
+            ('arg_domain@superdomain.org.ar', 7),
+            ('some_fake_mail@gmail.com', 5),
+            ('wow_fake_mail@hotmail.com', 4),
+            ('another_fake_mail@gmail.com', 6),
+            ('personalized_domain@wowdomain.com.br', 5),
+    ])
+    def test_transactions_search(self, email, expected_length):
+        with patch('pandas.read_csv', side_effect=(
+            read_csv('revenue_app/tests/transactions_example.csv'),
+            read_csv('revenue_app/tests/organizer_sales_example.csv'),
+        )):
+            filtered_transactions = transactions_search(email)
+        self.assertIsInstance(filtered_transactions, DataFrame)
+        self.assertListEqual(
+            filtered_transactions.columns.tolist(),
+            [
+                'transaction_created_date',
+                'payment_processor',
+                'currency',
+                'event_id',
+                'eb_perc_take_rate',
+                'sale__payment_amount__epp',
+                'sale__gtf_esf__epp',
+                'sale__eb_tax__epp',
+                'sale__ap_organizer__gts__epp',
+                'sale__ap_organizer__royalty__epp',
+                'sale__gtf_esf__offline',
+                'refund__payment_amount__epp',
+                'refund__gtf_epp__gtf_esf__epp',
+                'refund__eb_tax__epp',
+                'refund__ap_organizer__gts__epp',
+            ]
+        )
+        self.assertEqual(len(filtered_transactions), expected_length)
+
 
 class ViewsTest(TestCase):
     def setUp(self):
@@ -310,3 +347,10 @@ class ViewsTest(TestCase):
         response = client.get(URL)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, '/accounts/login/?next={}'.format(URL))
+
+    def test_transactions_search_view_returns_302_when_not_logged(self):
+        email = 'arg_domain@superdomain.org.ar'
+        URL = '/transactions/search/'
+        client = Client()
+        response = client.get(URL, {'email': email})
+        self.assertEqual(response.status_code, 302)
