@@ -21,6 +21,7 @@ from .utils import (
     get_transactions_by_date,
     merge_transactions,
     transactions_search,
+    get_transactions_event,
 )
 
 
@@ -323,6 +324,22 @@ class UtilsTestCase(TestCase):
             ]
         )
         self.assertEqual(len(filtered_transactions), expected_length)
+
+    @parameterized.expand([
+        (66220941, 5),
+        (98415193, 6),
+        (17471621, 4),
+        (35210860, 5),
+        (88128252, 7),
+    ])
+    def test_event_transactions(self, event_id, transactions_qty):
+        with patch('pandas.read_csv', side_effect=(
+            read_csv('revenue_app/tests/transactions_example.csv'),
+            read_csv('revenue_app/tests/organizer_sales_example.csv'),
+        )):
+            transactions_event, paidtix = get_transactions_event(event_id)
+        self.assertIsInstance(transactions_event, DataFrame)
+        self.assertEqual(len(transactions_event), transactions_qty)
 
 
 class ViewsTest(TestCase):
