@@ -139,6 +139,15 @@ def get_organizer_transactions(eventholder_user_id):
     organizer_transactions = merged[merged['eventholder_user_id'] == int(eventholder_user_id)]
     return organizer_transactions[ORGANIZER_FILTER_COLUMNS]
 
+def get_transactions_event(event_id):
+    transactions = get_transactions()
+    organizers_sales = get_organizer_sales()
+    paidtix = organizers_sales[organizers_sales['event_id'] == int(event_id)]['PaidTix'].item()
+    merged = merge_transactions(transactions, organizers_sales)
+    merged = calc_perc_take_rate(merged)
+    transactions_event = merged[merged['event_id'] == int(event_id)]
+    return (transactions_event, paidtix)
+
 
 def get_transactions_by_date(start_date, end_date):
     transactions = get_transactions()

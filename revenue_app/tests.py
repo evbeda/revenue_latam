@@ -20,6 +20,7 @@ from .utils import (
     get_transactions,
     get_transactions_by_date,
     merge_transactions,
+    get_transactions_event,
 )
 
 
@@ -286,6 +287,22 @@ class UtilsTestCase(TestCase):
             dates = get_dates()
         self.assertIsInstance(dates, list)
         self.assertEqual(len(dates), 12)
+
+    @parameterized.expand([
+        (66220941, 5),
+        (98415193, 6),
+        (17471621, 4),
+        (35210860, 5),
+        (88128252, 7),
+    ])
+    def test_event_transactions(self, event_id, transactions_qty):
+        with patch(
+            'pandas.read_csv',
+            return_value=read_csv('revenue_app/tests/transactions_example.csv')
+        ):
+            transactions_event = get_transactions_event(event_id)
+        self.assertIsInstance(transactions_event, DataFrame)
+        self.assertEqual(len(transactions_event), transactions_qty)
 
 
 class ViewsTest(TestCase):

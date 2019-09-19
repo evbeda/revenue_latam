@@ -36,7 +36,7 @@
       	    <td>{{transaction.sales_flag}}</td>
       	    <td>{{transaction.payment_processor}}</td>
       	    <td>{{transaction.currency}}</td>
-      	    <td><a href="#">{{transaction.event_id}}</a></td>
+	    <td><a href="{% url 'event-details' event_id=transaction.event_id %}">{{transaction.event_id}}</a></td>
       	    <td>{{transaction.eb_perc_take_rate}}</td>
       	    <td>{{transaction.sale__payment_amount__epp}}</td>
             <td>{{transaction.sale__gtf_esf__epp}}</td>

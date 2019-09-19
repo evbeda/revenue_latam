@@ -7,6 +7,7 @@ from .utils import (
     get_organizer_transactions,
     get_organizers_transactions,
     get_transactions_by_date,
+    get_transactions_event,
 )
 
 from chartjs.views.lines import BaseLineOptionsChartView
@@ -68,6 +69,17 @@ class TransactionsByDate(LoginRequiredMixin, TransactionsView):
         ).replace(' border="1"', '').replace(' style="text-align: right;"', '')
         return context
 
+
+class TrasactionsEvent(LoginRequiredMixin, TemplateView):
+    template_name = 'revenue_app/event.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['event_id'] = self.kwargs['event_id']
+        context['transactions_event'], context['event_paidtix'] = get_transactions_event(self.kwargs['event_id'])
+        context['organizer_id'] = context['transactions_event'].iloc[0]['eventholder_user_id']
+        context['organizer_email'] = context['transactions_event'].iloc[0]['email']
+        return context
 
 class ChartOptionsMixin():
     def get_options(self):

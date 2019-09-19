@@ -1,0 +1,53 @@
+{% extends 'revenue_app/base.html' %}
+{% load static %}
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+	<h1><b>Event details</b></h1>
+	<div style="margin-bottom: 20px">
+	    <h5><b>Event ID: </b>{{event_id}}</h5>
+	    <h5><b>Event PaidTix: </b>{{event_paidtix}}</h5>
+	    <h5><b>Organizer ID:</b> {{organizer_id}}</h5>
+	    <h5><b>E-mail </b>{{organizer_email}}</h5>
+	</div>
+	<table class="table table-hover">
+	    <thead>
+		<tr>
+		    <th scope="col">transaction_created_date</th>
+		    <th scope="col">payment_processor</th>
+		    <th scope="col">sale__payment_amount__epp</th>
+		    <th scope="col">sale__eb_tax__epp</th>
+		    <th scope="col">sale__ap_organizer__gts__epp</th>
+		    <th scope="col">sale__ap_organizer__royalty__epp</th>
+		    <th scope="col">sale__gtf_esf__epp</th>
+		    <th scope="col">sale__gtf_esf__offline</th>
+		    <th scope="col">refund__payment_amount__epp</th>
+		    <th scope="col">refund__gtf_epp__gtf_esf__epp</th>
+		    <th scope="col">refund__ap_organizer__gts__epp</th>
+		    <th scope="col">refund__eb_tax__epp</th>
+		</tr>
+	    </thead>
+	    <tbody>
+		{% for index, transaction in transactions_event.iterrows %}
+		<tr>
+		    <td>{{transaction.transaction_created_date}}</td>
+		    <td>{{transaction.payment_processor}}</td>
+		    <td>{{transaction.sale__payment_amount__epp}}</td>
+		    <td>{{transaction.sale__eb_tax__epp}}</td>
+		    <td>{{transaction.sale__ap_organizer__gts__epp}}</td>
+		    <td>{{transaction.sale__ap_organizer__royalty__epp}}</td>
+		    <td>{{transaction.sale__gtf_esf__epp}}</td>
+		    <td>{{transaction.sale__gtf_esf__offline}}</td>
+		    <td>{{transaction.refund__payment_amount__epp}}</td>
+		    <td>{{transaction.refund__gtf_epp__gtf_esf__epp}}</td>
+		    <td>{{transaction.refund__ap_organizer__gts__epp}}</td>
+		    <td>{{transaction.refund__eb_tax__epp}}</td>
+		</tr>
+		{% endfor %}
+	    </tbody>
+	</table>
+    </div>
+</div>
+
+{% endblock content %}
+
