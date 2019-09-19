@@ -111,3 +111,6 @@ run.sh
 
 # datasets
 datasets/
+
+# Mac stuff
+.DS_Store

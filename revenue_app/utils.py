@@ -1,3 +1,4 @@
+from functools import reduce
 import numpy as np
 import pandas as pd
 
@@ -87,19 +88,47 @@ def get_organizer_sales():
     return organizer_sales
 
 
-def get_organizer_event_list(organizer_id):
-    transactions = get_transactions()
-    return transactions[transactions['eventholder_user_id'] == int(organizer_id)]
-
-
-def filter_transactions_by_date(dataframe, start_date, end_date=None):
-    start_date = np.datetime64(start_date, 'D')
-    filter_condition = (dataframe['transaction_created_date'] == start_date)
-    if end_date:
-        end_date = np.datetime64(end_date, 'D')
-        filter_condition = (dataframe['transaction_created_date'] >= start_date) & \
-            (dataframe['transaction_created_date'] <= end_date)
-    return dataframe[filter_condition]
+def filter_transactions(transactions=None, **kwargs):
+    if transactions is None:
+        transactions = get_transactions()
+    conditions = []
+    if kwargs.get('event_id'):
+        conditions.insert(
+            0,
+            transactions['event_id'] == int(kwargs.get('event_id'))
+        )
+    if kwargs.get('email'):
+        conditions.insert(
+            0,
+            transactions['email'] == kwargs.get('email')
+        )
+    if kwargs.get('eventholder_user_id') or kwargs.get('organizer_id'):
+        conditions.insert(
+            0,
+            transactions['eventholder_user_id'] == int(
+                kwargs.get('eventholder_user_id') or kwargs.get('organizer_id')
+            )
+        )
+    if kwargs.get('start_date'):
+        start_date = np.datetime64(kwargs['start_date'], 'D')
+        if kwargs.get('end_date'):
+            end_date = np.datetime64(kwargs['end_date'], 'D')
+            conditions.insert(
+                0,
+                transactions['transaction_created_date'] >= start_date
+            )
+            conditions.insert(
+                0,
+                transactions['transaction_created_date'] <= end_date
+            )
+        else:
+            conditions.insert(
+                0,
+                transactions['transaction_created_date'] == start_date
+            )
+    if not conditions:
+        return transactions
+    return transactions[reduce(np.logical_and, conditions)]
 
 
 def merge_transactions(transactions, organizer_sales):
@@ -123,38 +152,19 @@ def calc_perc_take_rate(transactions):
     return transactions
 
 
-def get_organizers_transactions():
+def transactions(**kwargs):
     transactions = get_transactions()
     organizers_sales = get_organizer_sales()
     merged = merge_transactions(transactions, organizers_sales)
     merged = calc_perc_take_rate(merged)
-    return merged[FULL_COLUMNS]
+    return filter_transactions(merged, **kwargs)
 
-
-def get_organizer_transactions(eventholder_user_id):
-    transactions = get_transactions()
-    organizers_sales = get_organizer_sales()
-    merged = merge_transactions(transactions, organizers_sales)
-    merged = calc_perc_take_rate(merged)
-    organizer_transactions = merged[merged['eventholder_user_id'] == int(eventholder_user_id)]
-    return organizer_transactions[ORGANIZER_FILTER_COLUMNS]
 
 def get_transactions_event(event_id):
-    transactions = get_transactions()
+    transactions_event = transactions(event_id=event_id)
     organizers_sales = get_organizer_sales()
     paidtix = organizers_sales[organizers_sales['event_id'] == int(event_id)]['PaidTix']
-    merged = merge_transactions(transactions, organizers_sales)
-    merged = calc_perc_take_rate(merged)
-    transactions_event = merged[merged['event_id'] == int(event_id)]
     return (transactions_event, paidtix)
-
-
-def get_transactions_by_date(start_date, end_date):
-    transactions = get_transactions()
-    organizers_sales = get_organizer_sales()
-    merged = merge_transactions(transactions, organizers_sales)
-    merged = calc_perc_take_rate(merged)
-    return filter_transactions_by_date(merged, start_date, end_date)
 
 
 def get_dates():
@@ -168,18 +178,12 @@ def get_dates():
     ).tolist()
 
 
-def transactions_search(email):
-    transactions = get_transactions()
-    organizers_sales = get_organizer_sales()
-    merged = merge_transactions(transactions, organizers_sales)
-    merged = calc_perc_take_rate(merged)
-    filtered_transactions = merged[merged['email']==email]
-    return filtered_transactions[ORGANIZER_FILTER_COLUMNS]
-
 def get_top_organizers(filtered_transactions):
     ordered = filtered_transactions.groupby(
         ['eventholder_user_id', 'email'],
     ).agg({'sale__payment_amount__epp': sum}).sort_values(
-    by='sale__payment_amount__epp', ascending=False)
+        by='sale__payment_amount__epp',
+        ascending=False,
+    )
     top = ordered.head(10)
-    return top.reset_index(level=[0,1])
+    return top.reset_index(level=[0, 1])

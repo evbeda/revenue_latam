@@ -2,13 +2,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from .utils import (
     get_dates,
-    get_organizer_event_list,
-    get_organizer_transactions,
-    get_organizers_transactions,
-    get_transactions_by_date,
-    transactions_search,
     get_transactions_event,
     get_top_organizers,
+    transactions,
 )
 
 from chartjs.views.lines import BaseLineOptionsChartView
@@ -30,7 +26,7 @@ class OrganizersTransactions(LoginRequiredMixin, TransactionsView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['organizers_transactions'] = get_organizers_transactions()
+        context['organizers_transactions'] = transactions()
         return context
 
 
@@ -40,7 +36,9 @@ class OrganizerTransactions(LoginRequiredMixin, TransactionsView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         eventholder_user_id = self.kwargs['organizer_id']
-        context['organizer_transactions'] = get_organizer_transactions(eventholder_user_id).to_html(
+        context['organizer_transactions'] = transactions(
+            eventholder_user_id=eventholder_user_id,
+        ).to_html(
             index=False,
             classes='table table-sm table-hover table-bordered text-right',
         ).replace(' border="1"', '').replace(' style="text-align: right;"', '')
@@ -53,20 +51,21 @@ class TransactionsSearch(LoginRequiredMixin, TransactionsView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         email = self.request.GET.get('email')
-        context['organizer_transactions'] = transactions_search(email).to_html(
+        context['organizer_transactions'] = transactions(email=email).to_html(
             index=False,
             classes='table table-sm table-hover table-bordered text-right',
         ).replace(' border="1"', '').replace(' style="text-align: right;"', '')
         return context
+
 
 class TopOrganizersLatam(LoginRequiredMixin, TransactionsView):
     template_name = 'revenue_app/top_organizers.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        transactions = get_organizers_transactions()
-        context['top_ars'] = get_top_organizers(transactions[transactions['currency']=='ARS'])
-        context['top_brl'] = get_top_organizers(transactions[transactions['currency']=='BRL'])
+        trx = transactions()
+        context['top_ars'] = get_top_organizers(trx[trx['currency'] == 'ARS'])
+        context['top_brl'] = get_top_organizers(trx[trx['currency'] == 'BRL'])
         return context
 
 
@@ -77,11 +76,14 @@ class TransactionsByDate(LoginRequiredMixin, TransactionsView):
         context = super().get_context_data(**kwargs)
         start_date = self.request.GET.get('start_date')
         end_date = self.request.GET.get('end_date')
-        context['organizers_transactions'] = get_transactions_by_date(start_date, end_date)
+        context['organizers_transactions'] = transactions(
+            start_date=start_date,
+            end_date=end_date,
+        )
         return context
 
 
-class TransactionsEvent(LoginRequiredMixin, TemplateView):
+class TransactionsEvent(LoginRequiredMixin, TransactionsView):
     template_name = 'revenue_app/event.html'
 
     def get_context_data(self, **kwargs):
@@ -89,10 +91,11 @@ class TransactionsEvent(LoginRequiredMixin, TemplateView):
         context['event_id'] = self.kwargs['event_id']
         transactions_event, event_paidtix = get_transactions_event(self.kwargs['event_id'])
         context['transactions_event'] = transactions_event
-        context['event_paidtix'] = event_paidtix.item()
+        context['event_paidtix'] = event_paidtix.iloc[0]
         context['organizer_id'] = context['transactions_event'].iloc[0]['eventholder_user_id']
         context['organizer_email'] = context['transactions_event'].iloc[0]['email']
         return context
+
 
 class ChartOptionsMixin():
     def get_options(self):
