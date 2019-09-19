@@ -7,6 +7,7 @@ from .utils import (
     get_organizer_transactions,
     get_organizers_transactions,
     get_transactions_by_date,
+    transactions_search,
 )
 
 from chartjs.views.lines import BaseLineOptionsChartView
@@ -45,6 +46,19 @@ class OrganizerTransactions(LoginRequiredMixin, TransactionsView):
         return context
 
 
+class TransactionsSearch(LoginRequiredMixin, TransactionsView):
+    template_name = 'revenue_app/organizer_transactions.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        email = self.request.GET.get('email')
+        context['organizer_transactions'] = transactions_search(email).to_html(
+            index=False,
+            classes='table table-sm table-hover table-bordered text-right',
+        ).replace(' border="1"', '').replace(' style="text-align: right;"', '')
+        return context
+
+
 class OrganizerEventList(LoginRequiredMixin, TransactionsView):
     template_name = 'revenue_app/organizer_event_list.html'
 
@@ -61,11 +75,7 @@ class TransactionsByDate(LoginRequiredMixin, TransactionsView):
         context = super().get_context_data(**kwargs)
         start_date = self.request.GET.get('start_date')
         end_date = self.request.GET.get('end_date')
-        context['organizers_transactions'] = get_transactions_by_date(start_date, end_date).to_html(
-            columns=DATE_FILTER_COLUMNS,
-            index=False,
-            classes='table table-sm table-hover table-bordered text-right',
-        ).replace(' border="1"', '').replace(' style="text-align: right;"', '')
+        context['organizers_transactions'] = get_transactions_by_date(start_date, end_date)
         return context
 
 

@@ -157,3 +157,12 @@ def get_dates():
         ).sort_values().unique(),
         unit='D',
     ).tolist()
+
+
+def transactions_search(email):
+    transactions = get_transactions()
+    organizers_sales = get_organizer_sales()
+    merged = merge_transactions(transactions, organizers_sales)
+    merged = calc_perc_take_rate(merged)
+    filtered_transactions = merged[merged['email']==email]
+    return filtered_transactions[ORGANIZER_FILTER_COLUMNS]
