@@ -5,8 +5,7 @@
     <div class="sidebar-heading">Menu</div>
     <div class="list-group list-group-flush bg-light">
         <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action">Dashboard</a>
-        <a href="{% url 'organizers-transactions' %}" class="list-group-item list-group-item-action">Organizers Transactions</a>
-        <a href="#" class="list-group-item list-group-item-action">Events</a>
+        <a href="{% url 'organizers-transactions' %}" class="list-group-item list-group-item-action">Transactions</a>
         <a href="#" class="list-group-item list-group-item-action flex-column cursor-default">
             Filter by date
             <form method="get" action="{% url 'transactions-by-dates' %}">

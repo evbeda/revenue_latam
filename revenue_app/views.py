@@ -28,10 +28,7 @@ class OrganizersTransactions(LoginRequiredMixin, TransactionsView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['organizers_transactions'] = get_organizers_transactions().to_html(
-            index=False,
-            classes='table table-sm table-hover table-bordered text-right',
-        ).replace(' border="1"', '').replace(' style="text-align: right;"', '')
+        context['organizers_transactions'] = get_organizers_transactions()
         return context
 
 
@@ -40,8 +37,8 @@ class OrganizerTransactions(LoginRequiredMixin, TransactionsView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        email = self.request.GET.get('email')
-        context['organizer_transactions'] = get_organizer_transactions(email).to_html(
+        eventholder_user_id = self.kwargs['organizer_id']
+        context['organizer_transactions'] = get_organizer_transactions(eventholder_user_id).to_html(
             index=False,
             classes='table table-sm table-hover table-bordered text-right',
         ).replace(' border="1"', '').replace(' style="text-align: right;"', '')

@@ -182,6 +182,7 @@ class UtilsTestCase(TestCase):
         self.assertListEqual(
             organizers_transactions.columns.tolist(),
             [
+                'eventholder_user_id',
                 'transaction_created_date',
                 'email',
                 'sales_flag',
@@ -204,11 +205,11 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(organizers_transactions), 27)
 
     @parameterized.expand([
-            ('arg_domain@superdomain.org.ar', 7),
-            ('some_fake_mail@gmail.com', 5),
-            ('wow_fake_mail@hotmail.com', 4),
-            ('another_fake_mail@gmail.com', 6),
-            ('personalized_domain@wowdomain.com.br', 5),
+            (634364434, 7),
+            (497321858, 5),
+            (434444537, 4),
+            (696421958, 6),
+            (506285738, 5),
     ])
     def test_get_organizer_transactions(self, email, expected_length):
         with patch('pandas.read_csv', side_effect=(
@@ -303,7 +304,8 @@ class ViewsTest(TestCase):
         self.assertEqual(response.url, '/accounts/login/?next={}'.format(URL))
 
     def test_organizer_transactions_view_returns_302_when_not_logged(self):
-        URL = '/organizers/search/'
+        EVENT_ID = 497321858
+        URL = '/organizers/{}/'.format(EVENT_ID)
         client = Client()
         response = client.get(URL)
         self.assertEqual(response.status_code, 302)

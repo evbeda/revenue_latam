@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 FULL_COLUMNS = [
+    'eventholder_user_id',
     'transaction_created_date',
     'email',
     'sales_flag',
@@ -130,12 +131,12 @@ def get_organizers_transactions():
     return merged[FULL_COLUMNS]
 
 
-def get_organizer_transactions(email):
+def get_organizer_transactions(eventholder_user_id):
     transactions = get_transactions()
     organizers_sales = get_organizer_sales()
     merged = merge_transactions(transactions, organizers_sales)
     merged = calc_perc_take_rate(merged)
-    organizer_transactions = merged[merged['email'] == email]
+    organizer_transactions = merged[merged['eventholder_user_id'] == int(eventholder_user_id)]
     return organizer_transactions[ORGANIZER_FILTER_COLUMNS]
 
 

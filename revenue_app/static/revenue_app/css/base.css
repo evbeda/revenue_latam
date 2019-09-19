@@ -164,3 +164,7 @@ footer a {
 .btn-evb-orange:active {
   box-shadow: 0 0 0 0.2rem rgba(209, 65, 12, 0.5);
 }
+
+.table a {
+  color:  #D1410C;
+}
