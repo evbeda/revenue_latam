@@ -4,12 +4,12 @@ from revenue_app.views import (
     ChartJSONDataView,
     ChartJSONDataViewAlt,
     Dashboard,
-    OrganizerEventList,
     OrganizerTransactions,
     OrganizersTransactions,
     TransactionsByDate,
     TransactionsSearch,
     TransactionsEvent,
+    TopOrganizersLatam,
 )
 
 
@@ -19,7 +19,7 @@ urlpatterns = [
     url(r'organizers/(?P<organizer_id>[0-9]+)/$', OrganizerTransactions.as_view(), name='organizer-transactions'),
     url(r'transactions/search/$', TransactionsSearch.as_view(), name='transactions-search'),
     url(r'transactions/dates/$', TransactionsByDate.as_view(), name='transactions-by-dates'),
-    url(r'organizers/(?P<organizer_id>[0-9]+)/events/$', OrganizerEventList.as_view(), name='organizer-event-list'),
+    url(r'organizers/top/', TopOrganizersLatam.as_view(), name='top-organizers'),
     url(r'event/(?P<event_id>[0-9]+)/$', TransactionsEvent.as_view(), name='event-details'),
     url(r'^json/$', ChartJSONDataView.as_view(), name='json_data'),
     url(r'^json_alt/$', ChartJSONDataViewAlt.as_view(), name='json_data_alt'),
