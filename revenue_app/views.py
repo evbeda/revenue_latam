@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse
 from django.views.generic import TemplateView
 from .utils import (
     get_dates,
@@ -7,6 +8,7 @@ from .utils import (
     transactions,
     get_top_events,
 )
+import json
 
 from chartjs.views.lines import BaseLineOptionsChartView
 
@@ -104,7 +106,6 @@ class TopEventsLatam(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         trx = transactions()
         context['top_event_ars'] = get_top_events(trx[trx['currency']=='ARS'])
-        print(context['top_event_ars'])
         context['top_event_brl'] = get_top_events(trx[trx['currency']=='BRL'])
         return context
 
@@ -172,3 +173,33 @@ class ChartJSONDataViewAlt(ChartOptionsMixin, BaseLineOptionsChartView):
         Not implemented in parent class.
         '''
         return [[5, 5, 5], [6, 5, 4], [4, 5, 6]]
+
+
+def top_organizers_json_data(request):
+    trx = transactions()
+    res = json.dumps({
+        'arg': {
+            'labels': get_top_organizers(trx[trx['currency'] == 'ARS'])['email'].tolist(),
+            'data': get_top_organizers(trx[trx['currency'] == 'ARS'])['sale__payment_amount__epp'].tolist(),
+        },
+        'brl': {
+            'labels': get_top_organizers(trx[trx['currency'] == 'BRL'])['email'].tolist(),
+            'data': get_top_organizers(trx[trx['currency'] == 'BRL'])['sale__payment_amount__epp'].tolist(),
+        },
+    })
+    return HttpResponse(res, content_type="application/json")
+
+
+def top_events_json_data(request):
+    trx = transactions()
+    res = json.dumps({
+        'arg': {
+            'labels': get_top_events(trx[trx['currency'] == 'ARS'])['event_id'].tolist(),
+            'data': get_top_events(trx[trx['currency'] == 'ARS'])['sale__payment_amount__epp'].tolist(),
+        },
+        'brl': {
+            'labels': get_top_events(trx[trx['currency'] == 'BRL'])['event_id'].tolist(),
+            'data': get_top_events(trx[trx['currency'] == 'BRL'])['sale__payment_amount__epp'].tolist(),
+        },
+    })
+    return HttpResponse(res, content_type="application/json")

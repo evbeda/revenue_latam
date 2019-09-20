@@ -9,8 +9,10 @@ from revenue_app.views import (
     TransactionsByDate,
     TransactionsSearch,
     TransactionsEvent,
-    TopOrganizersLatam,
     TopEventsLatam,
+    TopOrganizersLatam,
+    top_events_json_data,
+    top_organizers_json_data,
 )
 
 
@@ -24,5 +26,7 @@ urlpatterns = [
     url(r'event/(?P<event_id>[0-9]+)/$', TransactionsEvent.as_view(), name='event-details'),
     url(r'events/top/$', TopEventsLatam.as_view(), name='top-events'),
     url(r'^json/$', ChartJSONDataView.as_view(), name='json_data'),
-    url(r'^json_alt/$', ChartJSONDataViewAlt.as_view(), name='json_data_alt'),
+    url(r'^json/alt/$', ChartJSONDataViewAlt.as_view(), name='json_data_alt'),
+    url(r'^json/top_org_arg/$', top_organizers_json_data, name='json_top_organizers'),
+    url(r'^json/top_events_arg/$', top_events_json_data, name='json_top_events'),
 ]
