@@ -95,18 +95,18 @@ def filter_transactions(transactions=None, **kwargs):
     if kwargs.get('event_id'):
         conditions.insert(
             0,
-            transactions['event_id'] == int(kwargs.get('event_id'))
+            transactions['event_id'] == int(str(kwargs.get('event_id')).strip())
         )
     if kwargs.get('email'):
         conditions.insert(
             0,
-            transactions['email'] == kwargs.get('email')
+            transactions['email'] == kwargs.get('email').strip()
         )
     if kwargs.get('eventholder_user_id') or kwargs.get('organizer_id'):
         conditions.insert(
             0,
             transactions['eventholder_user_id'] == int(
-                kwargs.get('eventholder_user_id') or kwargs.get('organizer_id')
+                str(kwargs.get('eventholder_user_id') or kwargs.get('organizer_id')).strip()
             )
         )
     if kwargs.get('start_date'):
