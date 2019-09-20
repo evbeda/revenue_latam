@@ -24,6 +24,9 @@
 	</table>
     </div>
 </div>
+<div style="width: 100%;">
+	<canvas id="chart_arg"></canvas>
+</div>
 <br>
 <h1>Top 10 Brazil Events</h1>
 <br>
@@ -47,4 +50,49 @@
 	</table>
     </div>
 </div>
+<div style="width: 100%;">
+	<canvas id="chart_brl"></canvas>
+</div>
 {% endblock content %}
+
+{% block scripts %}
+{{ block.super }}
+<script type="text/javascript" src="{% static 'js/Chart.min.js' %}"></script>
+<script type="text/javascript">
+  $.get('{% url "json_top_events" %}', function(data) {
+	var ctx_ars = $("#chart_arg").get(0).getContext("2d");
+	new Chart(ctx_ars, {
+	  type: 'horizontalBar',
+	  data: {
+		  labels: data.arg.labels,
+		  datasets: [{
+			  label: "Top Argentina Events",
+			  data: data.arg.data,
+			  fill: false,
+			  backgroundColor: ["rgba(255, 99, 132, 0.2)","rgba(255, 159, 64, 0.2)","rgba(255, 205, 86, 0.2)","rgba(75, 192, 192, 0.2)","rgba(54, 162, 235, 0.2)","rgba(153, 102, 255, 0.2)","rgba(201, 203, 207, 0.2)","rgba(255, 99, 132, 0.2)","rgba(255, 159, 64, 0.2)","rgba(255, 205, 86, 0.2)"],
+			  borderColor: ["rgb(255, 99, 132)","rgb(255, 159, 64)","rgb(255, 205, 86)","rgb(75, 192, 192)","rgb(54, 162, 235)","rgb(153, 102, 255)","rgb(201, 203, 207)","rgb(255, 99, 132)","rgb(255, 159, 64)","rgb(255, 205, 86)"],
+			  borderWidth: 1,
+		  }]
+	  },
+	  options: {scales: {yAxes: [{ticks: {beginAtZero: true}}]}},
+	});
+
+	var ctx_brl = $("#chart_brl").get(0).getContext("2d");
+	new Chart(ctx_brl, {
+	  type: 'horizontalBar',
+	  data: {
+		  labels: data.brl.labels,
+		  datasets: [{
+			  label: "Top Brazil Organizers",
+			  data: data.brl.data,
+			  fill: false,
+			  backgroundColor: ["rgba(255, 99, 132, 0.2)","rgba(255, 159, 64, 0.2)","rgba(255, 205, 86, 0.2)","rgba(75, 192, 192, 0.2)","rgba(54, 162, 235, 0.2)","rgba(153, 102, 255, 0.2)","rgba(201, 203, 207, 0.2)","rgba(255, 99, 132, 0.2)","rgba(255, 159, 64, 0.2)","rgba(255, 205, 86, 0.2)"],
+			  borderColor: ["rgb(255, 99, 132)","rgb(255, 159, 64)","rgb(255, 205, 86)","rgb(75, 192, 192)","rgb(54, 162, 235)","rgb(153, 102, 255)","rgb(201, 203, 207)","rgb(255, 99, 132)","rgb(255, 159, 64)","rgb(255, 205, 86)"],
+			  borderWidth: 1,
+		  }]
+	  },
+	  options: {scales: {yAxes: [{ticks: {beginAtZero: true}}]}},
+	});
+  });
+</script>
+{% endblock scripts %}
