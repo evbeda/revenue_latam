@@ -99,7 +99,7 @@ class TransactionsEvent(LoginRequiredMixin, TransactionsView):
         context['organizer_email'] = context['transactions_event'].iloc[0]['email']
         return context
 
-class TopEventsLatam(LoginRequiredMixin, TemplateView):
+class TopEventsLatam(LoginRequiredMixin, TransactionsView):
     template_name = 'revenue_app/top_events.html'
 
     def get_context_data(self, **kwargs):
