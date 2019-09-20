@@ -77,7 +77,7 @@ def get_transactions():
     transactions['transaction_created_date'] = pd.to_datetime(
         transactions['transaction_created_date'],
         format="%m/%d/%Y"
-    )
+    ).dt.date
     return transactions
 
 
@@ -156,7 +156,7 @@ def transactions(**kwargs):
     transactions = get_transactions()
     organizers_sales = get_organizer_sales()
     merged = merge_transactions(transactions, organizers_sales)
-    merged = calc_perc_take_rate(merged)
+    merged = calc_perc_take_rate(merged).round(2)
     return filter_transactions(merged, **kwargs)
 
 
@@ -172,7 +172,7 @@ def get_dates():
     return np.datetime_as_string(
         pd.to_datetime(
             transactions['transaction_created_date'],
-            format="%m/%d/%Y",
+            format="%Y-%m-%d",
         ).sort_values().unique(),
         unit='D',
     ).tolist()
@@ -184,14 +184,17 @@ def get_top_organizers(filtered_transactions):
     ).agg({'sale__payment_amount__epp': sum}).sort_values(
         by='sale__payment_amount__epp',
         ascending=False,
-    )
+    ).round(2)
     top = ordered.head(10)
     return top.reset_index(level=[0, 1])
+
 
 def get_top_events(filtered_transactions):
     ordered = filtered_transactions.groupby(
         ['event_id']
     ).agg({'sale__payment_amount__epp': sum}).sort_values(
-    by='sale__payment_amount__epp', ascending=False)
+        by='sale__payment_amount__epp',
+        ascending=False,
+    ).round(2)
     top = ordered.head(10)
     return top.reset_index(level=0)
