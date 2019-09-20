@@ -4,6 +4,7 @@ from django.test import (
     Client,
     TestCase,
 )
+from django.urls import reverse
 from unittest.mock import patch
 
 from pandas import read_csv
@@ -22,6 +23,8 @@ from .utils import (
     merge_transactions,
     transactions,
 )
+
+from .views import OrganizersTransactions, OrganizerTransactions
 
 TRANSACTIONS_EXAMPLE_PATH = 'revenue_app/tests/transactions_example.csv'
 ORGANIZER_SALES_EXAMPLE_PATH = 'revenue_app/tests/organizer_sales_example.csv'
@@ -297,6 +300,16 @@ class ViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, '/accounts/login/?next={}'.format(URL))
 
+    def test_organizers_transactions_view_returns_200_when_logged(self):
+        URL = '/transactions/'
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.logged_client.get(URL)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.template_name[0], OrganizersTransactions.template_name)
+
     def test_organizer_transactions_view_returns_302_when_not_logged(self):
         EVENT_ID = 497321858
         URL = '/organizers/{}/'.format(EVENT_ID)
@@ -304,6 +317,23 @@ class ViewsTest(TestCase):
         response = client.get(URL)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, '/accounts/login/?next={}'.format(URL))
+
+    @parameterized.expand([
+        (66220941,),
+        (98415193,),
+        (17471621,),
+        (35210860,),
+        (88128252,),
+    ])
+    def test_organizer_transactions_view_returns_200_when_logged(self, eventholder_user_id):
+        URL = '/organizers/{}/'.format(eventholder_user_id)
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.logged_client.get(URL)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.template_name[0], OrganizerTransactions.template_name)
 
     def test_transactions_search_view_returns_302_when_not_logged(self):
         email = 'arg_domain@superdomain.org.ar'
