@@ -1,0 +1,50 @@
+{% extends 'revenue_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<h1>Top 10 Argentina Events</h1>
+<br>
+<div class="row">
+    <div class="col-md-12">
+	<table class="table table-hover">
+	    <thead>
+		<tr>
+		    <th scope="col">Event ID</th>
+		    <th scope="col">sale__payment_amount__epp</th>
+		</tr>
+	    </thead>
+	    <tbody>
+		{% for tuples in top_event_ars.itertuples %}
+		<tr>
+		    <td><a href="{% url 'event-details' event_id=tuples.event_id %}">{{tuples.event_id}}</a></td>
+		    <td>{{tuples.sale__payment_amount__epp}}</td>
+		</tr>
+		{% endfor %}
+	    </tbody>
+	</table>
+    </div>
+</div>
+<br>
+<h1>Top 10 Brazil Events</h1>
+<br>
+<div class="row">
+    <div class="col-md-12">
+	<table class="table table-hover">
+	    <thead>
+		<tr>
+		    <th scope="col">Event ID</th>
+		    <th scope="col">sale__payment_amount__epp</th>
+		</tr>
+	    </thead>
+	    <tbody>
+		{% for tuples in top_event_ars.itertuples %}
+		<tr>
+		    <td><a href="{% url 'event-details' event_id=tuples.event_id %}">{{tuples.event_id}}</a></td>
+		    <td>{{tuples.sale__payment_amount__epp}}</td>
+		</tr>
+		{% endfor %}
+	    </tbody>
+	</table>
+    </div>
+</div>
+{% endblock content %}
