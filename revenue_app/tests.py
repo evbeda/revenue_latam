@@ -249,15 +249,19 @@ class UtilsTestCase(TestCase):
         ({'invalid_key': 'something'}, 27),
         ({'eventholder_user_id': '', 'organizer_id': '', 'start_date': '', 'end_date': ''}, 27),
         ({'eventholder_user_id': 696421958}, 6),
+        ({'eventholder_user_id': '	696421958 '}, 6),
         ({'eventholder_user_id': '696421958', 'start_date': '2018-08-02'}, 4),
         ({'eventholder_user_id': 696421958, 'start_date': '2018-08-02', 'invalid_key': 'something'}, 4),
         ({'organizer_id': 696421958, 'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 5),
+        ({'organizer_id': ' 696421958	', 'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 5),
         ({'start_date': '2018-08-02'}, 7),
         ({'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 10),
         ({'start_date': '2018-08-05', 'end_date': '2018-08-02'}, 0),
         ({'end_date': '2018-08-05'}, 27),
         ({'email': 'personalized_domain@wowdomain.com.br'}, 5),
+        ({'email': '     personalized_domain@wowdomain.com.br    '}, 5),
         ({'event_id': '88128252'}, 7),
+        ({'event_id': '			88128252		'}, 7),
     ])
     def test_filter_transactions(self, kwargs, expected_length):
         with patch('pandas.read_csv', return_value=read_csv(TRANSACTIONS_EXAMPLE_PATH)):
@@ -276,7 +280,6 @@ class UtilsTestCase(TestCase):
         self.assertIsInstance(top_brl, DataFrame)
         self.assertEqual(len(top_ars), 2)
         self.assertEqual(len(top_brl), 3)
-
 
 
 class ViewsTest(TestCase):

@@ -99,15 +99,17 @@ class TransactionsEvent(LoginRequiredMixin, TransactionsView):
         context['organizer_email'] = context['transactions_event'].iloc[0]['email']
         return context
 
+
 class TopEventsLatam(LoginRequiredMixin, TransactionsView):
     template_name = 'revenue_app/top_events.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         trx = transactions()
-        context['top_event_ars'] = get_top_events(trx[trx['currency']=='ARS'])
-        context['top_event_brl'] = get_top_events(trx[trx['currency']=='BRL'])
+        context['top_event_ars'] = get_top_events(trx[trx['currency'] == 'ARS'])
+        context['top_event_brl'] = get_top_events(trx[trx['currency'] == 'BRL'])
         return context
+
 
 class ChartOptionsMixin():
     def get_options(self):
