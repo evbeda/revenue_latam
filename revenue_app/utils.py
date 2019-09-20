@@ -187,3 +187,11 @@ def get_top_organizers(filtered_transactions):
     )
     top = ordered.head(10)
     return top.reset_index(level=[0, 1])
+
+def get_top_events(filtered_transactions):
+    ordered = filtered_transactions.groupby(
+        ['event_id']
+    ).agg({'sale__payment_amount__epp': sum}).sort_values(
+    by='sale__payment_amount__epp', ascending=False)
+    top = ordered.head(10)
+    return top.reset_index(level=0)

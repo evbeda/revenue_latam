@@ -18,6 +18,7 @@ from .utils import (
     get_transactions,
     get_transactions_event,
     get_top_organizers,
+    get_top_events,
     merge_transactions,
     transactions,
 )
@@ -262,6 +263,20 @@ class UtilsTestCase(TestCase):
         with patch('pandas.read_csv', return_value=read_csv(TRANSACTIONS_EXAMPLE_PATH)):
             filtered_transactions = filter_transactions(**kwargs)
         self.assertEqual(len(filtered_transactions), expected_length)
+
+    def test_get_top_ten_events(self):
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            trx = transactions()
+        top_ars = get_top_events(trx[trx['currency'] == 'ARS'])
+        top_brl = get_top_events(trx[trx['currency'] == 'BRL'])
+        self.assertIsInstance(top_ars, DataFrame)
+        self.assertIsInstance(top_brl, DataFrame)
+        self.assertEqual(len(top_ars), 2)
+        self.assertEqual(len(top_brl), 3)
+
 
 
 class ViewsTest(TestCase):
