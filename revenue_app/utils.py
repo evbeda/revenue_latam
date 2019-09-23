@@ -76,7 +76,7 @@ def get_transactions():
         transactions.drop('sale__eb_tax__epp__1', axis=1, inplace=True)
     transactions['transaction_created_date'] = pd.to_datetime(
         transactions['transaction_created_date'],
-        format="%m/%d/%Y"
+        format="%m/%d/%Y",
     ).dt.date
     return transactions
 
