@@ -4,9 +4,10 @@ from django.views.generic import TemplateView
 from .utils import (
     get_dates,
     get_transactions_event,
-    get_top_organizers,
-    transactions,
     get_top_events,
+    get_top_organizers,
+    random_color,
+    transactions,
 )
 import json
 
@@ -179,14 +180,19 @@ class ChartJSONDataViewAlt(ChartOptionsMixin, BaseLineOptionsChartView):
 
 def top_organizers_json_data(request):
     trx = transactions()
+    colors = [random_color() for _ in range(10)]
     res = json.dumps({
         'arg': {
             'labels': get_top_organizers(trx[trx['currency'] == 'ARS'])['email'].tolist(),
             'data': get_top_organizers(trx[trx['currency'] == 'ARS'])['sale__payment_amount__epp'].tolist(),
+            'backgroundColor': colors,
+            'borderColor': [color.replace('0.2', '1') for color in colors]
         },
         'brl': {
             'labels': get_top_organizers(trx[trx['currency'] == 'BRL'])['email'].tolist(),
             'data': get_top_organizers(trx[trx['currency'] == 'BRL'])['sale__payment_amount__epp'].tolist(),
+            'backgroundColor': colors,
+            'borderColor': [color.replace('0.2', '1') for color in colors]
         },
     })
     return HttpResponse(res, content_type="application/json")
@@ -194,14 +200,19 @@ def top_organizers_json_data(request):
 
 def top_events_json_data(request):
     trx = transactions()
+    colors = [random_color() for _ in range(10)]
     res = json.dumps({
         'arg': {
             'labels': get_top_events(trx[trx['currency'] == 'ARS'])['event_id'].tolist(),
             'data': get_top_events(trx[trx['currency'] == 'ARS'])['sale__payment_amount__epp'].tolist(),
+            'backgroundColor': colors,
+            'borderColor': [color.replace('0.2', '1') for color in colors]
         },
         'brl': {
             'labels': get_top_events(trx[trx['currency'] == 'BRL'])['event_id'].tolist(),
             'data': get_top_events(trx[trx['currency'] == 'BRL'])['sale__payment_amount__epp'].tolist(),
+            'backgroundColor': colors,
+            'borderColor': [color.replace('0.2', '1') for color in colors]
         },
     })
     return HttpResponse(res, content_type="application/json")

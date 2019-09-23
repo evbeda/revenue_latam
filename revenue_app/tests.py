@@ -22,6 +22,7 @@ from .utils import (
     get_top_organizers,
     get_top_events,
     merge_transactions,
+    random_color,
     transactions,
 )
 
@@ -240,7 +241,6 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(paidtix), 1)
         self.assertEqual(paidtix.iloc[0], tickets_qty)
 
-
     def test_get_top_ten_organizers(self):
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
@@ -298,6 +298,17 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(top_ars), 2)
         self.assertEqual(len(top_brl), 3)
 
+    def test_random_color(self):
+        color = random_color()
+        self.assertIsInstance(color, str)
+        self.assertEqual(color[:5], "rgba(")
+        self.assertEqual(color[-1], ")")
+        color_list = color[5:-1].split(", ")
+        self.assertEqual(len(color_list), 4)
+        self.assertEqual(color_list[-1], "0.2")
+        for c in color_list[:-1]:
+            self.assertTrue(0 <= int(c) <= 255)
+
 
 class ViewsTest(TestCase):
     def setUp(self):
@@ -316,9 +327,7 @@ class ViewsTest(TestCase):
 
     def test_dashboard_view_returns_200_when_logged(self):
         URL = reverse('dashboard')
-        with patch('pandas.read_csv', return_value=
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-        ):
+        with patch('pandas.read_csv', return_value=read_csv(TRANSACTIONS_EXAMPLE_PATH)):
             response = self.logged_client.get(URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], Dashboard.template_name)
@@ -369,7 +378,7 @@ class ViewsTest(TestCase):
 
     def test_transactions_search_view_returns_302_when_not_logged(self):
         email = 'arg_domain@superdomain.org.ar'
-        URL = '{}?email={}'.format(reverse('transactions-search'),email)
+        URL = '{}?email={}'.format(reverse('transactions-search'), email)
         client = Client()
         response = client.get(URL)
         self.assertEqual(response.status_code, 302)
@@ -382,7 +391,7 @@ class ViewsTest(TestCase):
         ('personalized_domain@wowdomain.com.br',),
     ])
     def test_transactions_search_view_returns_200_when_logged(self, email):
-        URL = '{}?email={}'.format(reverse('transactions-search'),email)
+        URL = '{}?email={}'.format(reverse('transactions-search'), email)
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),

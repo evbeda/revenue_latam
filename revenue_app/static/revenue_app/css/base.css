@@ -168,3 +168,11 @@ footer a {
 .table a {
   color:  #D1410C;
 }
+
+/* Charts */
+.chart-container {
+  place-self: center;
+  text-align: -webkit-center;
+  text-align: -moz-center;
+  max-width: 100%;
+}
