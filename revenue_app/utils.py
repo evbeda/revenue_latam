@@ -1,6 +1,7 @@
 from functools import reduce
 import numpy as np
 import pandas as pd
+from random import randint
 
 FULL_COLUMNS = [
     'eventholder_user_id',
@@ -198,3 +199,7 @@ def get_top_events(filtered_transactions):
     ).round(2)
     top = ordered.head(10)
     return top.reset_index(level=0)
+
+
+def random_color():
+    return f"rgba({randint(0, 255)}, {randint(0, 255)}, {randint(0, 255)}, 0.2)"

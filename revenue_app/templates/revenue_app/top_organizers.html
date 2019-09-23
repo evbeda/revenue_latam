@@ -2,10 +2,10 @@
 {% load static %}
 
 {% block content %}
-<h1>Top 10 Argentina Organizers</h1>
+<h1 class="text-center">Top 10 Argentina Organizers</h1>
 <br>
 <div class="row">
-	<div class="col-md-12">
+	<div class="col-6">
 		<table class="table table-hover">
 			<thead>
 				<tr>
@@ -23,15 +23,20 @@
 			</tbody>
 		</table>
 	</div>
-</div>
-<div style="width: 100%;">
-	<canvas id="chart_arg"></canvas>
+	<div class="col-6 chart-container">
+		<canvas id="chart_arg"></canvas>
+	</div>
 </div>
 <br>
-<h1>Top 10 Brazil Organizers</h1>
+<hr class="mb-4 mt-4">
+<br>
+<h1 class="text-center">Top 10 Brazil Organizers</h1>
 <br>
 <div class="row">
-	<div class="col-md-12">
+	<div class="col-6 chart-container">
+		<canvas id="chart_brl"></canvas>
+	</div>
+	<div class="col-6">
 		<table class="table table-hover">
 			<thead>
 				<tr>
@@ -50,9 +55,6 @@
 		</table>
 	</div>
 </div>
-<div style="width: 100%;">
-	<canvas id="chart_brl"></canvas>
-</div>
 {% endblock content %}
 
 {% block scripts %}
@@ -62,37 +64,45 @@
   $.get('{% url "json_top_organizers" %}', function(data) {
 	var ctx_ars = $("#chart_arg").get(0).getContext("2d");
 	new Chart(ctx_ars, {
-	  type: 'horizontalBar',
+	  type: 'doughnut',
 	  data: {
 		  labels: data.arg.labels,
 		  datasets: [{
 			  label: "Top Argentina Organizers",
 			  data: data.arg.data,
 			  fill: false,
-			  backgroundColor: ["rgba(255, 99, 132, 0.2)","rgba(255, 159, 64, 0.2)","rgba(255, 205, 86, 0.2)","rgba(75, 192, 192, 0.2)","rgba(54, 162, 235, 0.2)","rgba(153, 102, 255, 0.2)","rgba(201, 203, 207, 0.2)","rgba(255, 99, 132, 0.2)","rgba(255, 159, 64, 0.2)","rgba(255, 205, 86, 0.2)"],
-			  borderColor: ["rgb(255, 99, 132)","rgb(255, 159, 64)","rgb(255, 205, 86)","rgb(75, 192, 192)","rgb(54, 162, 235)","rgb(153, 102, 255)","rgb(201, 203, 207)","rgb(255, 99, 132)","rgb(255, 159, 64)","rgb(255, 205, 86)"],
+			  backgroundColor: data.arg.backgroundColor,
+			  borderColor: data.arg.borderColor,
 			  borderWidth: 1,
 		  }]
 	  },
-	  options: {scales: {yAxes: [{ticks: {beginAtZero: true}}]}},
+	  options: {
+		  legend: { position: 'bottom' },
+		  responsive: true,
+		  maintainAspectRatio: false,
+	  },
 	});
 
 	var ctx_brl = $("#chart_brl").get(0).getContext("2d");
 	new Chart(ctx_brl, {
-	  type: 'horizontalBar',
+	  type: 'doughnut',
 	  data: {
 		  labels: data.brl.labels,
 		  datasets: [{
 			  label: "Top Brazil Organizers",
 			  data: data.brl.data,
 			  fill: false,
-			  backgroundColor: ["rgba(255, 99, 132, 0.2)","rgba(255, 159, 64, 0.2)","rgba(255, 205, 86, 0.2)","rgba(75, 192, 192, 0.2)","rgba(54, 162, 235, 0.2)","rgba(153, 102, 255, 0.2)","rgba(201, 203, 207, 0.2)","rgba(255, 99, 132, 0.2)","rgba(255, 159, 64, 0.2)","rgba(255, 205, 86, 0.2)"],
-			  borderColor: ["rgb(255, 99, 132)","rgb(255, 159, 64)","rgb(255, 205, 86)","rgb(75, 192, 192)","rgb(54, 162, 235)","rgb(153, 102, 255)","rgb(201, 203, 207)","rgb(255, 99, 132)","rgb(255, 159, 64)","rgb(255, 205, 86)"],
+			  backgroundColor: data.brl.backgroundColor,
+			  borderColor: data.brl.borderColor,
 			  borderWidth: 1,
 		  }]
 	  },
-	  options: {scales: {yAxes: [{ticks: {beginAtZero: true}}]}},
-	});
+	  options: {
+		  legend: { position: 'bottom' },
+		  responsive: true,
+		  maintainAspectRatio: false,
+	  },
+  	});
   });
 </script>
 {% endblock scripts %}
