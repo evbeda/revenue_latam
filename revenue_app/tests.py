@@ -174,7 +174,8 @@ class UtilsTestCase(TestCase):
         ('eventholder_user_id', 5),
         (['eventholder_user_id', 'email'], 5),
         ('event_id', 5),
-        ('payment_processor', 3),
+        (['payment_processor'], 3),
+        ('payment_processor', 4),
         ('currency', 2),
     ])
     def test_group_transactions(self, by, expected_length):
@@ -229,7 +230,8 @@ class UtilsTestCase(TestCase):
         ({'groupby': 'eventholder_user_id'}, 5),
         ({'groupby': ['eventholder_user_id', 'email']}, 5),
         ({'groupby': 'event_id'}, 5),
-        ({'groupby': 'payment_processor'}, 3),
+        ({'groupby': ['payment_processor']}, 3),
+        ({'groupby': 'payment_processor'}, 4),
         ({'groupby': 'currency'}, 2),
     ])
     def test_transactions(self, kwargs, expected_length):

@@ -157,8 +157,18 @@ def group_transactions(transactions, by):
         'quarterly': 'Q',  # trimestre
         'yearly': 'Y',
     }
-    if (isinstance(by, str)) and (by in time_groupby):
-        grouped = transactions.set_index("transaction_created_date").resample(time_groupby[by]).sum().reset_index()
+    custom_groupby = {
+        'event_id': ['eventholder_user_id', 'email', 'event_id', 'currency'],
+        'eventholder_user_id': ['eventholder_user_id', 'email', 'currency'],
+        'email': ['eventholder_user_id', 'email', 'currency'],
+        'payment_processor': ['payment_processor', 'currency'],
+        'currency': ['currency'],
+    }
+    if isinstance(by, str):
+        if by in time_groupby:
+            grouped = transactions.set_index("transaction_created_date").resample(time_groupby[by]).sum().reset_index()
+        elif by in custom_groupby:
+            grouped = transactions.groupby(custom_groupby[by], as_index=False).sum()
     else:
         grouped = transactions.groupby(by, as_index=False).sum()
     return grouped
