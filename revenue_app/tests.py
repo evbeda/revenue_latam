@@ -335,6 +335,27 @@ class UtilsTestCase(TestCase):
         for c in color_list[:-1]:
             self.assertTrue(0 <= int(c) <= 255)
 
+    def test_download_csv(self):
+        URL = reverse('download-csv')
+        client = Client()
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = client.get(URL)
+        self.assertTrue(str(type(response)), "_csv.reader")
+
+    def test_download_excel(self):
+        URL = reverse('download-excel')
+        client = Client()
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = client.get(URL)
+        self.assertTrue(str(type(response)), "_excel.reader")
+
+
 
 class ViewsTest(TestCase):
     def setUp(self):

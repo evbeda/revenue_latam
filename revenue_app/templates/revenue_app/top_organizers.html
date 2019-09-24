@@ -10,14 +10,14 @@
 			<thead>
 				<tr>
 					<th scope="col">Email</th>
-					<th scope="col">sale__payment_amount__epp</th>
+					<th scope="col">sale__gtf_esf__epp</th>
 				</tr>
 			</thead>
 			<tbody>
 				{% for index, transactions in top_ars.iterrows %}
 				<tr>
 					<td><a href="{% url 'organizer-transactions' organizer_id=transactions.eventholder_user_id %}">{{transactions.email}}</a></td>
-					<td>{{transactions.sale__payment_amount__epp}}</td>
+					<td>{{transactions.sale__gtf_esf__epp}}</td>
 				</tr>
 				{% endfor %}
 			</tbody>
@@ -41,14 +41,14 @@
 			<thead>
 				<tr>
 					<th scope="col">Email</th>
-					<th scope="col">sale__payment_amount__epp</th>
+					<th scope="col">sale__gtf_esf__epp</th>
 				</tr>
 			</thead>
 			<tbody>
 				{% for index, transactions in top_brl.iterrows %}
 				<tr>
 					<td><a href="{% url 'organizer-transactions' organizer_id=transactions.eventholder_user_id %}">{{transactions.email}}</a></td>
-					<td>{{transactions.sale__payment_amount__epp}}</td>
+					<td>{{transactions.sale__gtf_esf__epp}}</td>
 				</tr>
 				{% endfor %}
 			</tbody>
