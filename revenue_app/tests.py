@@ -35,6 +35,7 @@ from .views import (
     TopOrganizersLatam,
     TransactionsByDate,
     TransactionsEvent,
+    TransactionsGrouped,
     TransactionsSearch,
 )
 
@@ -174,7 +175,8 @@ class UtilsTestCase(TestCase):
         ('eventholder_user_id', 5),
         (['eventholder_user_id', 'email'], 5),
         ('event_id', 5),
-        ('payment_processor', 3),
+        (['payment_processor'], 3),
+        ('payment_processor', 4),
         ('currency', 2),
     ])
     def test_group_transactions(self, by, expected_length):
@@ -229,7 +231,8 @@ class UtilsTestCase(TestCase):
         ({'groupby': 'eventholder_user_id'}, 5),
         ({'groupby': ['eventholder_user_id', 'email']}, 5),
         ({'groupby': 'event_id'}, 5),
-        ({'groupby': 'payment_processor'}, 3),
+        ({'groupby': ['payment_processor']}, 3),
+        ({'groupby': 'payment_processor'}, 4),
         ({'groupby': 'currency'}, 2),
     ])
     def test_transactions(self, kwargs, expected_length):
@@ -354,7 +357,6 @@ class UtilsTestCase(TestCase):
         )):
             response = client.get(URL)
         self.assertTrue(str(type(response)), "_excel.reader")
-
 
 
 class ViewsTest(TestCase):
@@ -532,3 +534,22 @@ class ViewsTest(TestCase):
             response = self.logged_client.get(URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsEvent.template_name)
+
+    def test_transactions_grouped_view_returns_302_when_not_logged(self):
+        groupby = 'daily'
+        URL = reverse('transactions-grouped')
+        client = Client()
+        response = client.get(URL, {'groupby': groupby})
+        self.assertEqual(response.status_code, 302)
+
+    def test_transactions_grouped_view_returns_200_when_logged(self):
+        kwargs = {'groupby': 'daily'}
+        URL = reverse('transactions-grouped')
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.logged_client.get(URL, kwargs)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.template_name[0], TransactionsGrouped.template_name)

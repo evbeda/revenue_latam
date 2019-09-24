@@ -1,7 +1,12 @@
+import csv
+from datetime import datetime, date
 import json
+import xlwt
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.views.generic import TemplateView
+
 from .utils import (
     FULL_COLUMNS,
     get_dates,
@@ -11,10 +16,6 @@ from .utils import (
     random_color,
     transactions,
 )
-from datetime import datetime, date
-import json
-import csv
-import xlwt
 
 
 class TransactionsView(TemplateView):
@@ -120,10 +121,7 @@ class TransactionsGrouped(LoginRequiredMixin, TransactionsView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['transactions'] = transactions(groupby=self.request.GET.get('groupby')).to_html(
-            index=False,
-            classes='table table-sm table-hover table-bordered text-right',
-        )
+        context['transactions'] = transactions(groupby=self.request.GET.get('groupby'))
         return context
 
 
@@ -187,6 +185,7 @@ def download_excel(request):
     workbook.save(response)
     return response
 
+
 def download_csv(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="transactions{}.csv"'.format(datetime.now())
@@ -196,4 +195,3 @@ def download_csv(request):
     for transaction in organizer_transactions:
         writer.writerow(transaction)
     return response
-

@@ -2,5 +2,75 @@
 {% load static %}
 
 {% block content %}
-{{transactions | safe}}
+<h1>Transactions grouped by {{request.GET.groupby}}</h1>
+<div class="row">
+        <div class="col-12">
+            <table class="table table-hover table-sm">
+                <thead>
+                    <tr>
+                        {% if request.GET.groupby in 'daily,weekly,semi-monthly,monthly,quarterly,yearly' %}
+                            <th scope="col">Transaction Date</th>
+                        {% elif request.GET.groupby == 'event_id' %}
+                            <th scope="col">Organizer ID</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Event ID</th>
+                            <th scope="col">Currency</th>
+                        {% elif request.GET.groupby in 'eventholder_user_id,email' %}
+                            <th scope="col">Organizer ID</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Currency</th>
+                        {% elif request.GET.groupby == 'payment_processor' %}
+                            <th scope="col">Payment Processor</th>
+                            <th scope="col">Currency</th>
+                        {% elif request.GET.groupby == 'currency' %}
+                            <th scope="col">Currency</th>
+                        {% endif %}
+                        <th scope="col">sale__payment_amount__epp</th>
+                        <th scope="col">sale__gtf_esf__epp</th>
+                        <th scope="col">sale__eb_tax__epp</th>
+                        <th scope="col">sale__ap_organizer__gts__epp</th>
+                        <th scope="col">sale__ap_organizer__royalty__epp</th>
+                        <th scope="col">sale__gtf_esf__offline</th>
+                        <th scope="col">refund__payment_amount__epp</th>
+                        <th scope="col">refund__gtf_epp__gtf_esf__epp</th>
+                        <th scope="col">refund__eb_tax__epp</th>
+                        <th scope="col">refund__ap_organizer__gts__epp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for index, transaction in transactions.iterrows %}
+                    <tr>
+                        {% if request.GET.groupby in 'daily,weekly,semi-monthly,monthly,quarterly,yearly' %}
+                            <td>{{transaction.transaction_created_date}}</td>
+                        {% elif request.GET.groupby == 'event_id' %}
+                            <td><a href="{% url 'organizer-transactions' organizer_id=transaction.eventholder_user_id %}">{{transaction.eventholder_user_id}}</a></td>
+                            <td><a href="{% url 'organizer-transactions' organizer_id=transaction.eventholder_user_id %}">{{transaction.email}}</a></td>
+                            <td><a href="{% url 'event-details' event_id=transaction.event_id %}">{{transaction.event_id}}</a></td>
+                            <td>{{transaction.currency}}</td>
+                        {% elif request.GET.groupby in 'eventholder_user_id,email' %}
+                            <td><a href="{% url 'organizer-transactions' organizer_id=transaction.eventholder_user_id %}">{{transaction.eventholder_user_id}}</a></td>
+                            <td><a href="{% url 'organizer-transactions' organizer_id=transaction.eventholder_user_id %}">{{transaction.email}}</a></td>
+                            <td>{{transaction.currency}}</td>
+                        {% elif request.GET.groupby == 'payment_processor' %}
+                            <td>{{transaction.payment_processor}}</td>
+                            <td>{{transaction.currency}}</td>
+                        {% elif request.GET.groupby == 'currency' %}
+                            <td>{{transaction.currency}}</td>
+                        {% endif %}
+                        <td>{{transaction.sale__payment_amount__epp}}</td>
+                        <td>{{transaction.sale__gtf_esf__epp}}</td>
+                        <td>{{transaction.sale__eb_tax__epp}}</td>
+                        <td>{{transaction.sale__ap_organizer__gts__epp}}</td>
+                        <td>{{transaction.sale__ap_organizer__royalty__epp}}</td>
+                        <td>{{transaction.sale__gtf_esf__offline}}</td>
+                        <td>{{transaction.refund__payment_amount__epp}}</td>
+                        <td>{{transaction.refund__gtf_epp__gtf_esf__epp}}</td>
+                        <td>{{transaction.refund__eb_tax__epp}}</td>
+                        <td>{{transaction.refund__ap_organizer__gts__epp}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock content %}
