@@ -21,6 +21,7 @@ from .utils import (
     get_transactions_event,
     get_top_organizers,
     get_top_events,
+    group_transactions,
     merge_transactions,
     random_color,
     transactions,
@@ -164,17 +165,34 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(merged_transactions), 27)
 
     @parameterized.expand([
+        ('daily', 31),
+        ('weekly', 5),
+        ('semi-monthly', 2),
+        ('monthly', 1),
+        ('quarterly', 1),
+        ('yearly', 1),
+        ('eventholder_user_id', 5),
+        (['eventholder_user_id', 'email'], 5),
+        ('event_id', 5),
+        ('payment_processor', 3),
+        ('currency', 2),
+    ])
+    def test_group_transactions(self, by, expected_length):
+        grouped = group_transactions(self.transactions, by)
+        self.assertEqual(len(grouped), expected_length)
+
+    @parameterized.expand([
         ({}, 27),
-        ({'eventholder_user_id': 634364434}, 7),
-        ({'eventholder_user_id': 497321858}, 5),
-        ({'eventholder_user_id': 434444537}, 4),
-        ({'eventholder_user_id': 696421958}, 6),
-        ({'eventholder_user_id': 506285738}, 5),
-        ({'organizer_id': 497321858}, 5),
-        ({'organizer_id': 696421958}, 6),
-        ({'organizer_id': 434444537}, 4),
-        ({'organizer_id': 506285738}, 5),
-        ({'organizer_id': 634364434}, 7),
+        ({'eventholder_user_id': '634364434'}, 7),
+        ({'eventholder_user_id': '497321858'}, 5),
+        ({'eventholder_user_id': '434444537'}, 4),
+        ({'eventholder_user_id': '696421958'}, 6),
+        ({'eventholder_user_id': '506285738'}, 5),
+        ({'organizer_id': '497321858'}, 5),
+        ({'organizer_id': '696421958'}, 6),
+        ({'organizer_id': '434444537'}, 4),
+        ({'organizer_id': '506285738'}, 5),
+        ({'organizer_id': '634364434'}, 7),
         ({'start_date': date(2018, 8, 3), 'end_date': None}, 1),
         ({'start_date': date(2018, 8, 5), 'end_date': None}, 2),
         ({'start_date': date(2018, 8, 3), 'end_date': date(2018, 8, 16)}, 4),
@@ -184,23 +202,35 @@ class UtilsTestCase(TestCase):
         ({'email': 'wow_fake_mail@hotmail.com'}, 4),
         ({'email': 'another_fake_mail@gmail.com'}, 6),
         ({'email': 'personalized_domain@wowdomain.com.br'}, 5),
-        ({'event_id': 66220941}, 5),
-        ({'event_id': 98415193}, 6),
-        ({'event_id': 17471621}, 4),
-        ({'event_id': 35210860}, 5),
-        ({'event_id': 88128252}, 7),
+        ({'event_id': '66220941'}, 5),
+        ({'event_id': '98415193'}, 6),
+        ({'event_id': '17471621'}, 4),
+        ({'event_id': '35210860'}, 5),
+        ({'event_id': '88128252'}, 7),
         ({'invalid_key': 'something'}, 27),
         ({'eventholder_user_id': '', 'organizer_id': '', 'start_date': '', 'end_date': ''}, 27),
-        ({'eventholder_user_id': 696421958}, 6),
+        ({'eventholder_user_id': '696421958'}, 6),
         ({'eventholder_user_id': '696421958', 'start_date': '2018-08-02'}, 4),
-        ({'eventholder_user_id': 696421958, 'start_date': '2018-08-02', 'invalid_key': 'something'}, 4),
-        ({'organizer_id': 696421958, 'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 5),
+        ({'eventholder_user_id': '696421958', 'start_date': '2018-08-02', 'invalid_key': 'something'}, 4),
+        ({'organizer_id': '696421958', 'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 5),
         ({'start_date': '2018-08-02'}, 7),
         ({'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 10),
         ({'start_date': '2018-08-05', 'end_date': '2018-08-02'}, 0),
         ({'end_date': '2018-08-05'}, 27),
         ({'email': 'personalized_domain@wowdomain.com.br'}, 5),
         ({'event_id': '88128252'}, 7),
+        ({'groupby': 'daily'}, 31),
+        ({'groupby': 'daily', 'start_date': '2018-08-02', 'end_date': '2018-08-15'}, 14),
+        ({'groupby': 'weekly'}, 5),
+        ({'groupby': 'semi-monthly'}, 2),
+        ({'groupby': 'monthly'}, 1),
+        ({'groupby': 'quarterly'}, 1),
+        ({'groupby': 'yearly'}, 1),
+        ({'groupby': 'eventholder_user_id'}, 5),
+        ({'groupby': ['eventholder_user_id', 'email']}, 5),
+        ({'groupby': 'event_id'}, 5),
+        ({'groupby': 'payment_processor'}, 3),
+        ({'groupby': 'currency'}, 2),
     ])
     def test_transactions(self, kwargs, expected_length):
         with patch('pandas.read_csv', side_effect=(
@@ -209,10 +239,6 @@ class UtilsTestCase(TestCase):
         )):
             organizer_transactions = transactions(**kwargs)
         self.assertIsInstance(organizer_transactions, DataFrame)
-        self.assertListEqual(
-            sorted(organizer_transactions.columns),
-            sorted(FULL_TRANSACTIONS_COLUMNS),
-        )
         self.assertEqual(len(organizer_transactions), expected_length)
 
     def test_get_dates(self):
@@ -222,11 +248,11 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(dates), 12)
 
     @parameterized.expand([
-        (66220941, 5, 3500),
-        (98415193, 6, 3402),
-        (17471621, 4, 2250),
-        (35210860, 5, 39),
-        (88128252, 7, 481),
+        ('66220941', 5, 3500),
+        ('98415193', 6, 3402),
+        ('17471621', 4, 2250),
+        ('35210860', 5, 39),
+        ('88128252', 7, 481),
     ])
     def test_event_transactions(self, event_id, transactions_qty, tickets_qty):
         with patch('pandas.read_csv', side_effect=(
@@ -265,11 +291,11 @@ class UtilsTestCase(TestCase):
         ({}, 27),
         ({'invalid_key': 'something'}, 27),
         ({'eventholder_user_id': '', 'organizer_id': '', 'start_date': '', 'end_date': ''}, 27),
-        ({'eventholder_user_id': 696421958}, 6),
+        ({'eventholder_user_id': '696421958'}, 6),
         ({'eventholder_user_id': '	696421958 '}, 6),
         ({'eventholder_user_id': '696421958', 'start_date': '2018-08-02'}, 4),
-        ({'eventholder_user_id': 696421958, 'start_date': '2018-08-02', 'invalid_key': 'something'}, 4),
-        ({'organizer_id': 696421958, 'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 5),
+        ({'eventholder_user_id': '696421958', 'start_date': '2018-08-02', 'invalid_key': 'something'}, 4),
+        ({'organizer_id': '696421958', 'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 5),
         ({'organizer_id': ' 696421958	', 'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 5),
         ({'start_date': '2018-08-02'}, 7),
         ({'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 10),
