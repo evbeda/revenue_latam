@@ -157,8 +157,18 @@ def group_transactions(transactions, by):
         'quarterly': 'Q',  # trimestre
         'yearly': 'Y',
     }
-    if (isinstance(by, str)) and (by in time_groupby):
-        grouped = transactions.set_index("transaction_created_date").resample(time_groupby[by]).sum().reset_index()
+    custom_groupby = {
+        'event_id': ['eventholder_user_id', 'email', 'event_id', 'currency'],
+        'eventholder_user_id': ['eventholder_user_id', 'email', 'currency'],
+        'email': ['eventholder_user_id', 'email', 'currency'],
+        'payment_processor': ['payment_processor', 'currency'],
+        'currency': ['currency'],
+    }
+    if isinstance(by, str):
+        if by in time_groupby:
+            grouped = transactions.set_index("transaction_created_date").resample(time_groupby[by]).sum().reset_index()
+        elif by in custom_groupby:
+            grouped = transactions.groupby(custom_groupby[by], as_index=False).sum()
     else:
         grouped = transactions.groupby(by, as_index=False).sum()
     return grouped
@@ -166,9 +176,8 @@ def group_transactions(transactions, by):
 
 def calc_perc_take_rate(transactions):
     transactions['eb_perc_take_rate'] = \
-        transactions['sale__gtf_esf__epp'] / transactions['sale__payment_amount__epp'] * 100
+        (transactions['sale__gtf_esf__epp'] / transactions['sale__payment_amount__epp'] * 100).apply(str)
     transactions.eb_perc_take_rate.replace(np.nan, 0.00, regex=True, inplace=True)
-    transactions['eb_perc_take_rate'] = transactions['eb_perc_take_rate'].apply(str)
     return transactions
 
 
@@ -176,10 +185,10 @@ def transactions(**kwargs):
     transactions = get_transactions()
     organizers_sales = get_organizer_sales()
     merged = merge_transactions(transactions, organizers_sales)
-    merged = calc_perc_take_rate(merged).round(2)
+    merged = calc_perc_take_rate(merged)
     if kwargs.get('groupby'):
         merged = group_transactions(merged, kwargs.get('groupby'))
-    return filter_transactions(merged, **kwargs)
+    return filter_transactions(merged, **kwargs).round(2)
 
 
 def get_transactions_event(event_id):
