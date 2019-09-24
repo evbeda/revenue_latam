@@ -133,13 +133,13 @@ def top_organizers_json_data(request):
     res = json.dumps({
         'arg': {
             'labels': get_top_organizers(trx[trx['currency'] == 'ARS'])['email'].tolist(),
-            'data': get_top_organizers(trx[trx['currency'] == 'ARS'])['sale__payment_amount__epp'].tolist(),
+            'data': get_top_organizers(trx[trx['currency'] == 'ARS'])['sale__gtf_esf__epp'].tolist(),
             'backgroundColor': colors,
             'borderColor': [color.replace('0.2', '1') for color in colors]
         },
         'brl': {
             'labels': get_top_organizers(trx[trx['currency'] == 'BRL'])['email'].tolist(),
-            'data': get_top_organizers(trx[trx['currency'] == 'BRL'])['sale__payment_amount__epp'].tolist(),
+            'data': get_top_organizers(trx[trx['currency'] == 'BRL'])['sale__gtf_esf__epp'].tolist(),
             'backgroundColor': colors,
             'borderColor': [color.replace('0.2', '1') for color in colors]
         },
