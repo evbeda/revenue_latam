@@ -2,7 +2,16 @@
 {% load static %}
 
 {% block content %}
-<h1>Transactions</h1>
+    <div class="dropdown show">
+<h1>
+	<span>Transactions</span>
+	<a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
+	<div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+	  <a class="dropdown-item" href="{% url 'download-csv' %}"><i class="fas fa-file-csv"></i> CSV</a>
+	  <a class="dropdown-item" href="{% url 'download-excel' %}"><i class="fas fa-file-excel"></i> Excel</a>
+	</div>
+    </div>
+</h1>
 <br>
 <div class="row">
 	<form class="form-inline" action="{% url 'transactions-search' %}" method="get" accept-charset="utf-8">

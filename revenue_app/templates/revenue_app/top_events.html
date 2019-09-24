@@ -44,7 +44,7 @@
 		</tr>
 	    </thead>
 	    <tbody>
-		{% for tuples in top_event_ars.itertuples %}
+		{% for tuples in top_event_brl.itertuples %}
 		<tr>
 		    <td><a href="{% url 'event-details' event_id=tuples.event_id %}">{{tuples.event_id}}</a></td>
 		    <td>{{tuples.sale__payment_amount__epp}}</td>

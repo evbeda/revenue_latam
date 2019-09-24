@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.views.generic import TemplateView
 from .utils import (
+    FULL_COLUMNS,
     get_dates,
     get_transactions_event,
     get_top_events,
@@ -10,6 +11,10 @@ from .utils import (
     random_color,
     transactions,
 )
+from datetime import datetime, date
+import json
+import csv
+import xlwt
 
 
 class TransactionsView(TemplateView):
@@ -28,7 +33,7 @@ class OrganizersTransactions(LoginRequiredMixin, TransactionsView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['organizers_transactions'] = transactions()
+        context['organizers_transactions'] = transactions().head(5000)
         return context
 
 
@@ -122,24 +127,6 @@ class TransactionsGrouped(LoginRequiredMixin, TransactionsView):
         return context
 
 
-class ChartOptionsMixin():
-    def get_options(self):
-        '''
-        Returns a dict of options.
-        Not implemented in parent class.
-        '''
-        options = {
-            'scales': {
-                'yAxes': [{
-                    'ticks': {
-                        'beginAtZero': True
-                    }
-                }]
-            }
-        }
-        return options
-
-
 def top_organizers_json_data(request):
     trx = transactions()
     colors = [random_color() for _ in range(10)]
@@ -178,3 +165,35 @@ def top_events_json_data(request):
         },
     })
     return HttpResponse(res, content_type="application/json")
+
+
+def download_excel(request):
+    response = HttpResponse(content_type='application/ms-excel')
+    response['Content-Disposition'] = 'attachment; filename="transactions{}.xls"'.format(datetime.now())
+    workbook = xlwt.Workbook(encoding='utf-8')
+    worksheet = workbook.add_sheet('Transactions')
+    organizers_transactions = transactions()
+    transactions_list = organizers_transactions.values.tolist()
+    row_num = 0
+    font_style = xlwt.XFStyle()
+    font_style.font.bold = True
+    for col_num in range(len(FULL_COLUMNS)):
+        worksheet.write(row_num, col_num, FULL_COLUMNS[col_num], font_style)
+    for row_list in transactions_list:
+        row_list[1] = row_list[1].strftime("%Y-%m-%d")
+        row_num += 1
+        for col_num in range(len(row_list)):
+            worksheet.write(row_num, col_num, row_list[col_num])
+    workbook.save(response)
+    return response
+
+def download_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="transactions{}.csv"'.format(datetime.now())
+    writer = csv.writer(response)
+    organizer_transactions = transactions().values.tolist()
+    writer.writerow(FULL_COLUMNS)
+    for transaction in organizer_transactions:
+        writer.writerow(transaction)
+    return response
+
