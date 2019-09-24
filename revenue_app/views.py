@@ -1,3 +1,4 @@
+import json
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.views.generic import TemplateView
@@ -9,9 +10,6 @@ from .utils import (
     random_color,
     transactions,
 )
-import json
-
-from chartjs.views.lines import BaseLineOptionsChartView
 
 
 class TransactionsView(TemplateView):
@@ -140,54 +138,6 @@ class ChartOptionsMixin():
             }
         }
         return options
-
-
-class ChartJSONDataView(ChartOptionsMixin, BaseLineOptionsChartView):
-    def get_providers(self):
-        '''
-        Return names of dataset.
-        Returns [] in parent class.
-        '''
-        return ['Org1', 'Org2', 'Org3']
-
-    def get_labels(self):
-        '''
-        Return labels for the x-axis.
-        Not implemented in parent class.
-        '''
-        return ['GTS', 'GTF', 'Qty']
-
-    def get_data(self):
-        '''
-        Return lists of datasets to show.
-        Example: [[1, 2, 3], [4, 5, 6]].
-        Not implemented in parent class.
-        '''
-        return [[5, 5, 5], [6, 5, 4], [4, 5, 6]]
-
-
-class ChartJSONDataViewAlt(ChartOptionsMixin, BaseLineOptionsChartView):
-    def get_providers(self):
-        '''
-        Return names of dataset.
-        Returns [] in parent class.
-        '''
-        return ['GTS', 'GTF', 'Qty']
-
-    def get_labels(self):
-        '''
-        Return labels for the x-axis.
-        Not implemented in parent class.
-        '''
-        return ['Org1', 'Org2', 'Org3']
-
-    def get_data(self):
-        '''
-        Return lists of datasets to show.
-        Example: [[1, 2, 3], [4, 5, 6]].
-        Not implemented in parent class.
-        '''
-        return [[5, 5, 5], [6, 5, 4], [4, 5, 6]]
 
 
 def top_organizers_json_data(request):
