@@ -78,7 +78,9 @@ def get_transactions():
     transactions['transaction_created_date'] = pd.to_datetime(
         transactions['transaction_created_date'],
         format="%m/%d/%Y",
-    ).dt.date
+    )
+    transactions['eventholder_user_id'] = transactions['eventholder_user_id'].apply(str)
+    transactions['event_id'] = transactions['event_id'].apply(str)
     return transactions
 
 
@@ -86,6 +88,7 @@ def get_organizer_sales():
     organizer_sales = pd.read_csv('datasets/organizer_sales.csv').replace(np.nan, '', regex=True)
     if 'organizer_email' in organizer_sales.columns:
         organizer_sales.rename(columns={'organizer_email': 'email'}, inplace=True)
+    organizer_sales['event_id'] = organizer_sales['event_id'].apply(str)
     return organizer_sales
 
 
@@ -96,7 +99,7 @@ def filter_transactions(transactions=None, **kwargs):
     if kwargs.get('event_id'):
         conditions.insert(
             0,
-            transactions['event_id'] == int(str(kwargs.get('event_id')).strip())
+            transactions['event_id'] == kwargs.get('event_id').strip()
         )
     if kwargs.get('email'):
         conditions.insert(
@@ -106,9 +109,8 @@ def filter_transactions(transactions=None, **kwargs):
     if kwargs.get('eventholder_user_id') or kwargs.get('organizer_id'):
         conditions.insert(
             0,
-            transactions['eventholder_user_id'] == int(
-                str(kwargs.get('eventholder_user_id') or kwargs.get('organizer_id')).strip()
-            )
+            transactions['eventholder_user_id'] ==
+            (kwargs.get('eventholder_user_id') or kwargs.get('organizer_id')).strip()
         )
     if kwargs.get('start_date'):
         start_date = np.datetime64(kwargs['start_date'], 'D')
@@ -146,10 +148,27 @@ def merge_transactions(transactions, organizer_sales):
     return merged
 
 
+def group_transactions(transactions, by):
+    time_groupby = {
+        'daily': 'D',
+        'weekly': 'W',
+        'semi-monthly': 'SMS',  # quincena
+        'monthly': 'M',
+        'quarterly': 'Q',  # trimestre
+        'yearly': 'Y',
+    }
+    if (isinstance(by, str)) and (by in time_groupby):
+        grouped = transactions.set_index("transaction_created_date").resample(time_groupby[by]).sum().reset_index()
+    else:
+        grouped = transactions.groupby(by, as_index=False).sum()
+    return grouped
+
+
 def calc_perc_take_rate(transactions):
     transactions['eb_perc_take_rate'] = \
         transactions['sale__gtf_esf__epp'] / transactions['sale__payment_amount__epp'] * 100
-    transactions.eb_perc_take_rate.replace('unknown', 0, regex=True, inplace=True)
+    transactions.eb_perc_take_rate.replace(np.nan, 0.00, regex=True, inplace=True)
+    transactions['eb_perc_take_rate'] = transactions['eb_perc_take_rate'].apply(str)
     return transactions
 
 
@@ -158,13 +177,15 @@ def transactions(**kwargs):
     organizers_sales = get_organizer_sales()
     merged = merge_transactions(transactions, organizers_sales)
     merged = calc_perc_take_rate(merged).round(2)
+    if kwargs.get('groupby'):
+        merged = group_transactions(merged, kwargs.get('groupby'))
     return filter_transactions(merged, **kwargs)
 
 
 def get_transactions_event(event_id):
     transactions_event = transactions(event_id=event_id)
     organizers_sales = get_organizer_sales()
-    paidtix = organizers_sales[organizers_sales['event_id'] == int(event_id)]['PaidTix']
+    paidtix = organizers_sales[organizers_sales['event_id'] == event_id]['PaidTix']
     return (transactions_event, paidtix)
 
 

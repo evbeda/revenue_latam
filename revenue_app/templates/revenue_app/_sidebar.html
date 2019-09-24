@@ -9,6 +9,26 @@
         <a href="{% url 'top-organizers' %}" class="list-group-item list-group-item-action">Top Organizers</a>
         <a href="{% url 'top-events' %}" class="list-group-item list-group-item-action">Top Events</a>
         <a href="#" class="list-group-item list-group-item-action flex-column cursor-default">
+            Grouped by
+            <form method="get" action="{% url 'transactions-grouped' %}">
+                <select name="groupby">
+                    <option value="">--------</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="semi-monthly">Semi-Monthly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="yearly">Yearly</option>
+                    <option value="eventholder_user_id">Organizer ID</option>
+                    <option value="email">Organizer Email</option>
+                    <option value="event_id">Events</option>
+                    <option value="payment_processor">Payment Processor</option>
+                    <option value="currency">Currency</option>
+                </select>
+                <button type="submit" class="mt-1 btn btn-evb-orange btn-sm">Apply</button>
+            </form>
+        </a>
+        <a href="#" class="list-group-item list-group-item-action flex-column cursor-default">
           Filter transactions
           <br>
           by date

@@ -112,6 +112,18 @@ class TopEventsLatam(LoginRequiredMixin, TransactionsView):
         return context
 
 
+class TransactionsGrouped(LoginRequiredMixin, TransactionsView):
+    template_name = 'revenue_app/transactions_grouped.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['transactions'] = transactions(groupby=self.request.GET.get('groupby')).to_html(
+            index=False,
+            classes='table table-sm table-hover table-bordered text-right',
+        )
+        return context
+
+
 class ChartOptionsMixin():
     def get_options(self):
         '''
