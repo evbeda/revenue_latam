@@ -12,6 +12,9 @@
 	</div>
     </div>
 </h1>
+{% if request.GET.start_date %}
+	<h5>from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
+{% endif %}
 <br>
 <div class="row">
 	<form class="form-inline" action="{% url 'transactions-search' %}" method="get" accept-charset="utf-8">
@@ -47,7 +50,7 @@
 			<tbody>
 				{% for index, transaction in organizers_transactions.iterrows %}
 				<tr>
-					<td>{{transaction.transaction_created_date}}</td>
+					<td><a href="{% url 'organizers-transactions' %}?start_date={{transaction.transaction_created_date.date}}">{{transaction.transaction_created_date.date}}</a></td>
 					<td><a href="{% url 'organizer-transactions' organizer_id=transaction.eventholder_user_id %}">{{transaction.email}}</a></td>
 					<td>{{transaction.sales_flag}}</td>
 					<td>{{transaction.payment_processor}}</td>

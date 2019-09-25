@@ -33,7 +33,6 @@ from .views import (
     OrganizersTransactions,
     TopEventsLatam,
     TopOrganizersLatam,
-    TransactionsByDate,
     TransactionsEvent,
     TransactionsGrouped,
     TransactionsSearch,
@@ -222,7 +221,7 @@ class UtilsTestCase(TestCase):
         ({'email': 'personalized_domain@wowdomain.com.br'}, 5),
         ({'event_id': '88128252'}, 7),
         ({'groupby': 'daily'}, 31),
-        ({'groupby': 'daily', 'start_date': '2018-08-02', 'end_date': '2018-08-15'}, 14),
+        ({'groupby': 'daily', 'start_date': '2018-08-02', 'end_date': '2018-08-15'}, 4),
         ({'groupby': 'weekly'}, 5),
         ({'groupby': 'semi-monthly'}, 2),
         ({'groupby': 'monthly'}, 1),
@@ -381,21 +380,32 @@ class ViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], Dashboard.template_name)
 
-    def test_organizers_transactions_view_returns_302_when_not_logged(self):
+    @parameterized.expand([
+        ({},),
+        ({'start_date': '2018-08-02'},),
+    ])
+    def test_organizers_transactions_view_returns_302_when_not_logged(self, kwargs):
         URL = reverse('organizers-transactions')
         client = Client()
         response = client.get(URL)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, '/accounts/login/?next={}'.format(URL))
 
-    def test_organizers_transactions_view_returns_200_when_logged(self):
+    @parameterized.expand([
+        ({},),
+        ({'start_date': '2018-08-02'},),
+        ({'start_date': '2018-08-02', 'end_date': '2018-08-05'},),
+        ({'start_date': '2018-08-05', 'end_date': '2018-08-02'},),
+        ({'end_date': '2018-08-05'},),
+    ])
+    def test_organizers_transactions_view_returns_200_when_logged(self, kwargs):
         URL = reverse('organizers-transactions')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            response = self.logged_client.get(URL)
+            response = self.logged_client.get(URL, kwargs)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], OrganizersTransactions.template_name)
 
@@ -483,30 +493,6 @@ class ViewsTest(TestCase):
             response = self.logged_client.get(URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TopEventsLatam.template_name)
-
-    def test_transactions_by_date_view_returns_302_when_not_logged(self):
-        date = '2018-08-02'
-        URL = reverse('transactions-by-dates')
-        client = Client()
-        response = client.get(URL, {'start_date': date})
-        self.assertEqual(response.status_code, 302)
-
-    @parameterized.expand([
-        ({'start_date': '2018-08-02'},),
-        ({'start_date': '2018-08-02', 'end_date': '2018-08-05'},),
-        ({'start_date': '2018-08-05', 'end_date': '2018-08-02'},),
-        ({'end_date': '2018-08-05'},),
-    ])
-    def test_transactions_by_date_view_returns_200_when_logged(self, kwargs):
-        URL = reverse('transactions-by-dates')
-        with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.logged_client.get(URL, kwargs)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.template_name[0], TransactionsByDate.template_name)
 
     def test_events_transactions_view_returns_302_when_not_logged(self):
         event_id = 66220941

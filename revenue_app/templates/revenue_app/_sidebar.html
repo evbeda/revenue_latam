@@ -11,7 +11,7 @@
         <a href="#" class="list-group-item list-group-item-action flex-column cursor-default">
             Grouped by
             <form method="get" action="{% url 'transactions-grouped' %}">
-                <select name="groupby">
+                <select id="groupby-select" name="groupby">
                     <option value="">--------</option>
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
@@ -29,10 +29,9 @@
             </form>
         </a>
         <a href="#" class="list-group-item list-group-item-action flex-column cursor-default">
-          Filter transactions
-          <br>
-          by date
-            <form method="get" action="{% url 'transactions-by-dates' %}">
+          Filter by date
+            <form method="get">
+                <input type="hidden" name="groupby" value="{{request.GET.groupby}}">
                 <select name="start_date">
                     <option value=""></option>
                     {% for date in dates_list %}

@@ -186,13 +186,14 @@ def transactions(**kwargs):
     organizers_sales = get_organizer_sales()
     merged = merge_transactions(transactions, organizers_sales)
     merged = calc_perc_take_rate(merged)
+    filtered = filter_transactions(merged, **kwargs)
     if kwargs.get('groupby'):
-        merged = group_transactions(merged, kwargs.get('groupby'))
-    return filter_transactions(merged, **kwargs).round(2)
+        filtered = group_transactions(filtered, kwargs.get('groupby'))
+    return filtered.round(2)
 
 
-def get_transactions_event(event_id):
-    transactions_event = transactions(event_id=event_id)
+def get_transactions_event(event_id, **kwargs):
+    transactions_event = transactions(event_id=event_id, **kwargs)
     organizers_sales = get_organizer_sales()
     paidtix = organizers_sales[organizers_sales['event_id'] == event_id]['PaidTix']
     return (transactions_event, paidtix)

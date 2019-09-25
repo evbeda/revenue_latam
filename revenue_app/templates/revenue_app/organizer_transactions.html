@@ -3,6 +3,9 @@
 
 {% block content %}
 <h1>Organizer</h1>
+{% if request.GET.start_date %}
+    <h5>from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
+{% endif %}
 <br>
 <div class="row">
   {{ organizer_transactions | safe }}
