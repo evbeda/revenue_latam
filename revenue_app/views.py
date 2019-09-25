@@ -8,7 +8,6 @@ from django.http import HttpResponse
 from django.views.generic import TemplateView
 
 from .utils import (
-    FULL_COLUMNS,
     get_dates,
     get_transactions_event,
     get_top_events,
@@ -16,6 +15,97 @@ from .utils import (
     random_color,
     transactions,
 )
+
+FULL_COLUMNS = [
+    'eventholder_user_id',
+    'transaction_created_date',
+    'payment_processor',
+    'currency',
+    # Vertical (not found yet)
+    # Subvertical (not found yet)
+    'event_id',
+    'email',
+    'sale__payment_amount__epp',
+    'sale__gtf_esf__epp',
+    'sale__eb_tax__epp',
+    'sale__ap_organizer__gts__epp',
+    'sale__ap_organizer__royalty__epp',
+    'sale__gtf_esf__offline',
+    'refund__payment_amount__epp',
+    'refund__gtf_epp__gtf_esf__epp',
+    'refund__eb_tax__epp',
+    'refund__ap_organizer__gts__epp',
+    'sales_flag',
+    'eb_perc_take_rate',
+    # 'refund__ap_organizer__royalty__epp', (not found yet)
+]
+
+TRANSACTIONS_COLUMNS = [
+    'transaction_created_date',
+    'eventholder_user_id',
+    'email',
+    'sales_flag',
+    'payment_processor',
+    'currency',
+    # Vertical (not found yet)
+    # Subvertical (not found yet)
+    'event_id',
+    'eb_perc_take_rate',
+    'sale__payment_amount__epp',
+    'sale__gtf_esf__epp',
+    'sale__eb_tax__epp',
+    'sale__ap_organizer__gts__epp',
+    'sale__ap_organizer__royalty__epp',
+    'sale__gtf_esf__offline',
+    'refund__payment_amount__epp',
+    'refund__gtf_epp__gtf_esf__epp',
+    'refund__eb_tax__epp',
+    'refund__ap_organizer__gts__epp',
+    # 'refund__ap_organizer__royalty__epp', (not found yet)
+]
+
+ORGANIZER_COLUMNS = [
+    'transaction_created_date',
+    'sales_flag',
+    'payment_processor',
+    'currency',
+    # Vertical (not found yet)
+    # Subvertical (not found yet)
+    'event_id',
+    'eb_perc_take_rate',
+    'sale__payment_amount__epp',
+    'sale__gtf_esf__epp',
+    'sale__eb_tax__epp',
+    'sale__ap_organizer__gts__epp',
+    'sale__ap_organizer__royalty__epp',
+    'sale__gtf_esf__offline',
+    'refund__payment_amount__epp',
+    'refund__gtf_epp__gtf_esf__epp',
+    'refund__eb_tax__epp',
+    'refund__ap_organizer__gts__epp',
+    # 'refund__ap_organizer__royalty__epp', (not found yet)
+]
+
+EVENT_COLUMNS = [
+    'transaction_created_date',
+    'sales_flag',
+    'payment_processor',
+    'currency',
+    # Vertical (not found yet)
+    # Subvertical (not found yet)
+    'eb_perc_take_rate',
+    'sale__payment_amount__epp',
+    'sale__gtf_esf__epp',
+    'sale__eb_tax__epp',
+    'sale__ap_organizer__gts__epp',
+    'sale__ap_organizer__royalty__epp',
+    'sale__gtf_esf__offline',
+    'refund__payment_amount__epp',
+    'refund__gtf_epp__gtf_esf__epp',
+    'refund__eb_tax__epp',
+    'refund__ap_organizer__gts__epp',
+    # 'refund__ap_organizer__royalty__epp', (not found yet)
+]
 
 
 class TransactionsView(TemplateView):
@@ -34,7 +124,7 @@ class OrganizersTransactions(LoginRequiredMixin, TransactionsView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['organizers_transactions'] = transactions(**self.request.GET.dict()).head(5000)
+        context['transactions'] = transactions(**self.request.GET.dict())[TRANSACTIONS_COLUMNS].head(5000)
         return context
 
 
@@ -44,13 +134,10 @@ class OrganizerTransactions(LoginRequiredMixin, TransactionsView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         eventholder_user_id = self.kwargs['organizer_id']
-        context['organizer_transactions'] = transactions(
+        context['transactions'] = transactions(
             eventholder_user_id=eventholder_user_id,
             **self.request.GET.dict(),
-        ).to_html(
-            index=False,
-            classes='table table-sm table-hover table-bordered text-right',
-        ).replace(' border="1"', '').replace(' style="text-align: right;"', '')
+        )[ORGANIZER_COLUMNS]
         return context
 
 
@@ -59,11 +146,9 @@ class TransactionsSearch(LoginRequiredMixin, TransactionsView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        email = self.request.GET.get('email')
-        context['organizer_transactions'] = transactions(email=email).to_html(
-            index=False,
-            classes='table table-sm table-hover table-bordered text-right',
-        ).replace(' border="1"', '').replace(' style="text-align: right;"', '')
+        context['transactions'] = transactions(
+            **self.request.GET.dict(),
+        )[ORGANIZER_COLUMNS]
         return context
 
 
@@ -88,11 +173,11 @@ class TransactionsEvent(LoginRequiredMixin, TransactionsView):
             self.kwargs['event_id'],
             **self.request.GET.dict(),
         )
-        context['transactions_event'] = transactions_event
-        context['event_paidtix'] = event_paidtix.iloc[0]
         if len(transactions_event) > 0:
-            context['organizer_id'] = context['transactions_event'].iloc[0]['eventholder_user_id']
-            context['organizer_email'] = context['transactions_event'].iloc[0]['email']
+            context['organizer_id'] = transactions_event.iloc[0]['eventholder_user_id']
+            context['organizer_email'] = transactions_event.iloc[0]['email']
+        context['transactions'] = transactions_event[EVENT_COLUMNS]
+        context['event_paidtix'] = event_paidtix.iloc[0]
         return context
 
 

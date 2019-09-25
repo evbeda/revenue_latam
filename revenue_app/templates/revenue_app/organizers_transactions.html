@@ -24,53 +24,8 @@
 	</form>
 </div>
 <div class="row">
-	<div class="col-12">
-		<table class="table table-hover table-sm">
-			<thead>
-				<tr>
-					<th scope="col">Transaction Date</th>
-					<th scope="col">Email</th>
-					<th scope="col">Sales Flag</th>
-					<th scope="col">Payment Processor</th>
-					<th scope="col">Currency</th>
-					<th scope="col">Event ID</th>
-					<th scope="col">EB %/Take Rate</th>
-					<th scope="col">sale__payment_amount__epp</th>
-					<th scope="col">sale__gtf_esf__epp</th>
-					<th scope="col">sale__eb_tax__epp</th>
-					<th scope="col">sale__ap_organizer__gts__epp</th>
-					<th scope="col">sale__ap_organizer__royalty__epp</th>
-					<th scope="col">sale__gtf_esf__offline</th>
-					<th scope="col">refund__payment_amount__epp</th>
-					<th scope="col">refund__gtf_epp__gtf_esf__epp</th>
-					<th scope="col">refund__eb_tax__epp</th>
-					<th scope="col">refund__ap_organizer__gts__epp</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for index, transaction in organizers_transactions.iterrows %}
-				<tr>
-					<td><a href="{% url 'organizers-transactions' %}?start_date={{transaction.transaction_created_date.date}}">{{transaction.transaction_created_date.date}}</a></td>
-					<td><a href="{% url 'organizer-transactions' organizer_id=transaction.eventholder_user_id %}">{{transaction.email}}</a></td>
-					<td>{{transaction.sales_flag}}</td>
-					<td>{{transaction.payment_processor}}</td>
-					<td>{{transaction.currency}}</td>
-					<td><a href="{% url 'event-details' event_id=transaction.event_id %}">{{transaction.event_id}}</a></td>
-					<td>{{transaction.eb_perc_take_rate}}</td>
-					<td>{{transaction.sale__payment_amount__epp}}</td>
-					<td>{{transaction.sale__gtf_esf__epp}}</td>
-					<td>{{transaction.sale__eb_tax__epp}}</td>
-					<td>{{transaction.sale__ap_organizer__gts__epp}}</td>
-					<td>{{transaction.sale__ap_organizer__royalty__epp}}</td>
-					<td>{{transaction.sale__gtf_esf__offline}}</td>
-					<td>{{transaction.refund__payment_amount__epp}}</td>
-					<td>{{transaction.refund__gtf_epp__gtf_esf__epp}}</td>
-					<td>{{transaction.refund__eb_tax__epp}}</td>
-					<td>{{transaction.refund__ap_organizer__gts__epp}}</td>
-				</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-	</div>
+    <div class="col-12">
+        {% include 'revenue_app/_dynamic_table.html' %}
+    </div>
 </div>
 {% endblock content %}
