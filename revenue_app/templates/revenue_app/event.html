@@ -4,6 +4,9 @@
 <div class="row">
     <div class="col-md-12">
 		<h1><b>Event details</b></h1>
+		{% if request.GET.start_date %}
+			<h5>from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
+		{% endif %}
 		<div style="margin-bottom: 20px">
 			<h5><b>Event ID: </b>{{event_id}}</h5>
 			<h5><b>Event PaidTix: </b>{{event_paidtix}}</h5>

@@ -42,6 +42,27 @@
         $(this).toggleClass("toggled");
       });
     </script>
+    <!-- Form Populate Script -->
+    <script>
+      function getURLParam(variable) {
+        var query = window.location.search.substring(1);
+        var vars = query.split("&");
+        for (var i=0;i<vars.length;i++) {
+          var pair = vars[i].split("=");
+          if (pair[0] == variable) {
+            return pair[1];
+          }
+        } 
+      }
+
+      var groupby_select = document.getElementById("groupby-select");
+      var groupby_param = getURLParam('groupby');
+      for (i=0; i<groupby_select.options.length; i++) {
+        if (groupby_select.options[i].value == groupby_param) {
+          groupby_select.selectedIndex = i;
+        }
+      }
+    </script>
     {% block scripts %}
     {% endblock scripts %}
   </body>

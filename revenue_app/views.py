@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime, date
+from datetime import datetime
 import json
 import xlwt
 
@@ -34,7 +34,7 @@ class OrganizersTransactions(LoginRequiredMixin, TransactionsView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['organizers_transactions'] = transactions().head(5000)
+        context['organizers_transactions'] = transactions(**self.request.GET.dict()).head(5000)
         return context
 
 
@@ -46,6 +46,7 @@ class OrganizerTransactions(LoginRequiredMixin, TransactionsView):
         eventholder_user_id = self.kwargs['organizer_id']
         context['organizer_transactions'] = transactions(
             eventholder_user_id=eventholder_user_id,
+            **self.request.GET.dict(),
         ).to_html(
             index=False,
             classes='table table-sm table-hover table-bordered text-right',
@@ -71,23 +72,9 @@ class TopOrganizersLatam(LoginRequiredMixin, TransactionsView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        trx = transactions()
+        trx = transactions(**(self.request.GET.dict()))
         context['top_ars'] = get_top_organizers(trx[trx['currency'] == 'ARS'])
         context['top_brl'] = get_top_organizers(trx[trx['currency'] == 'BRL'])
-        return context
-
-
-class TransactionsByDate(LoginRequiredMixin, TransactionsView):
-    template_name = 'revenue_app/organizers_transactions.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        start_date = self.request.GET.get('start_date')
-        end_date = self.request.GET.get('end_date')
-        context['organizers_transactions'] = transactions(
-            start_date=start_date,
-            end_date=end_date,
-        )
         return context
 
 
@@ -97,11 +84,15 @@ class TransactionsEvent(LoginRequiredMixin, TransactionsView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['event_id'] = self.kwargs['event_id']
-        transactions_event, event_paidtix = get_transactions_event(self.kwargs['event_id'])
+        transactions_event, event_paidtix = get_transactions_event(
+            self.kwargs['event_id'],
+            **self.request.GET.dict(),
+        )
         context['transactions_event'] = transactions_event
         context['event_paidtix'] = event_paidtix.iloc[0]
-        context['organizer_id'] = context['transactions_event'].iloc[0]['eventholder_user_id']
-        context['organizer_email'] = context['transactions_event'].iloc[0]['email']
+        if len(transactions_event) > 0:
+            context['organizer_id'] = context['transactions_event'].iloc[0]['eventholder_user_id']
+            context['organizer_email'] = context['transactions_event'].iloc[0]['email']
         return context
 
 
@@ -121,7 +112,7 @@ class TransactionsGrouped(LoginRequiredMixin, TransactionsView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['transactions'] = transactions(groupby=self.request.GET.get('groupby'))
+        context['transactions'] = transactions(**self.request.GET.dict())
         return context
 
 
