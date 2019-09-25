@@ -3,69 +3,6 @@ import numpy as np
 import pandas as pd
 from random import randint
 
-FULL_COLUMNS = [
-    'eventholder_user_id',
-    'transaction_created_date',
-    'payment_processor',
-    'currency',
-    # Vertical (not found yet)
-    # Subvertical (not found yet)
-    'event_id',
-    'email',
-    'sale__payment_amount__epp',
-    'sale__gtf_esf__epp',
-    'sale__eb_tax__epp',
-    'sale__ap_organizer__gts__epp',
-    'sale__ap_organizer__royalty__epp',
-    'sale__gtf_esf__offline',
-    'refund__payment_amount__epp',
-    'refund__gtf_epp__gtf_esf__epp',
-    'refund__eb_tax__epp',
-    'refund__ap_organizer__gts__epp',
-    'sales_flag',
-    'eb_perc_take_rate',
-    # 'refund__ap_organizer__royalty__epp', (not found yet)
-]
-
-ORGANIZER_FILTER_COLUMNS = [
-    'transaction_created_date',
-    'payment_processor',
-    'currency',
-    'event_id',
-    'eb_perc_take_rate',
-    'sale__payment_amount__epp',
-    'sale__gtf_esf__epp',
-    'sale__eb_tax__epp',
-    'sale__ap_organizer__gts__epp',
-    'sale__ap_organizer__royalty__epp',
-    'sale__gtf_esf__offline',
-    'refund__payment_amount__epp',
-    'refund__gtf_epp__gtf_esf__epp',
-    'refund__eb_tax__epp',
-    'refund__ap_organizer__gts__epp',
-]
-
-DATE_FILTER_COLUMNS = [
-    'transaction_created_date',
-    'email',
-    'sales_flag',
-    'payment_processor',
-    'currency',
-    'event_id',
-    'eb_perc_take_rate',
-    'sale__payment_amount__epp',
-    'sale__gtf_esf__epp',
-    'sale__eb_tax__epp',
-    'sale__ap_organizer__gts__epp',
-    'sale__ap_organizer__royalty__epp',
-    'sale__gtf_esf__offline',
-    'refund__payment_amount__epp',
-    'refund__gtf_epp__gtf_esf__epp',
-    'refund__eb_tax__epp',
-    'refund__ap_organizer__gts__epp',
-    # 'refund__ap_organizer__royalty__epp', (not found yet)
-]
-
 
 def get_rollups():
     return pd.read_excel('datasets/Revenue Queries.xlsx', sheet_name=0, header=1, usecols=range(0, 53))
@@ -175,8 +112,9 @@ def group_transactions(transactions, by):
 
 
 def calc_perc_take_rate(transactions):
-    transactions['eb_perc_take_rate'] = \
-        (transactions['sale__gtf_esf__epp'] / transactions['sale__payment_amount__epp'] * 100).apply(str)
+    transactions['eb_perc_take_rate'] = (
+        transactions['sale__gtf_esf__epp'] / transactions['sale__payment_amount__epp'] * 100
+    ).round(2).apply(str)
     transactions.eb_perc_take_rate.replace(np.nan, 0.00, regex=True, inplace=True)
     return transactions
 

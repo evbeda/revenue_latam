@@ -8,6 +8,8 @@
 {% endif %}
 <br>
 <div class="row">
-  {{ organizer_transactions | safe }}
+  <div class="col-12">
+    {% include 'revenue_app/_dynamic_table.html' %}    
+  </div>
 </div>
 {% endblock content %}
