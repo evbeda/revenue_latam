@@ -10,35 +10,40 @@ from django.test import (
 from django.urls import reverse
 from unittest.mock import patch
 
+from freezegun import freeze_time
 from pandas import read_csv
 from pandas.core.frame import DataFrame, Series
+from pandas.testing import assert_frame_equal
 from parameterized import parameterized
+
+from revenue_app.presto_connection import read_sql
 
 from revenue_app.utils import (
     calc_perc_take_rate,
+    clean_corrections,
+    clean_organizer_sales,
+    clean_transactions,
     event_details,
     filter_transactions,
-    get_corrections,
     get_event_transactions,
-    get_organizer_sales,
     get_organizer_transactions,
     get_summarized_data,
     get_top_events,
     get_top_organizers,
     get_top_organizers_refunds,
-    get_transactions,
     group_transactions,
+    manage_transactions,
     merge_corrections,
     merge_transactions,
     payment_processor_summary,
     random_color,
     sales_flag_summary,
     summarize_dataframe,
-    transactions,
 )
 
 from revenue_app.views import (
     Dashboard,
+    MakeQuery,
     OrganizerTransactions,
     OrganizersTransactions,
     TopEventsLatam,
@@ -51,6 +56,7 @@ from revenue_app.views import (
 TRANSACTIONS_EXAMPLE_PATH = 'revenue_app/tests/transactions_example.csv'
 CORRECTIONS_EXAMPLE_PATH = 'revenue_app/tests/corrections_example.csv'
 ORGANIZER_SALES_EXAMPLE_PATH = 'revenue_app/tests/organizer_sales_example.csv'
+TRANSACTIONS_SQL_EXAMPLE_PATH = 'revenue_app/tests/transactions_example.sql'
 
 BASE_ORGANIZER_SALES_COLUMNS = [
     'transaction_created_date',
@@ -118,20 +124,17 @@ class UtilsTestCase(TestCase):
 
     @property
     def transactions(self):
-        with patch('revenue_app.utils.pd.read_csv', return_value=read_csv(TRANSACTIONS_EXAMPLE_PATH)):
-            return get_transactions()
+        return clean_transactions(read_csv(TRANSACTIONS_EXAMPLE_PATH))
 
     @property
     def corrections(self):
-        with patch('revenue_app.utils.pd.read_csv', return_value=read_csv(CORRECTIONS_EXAMPLE_PATH)):
-            return get_corrections()
+        return clean_corrections(read_csv(CORRECTIONS_EXAMPLE_PATH))
 
     @property
     def organizer_sales(self):
-        with patch('revenue_app.utils.pd.read_csv', return_value=read_csv(ORGANIZER_SALES_EXAMPLE_PATH)):
-            return get_organizer_sales()
+        return clean_organizer_sales(read_csv(ORGANIZER_SALES_EXAMPLE_PATH))
 
-    def test_get_transactions(self):
+    def test_clean_transactions(self):
         transactions = self.transactions
         self.assertIsInstance(transactions, DataFrame)
         self.assertListEqual(
@@ -141,7 +144,7 @@ class UtilsTestCase(TestCase):
         self.assertNotIn('sale__eb_tax__epp__1', transactions.columns.tolist())
         self.assertEqual(len(transactions), 27)
 
-    def test_get_corrections(self):
+    def test_clean_corrections(self):
         corrections = self.corrections
         self.assertIsInstance(corrections, DataFrame)
         self.assertListEqual(
@@ -151,7 +154,7 @@ class UtilsTestCase(TestCase):
         self.assertNotIn('sale__eb_tax__epp__1', corrections.columns.tolist())
         self.assertEqual(len(corrections), 12)
 
-    def test_get_organizer_sales(self):
+    def test_clean_organizer_sales(self):
         organizer_sales = self.organizer_sales
         self.assertIsInstance(organizer_sales, DataFrame)
         self.assertListEqual(
@@ -253,13 +256,13 @@ class UtilsTestCase(TestCase):
         ({'groupby': 'sub_vertical'}, 5),
         ({'groupby': 'currency'}, 2),
     ])
-    def test_transactions(self, kwargs, expected_length):
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            organizer_transactions = transactions(**kwargs)
+    def test_manage_transactions(self, kwargs, expected_length):
+        organizer_transactions = manage_transactions(
+            self.transactions,
+            self.corrections,
+            self.organizer_sales,
+            **kwargs,
+        )
         self.assertIsInstance(organizer_transactions, DataFrame)
         self.assertEqual(len(organizer_transactions), expected_length)
 
@@ -271,13 +274,12 @@ class UtilsTestCase(TestCase):
         ('88128252', 7, 3367),
     ])
     def test_get_event_transactions(self, event_id, transactions_qty, tickets_qty):
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            transactions, details, sales_refunds = get_event_transactions(event_id)
+        transactions, details, sales_refunds = get_event_transactions(
+            self.transactions,
+            self.corrections,
+            self.organizer_sales,
+            event_id,
+        )
         self.assertIsInstance(transactions, DataFrame)
         self.assertEqual(len(transactions), transactions_qty)
         self.assertEqual(details['PaidTix'], tickets_qty)
@@ -290,24 +292,22 @@ class UtilsTestCase(TestCase):
         ('634364434', 7, 3367),
     ])
     def test_get_organizer_transactions(self, eventholder_user_id, transactions_qty, tickets_qty):
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            transactions, details, sales_refunds = get_organizer_transactions(eventholder_user_id)
+        transactions, details, sales_refunds = get_organizer_transactions(
+            self.transactions,
+            self.corrections,
+            self.organizer_sales,
+            eventholder_user_id,
+        )
         self.assertIsInstance(transactions, DataFrame)
         self.assertEqual(len(transactions), transactions_qty)
         self.assertEqual(details['PaidTix'], tickets_qty)
 
     def test_get_top_ten_organizers(self):
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            trx = transactions()
+        trx = manage_transactions(
+            self.transactions,
+            self.corrections,
+            self.organizer_sales,
+        )
         top_ars = get_top_organizers(trx[trx['currency'] == 'ARS'])
         top_brl = get_top_organizers(trx[trx['currency'] == 'BRL'])
         self.assertIsInstance(top_ars, DataFrame)
@@ -316,14 +316,26 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(top_brl), 4)
 
     def test_get_top_ten_organizers_refunds(self):
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            trx = transactions()
+        trx = manage_transactions(
+            self.transactions,
+            self.corrections,
+            self.organizer_sales,
+        )
         top_ars = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])
         top_brl = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])
+        self.assertIsInstance(top_ars, DataFrame)
+        self.assertIsInstance(top_brl, DataFrame)
+        self.assertEqual(len(top_ars), 3)
+        self.assertEqual(len(top_brl), 4)
+
+    def test_get_top_ten_events(self):
+        trx = manage_transactions(
+            self.transactions,
+            self.corrections,
+            self.organizer_sales,
+        )
+        top_ars = get_top_events(trx[trx['currency'] == 'ARS'])
+        top_brl = get_top_events(trx[trx['currency'] == 'BRL'])
         self.assertIsInstance(top_ars, DataFrame)
         self.assertIsInstance(top_brl, DataFrame)
         self.assertEqual(len(top_ars), 3)
@@ -356,23 +368,8 @@ class UtilsTestCase(TestCase):
         ({'event_id': '			88128252		'}, 7),
     ])
     def test_filter_transactions(self, kwargs, expected_length):
-        with patch('revenue_app.utils.pd.read_csv', return_value=read_csv(TRANSACTIONS_EXAMPLE_PATH)):
-            filtered_transactions = filter_transactions(**kwargs)
+        filtered_transactions = filter_transactions(self.transactions, **kwargs)
         self.assertEqual(len(filtered_transactions), expected_length)
-
-    def test_get_top_ten_events(self):
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            trx = transactions()
-        top_ars = get_top_events(trx[trx['currency'] == 'ARS'])
-        top_brl = get_top_events(trx[trx['currency'] == 'BRL'])
-        self.assertIsInstance(top_ars, DataFrame)
-        self.assertIsInstance(top_brl, DataFrame)
-        self.assertEqual(len(top_ars), 3)
-        self.assertEqual(len(top_brl), 4)
 
     def test_random_color(self):
         color = random_color()
@@ -440,12 +437,12 @@ class UtilsTestCase(TestCase):
         }),
     ])
     def test_summarize_dataframe(self, eventholder_user_id, expected_total):
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            organizer = transactions(eventholder_user_id=eventholder_user_id)
+        organizer = manage_transactions(
+            self.transactions,
+            self.corrections,
+            self.organizer_sales,
+            eventholder_user_id=eventholder_user_id,
+        )
         total_organizer = summarize_dataframe(organizer)
         self.assertEqual(total_organizer, expected_total)
 
@@ -487,10 +484,7 @@ class UtilsTestCase(TestCase):
         }),
     ])
     def test_event_details(self, event_id, eventholder_user_id, details_organizer):
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = event_details(event_id, eventholder_user_id)
+        response = event_details(event_id, eventholder_user_id, self.organizer_sales)
         self.assertEqual(response, details_organizer)
 
     @parameterized.expand([
@@ -510,12 +504,11 @@ class UtilsTestCase(TestCase):
         ('BRL', 'Avg EB Perc Take Rate', 7.77),
     ])
     def test_get_summarized_data(self, country, data, expected):
-        with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            summarized_data = get_summarized_data()
+        summarized_data = get_summarized_data(
+            self.transactions,
+            self.corrections,
+            self.organizer_sales,
+        )
         self.assertEqual(summarized_data[country][data], expected)
 
     @parameterized.expand([
@@ -525,12 +518,11 @@ class UtilsTestCase(TestCase):
         ('BRL', 'PAYPAL', 10890, 871.2),
     ])
     def test_payment_processor_summary(self, currency, payment_processor, gtv, gtf):
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            trx = transactions()
+        trx = manage_transactions(
+            self.transactions,
+            self.corrections,
+            self.organizer_sales,
+        )
         filtered = (trx[trx['currency'] == currency])
         pp_gtv, pp_gtf = payment_processor_summary(filtered)
         self.assertIsInstance(pp_gtv, DataFrame)
@@ -545,12 +537,11 @@ class UtilsTestCase(TestCase):
         ('BRL', 'sales', 1, 1236.45),
     ])
     def test_sales_flag_summary(self, currency, sales_flag, org_qty, gtf):
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            trx = transactions()
+        trx = manage_transactions(
+            self.transactions,
+            self.corrections,
+            self.organizer_sales,
+        )
         filtered = (trx[trx['currency'] == currency])
         sf_org, sf_gtf = sales_flag_summary(filtered)
         self.assertIsInstance(sf_org, Series)
@@ -564,6 +555,13 @@ class UtilsTestCase(TestCase):
 class ViewsTest(TestCase):
     def setUp(self):
         self.client = Client()
+
+    def load_dataframes(self):
+        session = self.client.session
+        session['transactions'] = read_csv(TRANSACTIONS_EXAMPLE_PATH)
+        session['corrections'] = read_csv(CORRECTIONS_EXAMPLE_PATH)
+        session['organizer_sales'] = read_csv(ORGANIZER_SALES_EXAMPLE_PATH)
+        session.save()
 
     def test_dashboard_view_returns_200(self):
         URL = reverse('dashboard')
@@ -583,17 +581,18 @@ class ViewsTest(TestCase):
             ('BRL', 'ATV'),
             ('BRL', 'Avg EB Perc Take Rate'),
         ]
-        with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], Dashboard.template_name)
         for elem in context_dict:
             self.assertIn(elem[1], response.context['summarized_data'][elem[0]])
+
+    def test_dashboard_view_returns_302_if_doesnt_have_queries(self):
+        URL = reverse('dashboard')
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('make-query'))
 
     @parameterized.expand([
         ({},),
@@ -604,14 +603,16 @@ class ViewsTest(TestCase):
     ])
     def test_organizers_transactions_view_returns_200(self, kwargs):
         URL = reverse('organizers-transactions')
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL, kwargs)
+        self.load_dataframes()
+        response = self.client.get(URL, kwargs)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], OrganizersTransactions.template_name)
+
+    def test_organizers_transactions_view_returns_302_if_doesnt_have_queries(self):
+        URL = reverse('organizers-transactions')
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('make-query'))
 
     @parameterized.expand([
         (497321858, 5),
@@ -622,55 +623,69 @@ class ViewsTest(TestCase):
     ])
     def test_organizer_transactions_view_returns_200(self, eventholder_user_id, expected_length):
         URL = reverse('organizer-transactions', kwargs={'eventholder_user_id': eventholder_user_id})
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertEqual(len(response.context['transactions']), expected_length)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], OrganizerTransactions.template_name)
 
+    @parameterized.expand([
+        (497321858,),
+        (696421958,),
+        (434444537,),
+        (506285738,),
+        (634364434,),
+    ])
+    def test_organizer_transactions_view_returns_302_if_doesnt_have_queries(self, eventholder_user_id):
+        URL = reverse('organizer-transactions', kwargs={'eventholder_user_id': eventholder_user_id})
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('make-query'))
+
     def test_top_organizers_view_returns_200(self):
         URL = reverse('top-organizers')
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertEqual(len(response.context['top_ars']), 3)
         self.assertEqual(len(response.context['top_brl']), 4)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TopOrganizersLatam.template_name)
 
+    def test_top_organizers_view_returns_302_if_doesnt_have_queries(self):
+        URL = reverse('top-organizers')
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('make-query'))
+
     def test_top_organizers_refunds_view_returns_200(self):
         URL = reverse('top-organizers-refunds')
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertEqual(len(response.context['top_ars']), 3)
         self.assertEqual(len(response.context['top_brl']), 4)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TopOrganizersRefundsLatam.template_name)
 
+    def test_top_organizers_refunds_view_returns_302_if_doesnt_have_queries(self):
+        URL = reverse('top-organizers-refunds')
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('make-query'))
+
     def test_top_events_view_returns_200(self):
         URL = reverse('top-events')
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertEqual(len(response.context['top_event_ars']), 3)
         self.assertEqual(len(response.context['top_event_brl']), 4)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TopEventsLatam.template_name)
+
+    def test_top_events_view_returns_302_if_doesnt_have_queries(self):
+        URL = reverse('top-events')
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('make-query'))
 
     @parameterized.expand([
         (66220941, 5),
@@ -681,129 +696,113 @@ class ViewsTest(TestCase):
     ])
     def test_events_transactions_view_returns_200(self, event_id, expected_length):
         URL = reverse('event-details', kwargs={'event_id': event_id})
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertEqual(len(response.context['transactions']), expected_length)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsEvent.template_name)
 
+    @parameterized.expand([
+        (66220941, 5),
+        (98415193, 6),
+        (17471621, 4),
+        (35210860, 5),
+        (88128252, 7),
+    ])
+    def test_events_transactions_view_returns_302_if_doesnt_have_queries(self, event_id, expected_length):
+        URL = reverse('event-details', kwargs={'event_id': event_id})
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('make-query'))
+
     def test_transactions_grouped_view_returns_200(self):
         kwargs = {'groupby': 'day'}
         URL = reverse('transactions-grouped')
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL, kwargs)
+        self.load_dataframes()
+        response = self.client.get(URL, kwargs)
         self.assertEqual(len(response.context['transactions']), 22)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsGrouped.template_name)
 
+    def test_transactions_grouped_view_returns_302_if_doesnt_have_queries(self):
+        kwargs = {'groupby': 'day'}
+        URL = reverse('transactions-grouped')
+        response = self.client.get(URL, kwargs)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('make-query'))
+
     def test_organizer_transactions_pdf(self):
         URL = reverse('download-organizer-pdf', kwargs={'eventholder_user_id': 497321858})
-        with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertTrue(str(type(response)), "_pdf.reader")
+
+    def test_organizer_transactions_pdf_returns_302_if_doesnt_have_queries(self):
+        URL = reverse('download-organizer-pdf', kwargs={'eventholder_user_id': 497321858})
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('make-query'))
 
     def test_event_transactions_pdf(self):
         URL = reverse('download-event-pdf', kwargs={'event_id': 66220941})
-        with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertTrue(str(type(response)), "_pdf.reader")
+
+    def test_event_transactions_pdf_returns_302_if_doesnt_have_queries(self):
+        URL = reverse('download-event-pdf', kwargs={'event_id': 66220941})
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('make-query'))
 
     def test_top_organizers_latam_pdf(self):
         URL = reverse('download-top-organizers-pdf')
-        with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertTrue(str(type(response)), "_pdf.reader")
+
+    def test_top_organizers_latam_pdf_returns_302_if_doesnt_have_queries(self):
+        URL = reverse('download-top-organizers-pdf')
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('make-query'))
 
     def test_top_events_latam_pdf(self):
         URL = reverse('download-top-events-pdf')
-        with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertTrue(str(type(response)), "_pdf.reader")
+
+    def test_top_events_latam_pdf_returns_302_if_doesnt_have_queries(self):
+        URL = reverse('download-top-events-pdf')
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('make-query'))
 
     def test_top_organizer_refunds_latam_pdf(self):
         URL = reverse('download-organizer-refunds-pdf')
-        with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertTrue(str(type(response)), "_pdf.reader")
 
+    def test_top_organizer_refunds_latam_pdf_302_if_doesnt_have_queries(self):
+        URL = reverse('download-organizer-refunds-pdf')
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('make-query'))
+
     @parameterized.expand([
-        (
-            reverse('organizers-transactions'),
-            (
-                read_csv(TRANSACTIONS_EXAMPLE_PATH),
-                read_csv(CORRECTIONS_EXAMPLE_PATH),
-                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            ),
-            'transactions'
-        ),
-        (
-            reverse('organizer-transactions', kwargs={'eventholder_user_id': 497321858}),
-            (
-                read_csv(TRANSACTIONS_EXAMPLE_PATH),
-                read_csv(CORRECTIONS_EXAMPLE_PATH),
-                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            ),
-            'organizer_497321858'
-        ),
-        (
-            reverse('transactions-grouped') + '?groupby=week',
-            (
-                read_csv(TRANSACTIONS_EXAMPLE_PATH),
-                read_csv(CORRECTIONS_EXAMPLE_PATH),
-                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            ),
-            'transactions_grouped_by_week'
-        ),
-        (
-            reverse('event-details', kwargs={'event_id': 98415193}),
-            (
-                read_csv(TRANSACTIONS_EXAMPLE_PATH),
-                read_csv(CORRECTIONS_EXAMPLE_PATH),
-                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            ),
-            'event_98415193'
-        ),
+        (reverse('organizers-transactions'), 'transactions'),
+        (reverse('organizer-transactions', kwargs={'eventholder_user_id': 497321858}), 'organizer_497321858'),
+        (reverse('transactions-grouped') + '?groupby=week', 'transactions_grouped_by_week'),
+        (reverse('event-details', kwargs={'event_id': 98415193}), 'event_98415193'),
     ])
-    def test_download_csv(self, url_from, patches, csv_name):
+    def test_download_csv(self, url_from, csv_name):
         URL = reverse('download-csv', kwargs={'csv_name': csv_name})
-        client = Client()
-        with patch('revenue_app.utils.pd.read_csv', side_effect=patches):
-            # load an URL that set session['transactions']
-            client.get(url_from)
-        response = client.get(URL)
+        self.load_dataframes()
+        # load an URL that set session['transactions']
+        self.client.get(url_from)
+        response = self.client.get(URL)
         self.assertEqual(response['Content-Type'], 'text/csv')
         self.assertIn('attachment; filename=', response['Content-Disposition'])
         self.assertIn(csv_name, response['Content-Disposition'])
@@ -811,52 +810,17 @@ class ViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     @parameterized.expand([
-        (
-            reverse('organizers-transactions'),
-            (
-                read_csv(TRANSACTIONS_EXAMPLE_PATH),
-                read_csv(CORRECTIONS_EXAMPLE_PATH),
-                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            ),
-            'transactions'
-        ),
-        (
-            reverse('organizer-transactions', kwargs={'eventholder_user_id': 497321858}),
-            (
-                read_csv(TRANSACTIONS_EXAMPLE_PATH),
-                read_csv(CORRECTIONS_EXAMPLE_PATH),
-                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            ),
-            'organizer_497321858'
-        ),
-        (
-            reverse('transactions-grouped') + '?groupby=week',
-            (
-                read_csv(TRANSACTIONS_EXAMPLE_PATH),
-                read_csv(CORRECTIONS_EXAMPLE_PATH),
-                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            ),
-            'transactions_grouped_by_week'
-        ),
-        (
-            reverse('event-details', kwargs={'event_id': 98415193}),
-            (
-                read_csv(TRANSACTIONS_EXAMPLE_PATH),
-                read_csv(CORRECTIONS_EXAMPLE_PATH),
-                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            ),
-            'event_98415193'
-        ),
+        (reverse('organizers-transactions'), 'transactions'),
+        (reverse('organizer-transactions', kwargs={'eventholder_user_id': 497321858}), 'organizer_497321858'),
+        (reverse('transactions-grouped') + '?groupby=week', 'transactions_grouped_by_week'),
+        (reverse('event-details', kwargs={'event_id': 98415193}), 'event_98415193'),
     ])
-    def test_download_excel(self, url_from, patches, xls_name):
+    def test_download_excel(self, url_from, xls_name):
         URL = reverse('download-excel', kwargs={'xls_name': xls_name})
-        client = Client()
-        with patch('revenue_app.utils.pd.read_csv', side_effect=patches):
-            # load an URL that set session['transactions']
-            client.get(url_from)
-        response = client.get(URL)
+        self.load_dataframes()
+        # load an URL that set session['transactions']
+        self.client.get(url_from)
+        response = self.client.get(URL)
         self.assertEqual(response['Content-Type'], 'application/ms-excel')
         self.assertIn('attachment; filename=', response['Content-Disposition'])
         self.assertIn(xls_name, response['Content-Disposition'])
@@ -865,12 +829,8 @@ class ViewsTest(TestCase):
 
     def test_dashboard_summary(self):
         URL = reverse('json_dashboard_summary')
-        with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             str(response._headers['content-type']),
@@ -879,12 +839,8 @@ class ViewsTest(TestCase):
 
     def test_top_events_json_data(self):
         URL = reverse('json_top_events')
-        with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             str(response._headers['content-type']),
@@ -893,12 +849,8 @@ class ViewsTest(TestCase):
 
     def test_top_organizers_refunds_json_data(self):
         URL = reverse('json_top_organizers_refunds')
-        with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             str(response._headers['content-type']),
@@ -907,17 +859,49 @@ class ViewsTest(TestCase):
 
     def test_top_organizers_json_data(self):
         URL = reverse('json_top_organizers')
-        with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(CORRECTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
+        self.load_dataframes()
+        response = self.client.get(URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             str(response._headers['content-type']),
             "('Content-Type', 'application/json')",
         )
+
+    @parameterized.expand([
+        ({},),
+        ({'start_date': '2018-08-02'},),
+        ({'end_date': '2018-08-05'},),
+    ])
+    def test_make_query_view_returns_200_but_does_not_make_query(self, kwargs):
+        URL = reverse('make-query')
+        response = self.client.get(URL, kwargs)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.template_name[0], MakeQuery.template_name)
+        self.assertNotContains(response, 'ran successfully.')
+
+    def test_make_query_view_returns_200_and_makes_queries(self):
+        for query_name in ['organizer_sales', 'transactions', 'corrections']:
+            self.assertNotIn(query_name, self.client.session)
+        kwargs = {
+            'start_date': '2018-08-02',
+            'end_date': '2018-08-05',
+            'okta_username': 'fakename',
+            'okta_password': 'fakepass',
+        }
+        URL = reverse('make-query')
+        with patch('revenue_app.views.make_query', side_effect=(
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
+        )):
+            response = self.client.get(URL, kwargs)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.template_name[0], MakeQuery.template_name)
+        for query_name in ['organizer_sales', 'transactions', 'corrections']:
+            self.assertContains(response, f'{query_name} ran successfully')
+        assert_frame_equal(self.client.session['organizer_sales'], read_csv(ORGANIZER_SALES_EXAMPLE_PATH))
+        assert_frame_equal(self.client.session['transactions'], read_csv(TRANSACTIONS_EXAMPLE_PATH))
+        assert_frame_equal(self.client.session['corrections'], read_csv(CORRECTIONS_EXAMPLE_PATH))
 
 
 class TemplateTagsTest(TestCase):
@@ -1001,6 +985,34 @@ class TemplateTagsTest(TestCase):
         self.assertEqual(rendered, expected)
 
     @parameterized.expand([
+        ("2019-01-30", '2018-12-01'),
+        ("2019-02-14", '2019-01-01'),
+        ("2019-03-31", '2019-02-01'),
+    ])
+    def test_previous_month_start(self, time, expected):
+        with freeze_time(time):
+            rendered = self.render_template(
+                '{% load date_filters %}'
+                '{% previous_month_start %}'
+            )
+        self.assertEqual(rendered, expected)
+
+    @parameterized.expand([
+        ("2019-01-30", '2018-12-31'),
+        ("2019-02-14", '2019-01-31'),
+        ("2019-03-31", '2019-02-28'),
+        ("2020-03-05", '2020-02-29'),
+        ("2019-05-10", '2019-04-30'),
+    ])
+    def test_previous_month_end(self, time, expected):
+        with freeze_time(time):
+            rendered = self.render_template(
+                '{% load date_filters %}'
+                '{% previous_month_end %}'
+            )
+        self.assertEqual(rendered, expected)
+
+    @parameterized.expand([
         ({'value': 'day'}, 'Day'),
         ({'value': 'week'}, 'Week'),
         ({'value': 'semi_month'}, 'Semi Month'),
@@ -1042,3 +1054,22 @@ class TemplateTagsTest(TestCase):
             context
         )
         self.assertEqual(rendered, expected)
+
+
+class PrestoQueriesTestCase(TestCase):
+    def test_read_sql(self):
+        expected = '''SELECT
+column_one,
+column_two,
+sum(column_three/100.00) AS column_three
+FROM some_table
+JOIN other_table o ON o.id = column_one
+WHERE column_date >= CAST('2019-12-10' AS DATE)
+AND column_date <= CAST('2019-12-25' AS DATE)
+AND column_three IN ('case1', 'case2')
+GROUP BY 1, 2
+ORDER BY 1, 2
+'''
+        with patch("revenue_app.presto_connection.open", return_value=open(TRANSACTIONS_SQL_EXAMPLE_PATH)):
+            readed = read_sql('transactions')
+        self.assertEqual(readed, expected)

@@ -1,6 +1,7 @@
 from calendar import monthrange
 from django import template
 from datetime import date, timedelta
+from dateutil.relativedelta import relativedelta
 
 register = template.Library()
 
@@ -27,3 +28,16 @@ def get_quarter(value):
 @register.filter(name='quarter_start')
 def get_quarter_start(value):
     return date(value.year, (value.month - 1) // 3 * 3 + 1, 1)
+
+
+@register.simple_tag(name='previous_month_start')
+def get_previous_month_start():
+    today = date.today()
+    new_date = today - relativedelta(months=1)
+    return date(new_date.year, new_date.month, 1)
+
+
+@register.simple_tag(name='previous_month_end')
+def get_previous_month_end():
+    today = date.today()
+    return date(today.year, today.month, 1) - relativedelta(days=1)

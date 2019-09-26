@@ -116,4 +116,4 @@ datasets/
 .DS_Store
 
 # Querys
-*.sql
+sql/
