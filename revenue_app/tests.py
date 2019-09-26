@@ -1,5 +1,9 @@
 from datetime import date
 from django.contrib.auth.models import User
+from django.template import (
+    Context,
+    Template,
+)
 from django.test import (
     Client,
     TestCase,
@@ -165,12 +169,12 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(merged_transactions), 27)
 
     @parameterized.expand([
-        ('daily', 31),
-        ('weekly', 5),
-        ('semi-monthly', 2),
-        ('monthly', 1),
-        ('quarterly', 1),
-        ('yearly', 1),
+        ('day', 31),
+        ('week', 5),
+        ('semi-month', 2),
+        ('month', 1),
+        ('quarter', 1),
+        ('year', 1),
         ('eventholder_user_id', 5),
         (['eventholder_user_id', 'email'], 5),
         ('event_id', 5),
@@ -220,13 +224,13 @@ class UtilsTestCase(TestCase):
         ({'end_date': '2018-08-05'}, 27),
         ({'email': 'personalized_domain@wowdomain.com.br'}, 5),
         ({'event_id': '88128252'}, 7),
-        ({'groupby': 'daily'}, 31),
-        ({'groupby': 'daily', 'start_date': '2018-08-02', 'end_date': '2018-08-15'}, 4),
-        ({'groupby': 'weekly'}, 5),
-        ({'groupby': 'semi-monthly'}, 2),
-        ({'groupby': 'monthly'}, 1),
-        ({'groupby': 'quarterly'}, 1),
-        ({'groupby': 'yearly'}, 1),
+        ({'groupby': 'day'}, 31),
+        ({'groupby': 'day', 'start_date': '2018-08-02', 'end_date': '2018-08-15'}, 4),
+        ({'groupby': 'week'}, 5),
+        ({'groupby': 'semi-month'}, 2),
+        ({'groupby': 'month'}, 1),
+        ({'groupby': 'quarter'}, 1),
+        ({'groupby': 'year'}, 1),
         ({'groupby': 'eventholder_user_id'}, 5),
         ({'groupby': ['eventholder_user_id', 'email']}, 5),
         ({'groupby': 'event_id'}, 5),
@@ -522,14 +526,14 @@ class ViewsTest(TestCase):
         self.assertEqual(response.template_name[0], TransactionsEvent.template_name)
 
     def test_transactions_grouped_view_returns_302_when_not_logged(self):
-        groupby = 'daily'
+        groupby = 'day'
         URL = reverse('transactions-grouped')
         client = Client()
         response = client.get(URL, {'groupby': groupby})
         self.assertEqual(response.status_code, 302)
 
     def test_transactions_grouped_view_returns_200_when_logged(self):
-        kwargs = {'groupby': 'daily'}
+        kwargs = {'groupby': 'day'}
         URL = reverse('transactions-grouped')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
@@ -539,3 +543,84 @@ class ViewsTest(TestCase):
             response = self.logged_client.get(URL, kwargs)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsGrouped.template_name)
+
+
+class TemplateTagsTest(TestCase):
+    def render_template(self, string, context=None):
+        context = context or {}
+        return Template(string).render(Context(context))
+
+    @parameterized.expand([
+        ({'value': date(2019, 8,  4)}, 'July 29, 2019'),
+        ({'value': date(2019, 8, 11)},  'Aug. 5, 2019'),
+        ({'value': date(2019, 8, 18)}, 'Aug. 12, 2019'),
+        ({'value': date(2019, 8, 25)}, 'Aug. 19, 2019'),
+        ({'value': date(2019, 9,  1)}, 'Aug. 26, 2019'),
+    ])
+    def test_week_start(self, context, expected):
+        rendered = self.render_template(
+            '{% load date_filters %}'
+            '{{value|week_start|date}}',
+            context
+        )
+        self.assertEqual(rendered, expected)
+
+    @parameterized.expand([
+        ({'value': date(2019, 8,  1)}, 'Aug. 14, 2019'),
+        ({'value': date(2019, 8, 15)}, 'Aug. 31, 2019'),
+        ({'value': date(2019, 2,  1)}, 'Feb. 14, 2019'),
+        ({'value': date(2019, 2, 15)}, 'Feb. 28, 2019'),
+        ({'value': date(2020, 2,  1)}, 'Feb. 14, 2020'),
+        ({'value': date(2020, 2, 15)}, 'Feb. 29, 2020'),
+    ])
+    def test_semimonth_end(self, context, expected):
+        rendered = self.render_template(
+            '{% load date_filters %}'
+            '{{value|semimonth_end|date}}',
+            context
+        )
+        self.assertEqual(rendered, expected)
+
+    @parameterized.expand([
+        ({'value': date(2019,  1,  1)}, 'Q1'),
+        ({'value': date(2019,  2, 15)}, 'Q1'),
+        ({'value': date(2019,  3, 19)}, 'Q1'),
+        ({'value': date(2019,  4, 30)}, 'Q2'),
+        ({'value': date(2019,  5, 24)}, 'Q2'),
+        ({'value': date(2019,  6, 14)}, 'Q2'),
+        ({'value': date(2019,  7, 10)}, 'Q3'),
+        ({'value': date(2019,  8, 25)}, 'Q3'),
+        ({'value': date(2019,  9, 21)}, 'Q3'),
+        ({'value': date(2019, 10,  8)}, 'Q4'),
+        ({'value': date(2019, 11, 11)}, 'Q4'),
+        ({'value': date(2019, 12, 16)}, 'Q4'),
+    ])
+    def test_quarter(self, context, expected):
+        rendered = self.render_template(
+            '{% load date_filters %}'
+            'Q{{value|quarter}}',
+            context
+        )
+        self.assertEqual(rendered, expected)
+
+    @parameterized.expand([
+        ({'value': date(2019,  1,  1)}, 'Jan. 1, 2019'),
+        ({'value': date(2019,  2, 15)}, 'Jan. 1, 2019'),
+        ({'value': date(2019,  3, 19)}, 'Jan. 1, 2019'),
+        ({'value': date(2019,  4, 30)}, 'April 1, 2019'),
+        ({'value': date(2019,  5, 24)}, 'April 1, 2019'),
+        ({'value': date(2019,  6, 14)}, 'April 1, 2019'),
+        ({'value': date(2019,  7, 10)}, 'July 1, 2019'),
+        ({'value': date(2019,  8, 25)}, 'July 1, 2019'),
+        ({'value': date(2019,  9, 21)}, 'July 1, 2019'),
+        ({'value': date(2019, 10,  8)}, 'Oct. 1, 2019'),
+        ({'value': date(2019, 11, 11)}, 'Oct. 1, 2019'),
+        ({'value': date(2019, 12, 16)}, 'Oct. 1, 2019'),
+    ])
+    def test_quarter_start(self, context, expected):
+        rendered = self.render_template(
+            '{% load date_filters %}'
+            '{{value|quarter_start}}',
+            context
+        )
+        self.assertEqual(rendered, expected)

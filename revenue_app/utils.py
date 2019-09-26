@@ -87,12 +87,12 @@ def merge_transactions(transactions, organizer_sales):
 
 def group_transactions(transactions, by):
     time_groupby = {
-        'daily': 'D',
-        'weekly': 'W',
-        'semi-monthly': 'SMS',  # quincena
-        'monthly': 'M',
-        'quarterly': 'Q',  # trimestre
-        'yearly': 'Y',
+        'day': 'D',
+        'week': 'W',
+        'semi-month': 'SMS',  # quincena del 1 al 14 y del 15 a fin de mes, consultar con finanzas
+        'month': 'M',
+        'quarter': 'Q',  # trimestre
+        'year': 'Y',
     }
     custom_groupby = {
         'event_id': ['eventholder_user_id', 'email', 'event_id', 'currency'],
