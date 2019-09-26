@@ -10,6 +10,7 @@ django-bootstrap4==1.0.1
 django-chartjs==1.5.0
 docopt==0.6.2
 eventbrite==3.3.3
+freezegun==0.3.12
 gunicorn==19.9.0
 html5lib==1.0.1
 idna==2.8
@@ -19,6 +20,7 @@ pandas==0.25.1
 parameterized==0.7.0
 Pillow==6.2.0
 psycopg2-binary==2.8.3
+PyHive==0.6.1
 PyJWT==1.7.1
 PyPDF2==1.26.0
 python-dateutil==2.8.0

@@ -5,6 +5,7 @@ from revenue_app.views import (
     dashboard_summary,
     download_csv,
     download_excel,
+    MakeQuery,
     OrganizerTransactions,
     OrganizerTransactionsPdf,
     OrganizersTransactions,
@@ -25,6 +26,7 @@ from revenue_app.views import (
 
 urlpatterns = [
     url(r'^$', Dashboard.as_view(), name='dashboard'),
+    url(r'queries/$', MakeQuery.as_view(), name='make-query'),
     url(r'^transactions/$', OrganizersTransactions.as_view(), name='organizers-transactions'),
     url(
         r'^organizer/(?P<eventholder_user_id>[0-9]+)/$',

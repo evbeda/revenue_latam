@@ -1,0 +1,72 @@
+
+{% extends 'revenue_app/base.html' %}
+{% load static %}
+{% load date_filters %}
+
+{% block content %}
+
+<div class="row">
+  <div class="col-12">
+    <h1>Queries</h1>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    {% if error %}
+      <div class="alert alert-danger">
+        {{ error|safe }}
+      </div>
+    {% elif queries_status %}
+      <div class="alert alert-success">
+        Successful queries:
+        <ul class="mb-0">
+        {% for status in queries_status %}
+          <li>{{ status }}</li>
+        {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<form form method="GET" action="{% url 'make-query' %}">
+  <div class="row">
+    <div class="col-12">
+      <div class="form-group">
+        <label for="okta_username">Okta Username:</label>
+        <input type="text" name="okta_username" class="form-control">
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-12">
+      <div class="form-group">
+        <label for="okta_username">Okta Password:</label>
+        <input type="password" name="okta_password" class="form-control">
+      </div>    
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-6">
+      <div class="form-group">
+        <label for="start_date">Start date:</label>
+        <input type="date" name="start_date" class="form-control" value="{% previous_month_start %}">
+      </div>
+    </div>
+    <div class="col-6">
+      <div class="form-group">
+        <label for="end_date">End date:</label>
+        <input type="date" name="end_date" class="form-control" value="{% previous_month_end %}">
+      </div>
+    </div>
+  </div>
+  {% csrf_token %}
+  <div class="row mt-3">
+    <div class="col-12">
+      <button type="submit" class="btn btn-block btn-evb-orange">Make Query</button>
+    </div>
+  </div>
+</form>
+<br>
+{% endblock content %}

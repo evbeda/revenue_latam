@@ -6,10 +6,18 @@ from datetime import datetime
 import json
 import xlwt
 
-from django.http import HttpResponse
+from django.http import (
+    HttpResponse,
+    HttpResponseRedirect,
+)
 from django.template.loader import get_template
 from django.views.generic import TemplateView
+from django.shortcuts import resolve_url
 
+from revenue_app.presto_connection import (
+    make_query,
+    PrestoError,
+)
 from revenue_app.utils import (
     get_event_transactions,
     get_organizer_transactions,
@@ -17,10 +25,10 @@ from revenue_app.utils import (
     get_top_events,
     get_top_organizers,
     get_top_organizers_refunds,
+    manage_transactions,
     payment_processor_summary,
     random_color,
     sales_flag_summary,
-    transactions,
 )
 
 FULL_COLUMNS = [
@@ -146,39 +154,98 @@ TOP_EVENTS_COLUMNS = [
 ]
 
 
-class Dashboard(TemplateView):
+class QueriesRequiredMixin():
+    def dispatch(self, request, *args, **kwargs):
+        if any([
+            request.session.get(dataframe) is None
+            for dataframe in ['transactions', 'corrections', 'organizer_sales']
+        ]):
+            return HttpResponseRedirect(resolve_url('make-query'))
+        return super().dispatch(request, *args, **kwargs)
+
+
+class Dashboard(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/dashboard.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['summarized_data'] = get_summarized_data()
+        context['summarized_data'] = get_summarized_data(
+            self.request.session.get('transactions').copy(),
+            self.request.session.get('corrections').copy(),
+            self.request.session.get('organizer_sales').copy(),
+        )
         return context
 
 
-class OrganizersTransactions(TemplateView):
+class MakeQuery(TemplateView):
+    template_name = 'revenue_app/query.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if (
+            self.request.GET.get('start_date') and
+            self.request.GET.get('end_date')
+        ):
+            start_date = self.request.GET.get('start_date')
+            end_date = self.request.GET.get('end_date')
+            okta_username = self.request.GET.get('okta_username')
+            okta_password = self.request.GET.get('okta_password')
+            context['queries_status'] = []
+            for query_name in [
+                'organizer_sales',
+                'transactions',
+                'corrections',
+            ]:
+                try:
+                    dataframe = make_query(
+                        start_date=start_date,
+                        end_date=end_date,
+                        okta_username=okta_username,
+                        okta_password=okta_password,
+                        query_name=query_name,
+                    )
+                    self.request.session[query_name] = dataframe
+                    context['queries_status'].append(
+                        f'{query_name} ran successfully.'
+                    )
+                except PrestoError as exception:
+                    context['error'] = exception.args[0]
+                    break
+        return context
+
+
+class OrganizersTransactions(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/organizers_transactions.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        trx = transactions(**self.request.GET.dict())[TRANSACTIONS_COLUMNS]
+        trx = manage_transactions(
+            self.request.session.get('transactions').copy(),
+            self.request.session.get('corrections').copy(),
+            self.request.session.get('organizer_sales').copy(),
+            **self.request.GET.dict(),
+        )[TRANSACTIONS_COLUMNS]
         context['transactions'] = trx.head(5000)
-        self.request.session['transactions'] = trx
+        self.request.session['export_transactions'] = trx
         return context
 
 
-class OrganizerTransactions(TemplateView):
+class OrganizerTransactions(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/organizer_transactions.html'
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         transactions, details, sales_refunds = get_organizer_transactions(
+            self.request.session.get('transactions').copy(),
+            self.request.session.get('corrections').copy(),
+            self.request.session.get('organizer_sales').copy(),
             self.kwargs['eventholder_user_id'],
             **self.request.GET.dict(),
         )
         context['details'] = details
         context['sales_refunds'] = sales_refunds
         context['transactions'] = transactions[ORGANIZER_COLUMNS]
-        self.request.session['transactions'] = transactions
+        self.request.session['export_transactions'] = transactions
         return context
 
 
@@ -190,12 +257,17 @@ class OrganizerTransactionsPdf(OrganizerTransactions):
         return HttpResponse(pdf, content_type='application/pdf')
 
 
-class TopOrganizersLatam(TemplateView):
+class TopOrganizersLatam(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/top_organizers.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        trx = transactions(**(self.request.GET.dict()))
+        trx = manage_transactions(
+            self.request.session.get('transactions').copy(),
+            self.request.session.get('corrections').copy(),
+            self.request.session.get('organizer_sales').copy(),
+            **(self.request.GET.dict()),
+        )
         context['top_ars'] = get_top_organizers(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_COLUMNS]
         context['top_brl'] = get_top_organizers(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_COLUMNS]
         return context
@@ -208,12 +280,17 @@ class TopOrganizersLatamPdf(TopOrganizersLatam):
         return HttpResponse(pdf, content_type='application/pdf')
 
 
-class TopOrganizersRefundsLatam(TemplateView):
+class TopOrganizersRefundsLatam(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/top_organizers_refunds.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        trx = transactions(**(self.request.GET.dict()))
+        trx = manage_transactions(
+            self.request.session.get('transactions').copy(),
+            self.request.session.get('corrections').copy(),
+            self.request.session.get('organizer_sales').copy(),
+            **(self.request.GET.dict()),
+        )
         context['top_ars'] = \
             get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
         context['top_brl'] = \
@@ -228,19 +305,22 @@ class TopOrganizersRefundsLatamPdf(TopOrganizersRefundsLatam):
         return HttpResponse(pdf, content_type='application/pdf')
 
 
-class TransactionsEvent(TemplateView):
+class TransactionsEvent(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/event.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         transactions, details, sales_refunds = get_event_transactions(
+            self.request.session.get('transactions').copy(),
+            self.request.session.get('corrections').copy(),
+            self.request.session.get('organizer_sales').copy(),
             self.kwargs['event_id'],
-            **self.request.GET.dict(),
+            **(self.request.GET.dict()),
         )
         context['details'] = details
         context['sales_refunds'] = sales_refunds
         context['transactions'] = transactions[EVENT_COLUMNS]
-        self.request.session['transactions'] = transactions
+        self.request.session['export_transactions'] = transactions
         return context
 
 
@@ -251,12 +331,17 @@ class TransactionsEventPdf(TransactionsEvent):
         return HttpResponse(pdf, content_type='application/pdf')
 
 
-class TopEventsLatam(TemplateView):
+class TopEventsLatam(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/top_events.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        trx = transactions(**(self.request.GET.dict()))
+        trx = manage_transactions(
+            self.request.session.get('transactions').copy(),
+            self.request.session.get('corrections').copy(),
+            self.request.session.get('organizer_sales').copy(),
+            **(self.request.GET.dict()),
+        )
         context['top_event_ars'] = get_top_events(trx[trx['currency'] == 'ARS'])[:10][TOP_EVENTS_COLUMNS]
         context['top_event_brl'] = get_top_events(trx[trx['currency'] == 'BRL'])[:10][TOP_EVENTS_COLUMNS]
         return context
@@ -269,19 +354,28 @@ class TopEventsLatamPdf(TopEventsLatam):
         return HttpResponse(pdf, content_type='application/pdf')
 
 
-class TransactionsGrouped(TemplateView):
+class TransactionsGrouped(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/transactions_grouped.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        trx = transactions(**self.request.GET.dict())
+        trx = manage_transactions(
+            self.request.session.get('transactions').copy(),
+            self.request.session.get('corrections').copy(),
+            self.request.session.get('organizer_sales').copy(),
+            **(self.request.GET.dict()),
+        )
         context['transactions'] = trx
-        self.request.session['transactions'] = trx
+        self.request.session['export_transactions'] = trx
         return context
 
 
 def top_organizers_json_data(request):
-    trx = transactions()
+    trx = manage_transactions(
+        request.session.get('transactions'),
+        request.session.get('corrections'),
+        request.session.get('organizer_sales'),
+    )
     colors = [random_color() for _ in range(11)]
     top_organizers_ars = get_top_organizers(trx[trx['currency'] == 'ARS'])
     top_organizers_brl = get_top_organizers(trx[trx['currency'] == 'BRL'])
@@ -303,7 +397,11 @@ def top_organizers_json_data(request):
 
 
 def top_organizers_refunds_json_data(request):
-    trx = transactions()
+    trx = manage_transactions(
+        request.session.get('transactions'),
+        request.session.get('corrections'),
+        request.session.get('organizer_sales'),
+    )
     colors = [random_color() for _ in range(11)]
     top_organizers_ars = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])
     top_organizers_brl = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])
@@ -325,7 +423,11 @@ def top_organizers_refunds_json_data(request):
 
 
 def top_events_json_data(request):
-    trx = transactions()
+    trx = manage_transactions(
+        request.session.get('transactions'),
+        request.session.get('corrections'),
+        request.session.get('organizer_sales'),
+    )
     colors = [random_color() for _ in range(11)]
     top_events_ars = get_top_events(trx[trx['currency'] == 'ARS'])
     top_events_brl = get_top_events(trx[trx['currency'] == 'BRL'])
@@ -347,7 +449,11 @@ def top_events_json_data(request):
 
 
 def dashboard_summary(request):
-    trx = transactions()
+    trx = manage_transactions(
+        request.session.get('transactions'),
+        request.session.get('corrections'),
+        request.session.get('organizer_sales'),
+    )
     ars = trx[trx['currency'] == 'ARS']
     brl = trx[trx['currency'] == 'BRL']
     ars_pp_gtv, ars_pp_gtf = payment_processor_summary(ars)
@@ -416,7 +522,7 @@ def download_excel(request, xls_name):
     response['Content-Disposition'] = 'attachment; filename="{}_{}.xls"'.format(xls_name, datetime.now())
     workbook = xlwt.Workbook(encoding='utf-8')
     worksheet = workbook.add_sheet('Transactions')
-    organizers_transactions = request.session.get('transactions')
+    organizers_transactions = request.session.get('export_transactions')
     transactions_list = organizers_transactions.values.tolist()
     columns = organizers_transactions.columns.tolist()
     date_column_idx = columns.index('transaction_created_date')
@@ -438,7 +544,7 @@ def download_csv(request, csv_name):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="{}_{}.csv"'.format(csv_name, datetime.now())
     writer = csv.writer(response)
-    organizers_transactions = request.session.get('transactions')
+    organizers_transactions = request.session.get('export_transactions')
     columns = organizers_transactions.columns.tolist()
     values = organizers_transactions.values.tolist()
     writer.writerow(columns)
