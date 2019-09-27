@@ -34,7 +34,7 @@
                             {{value.year}}
                         </a></td>
                     {% else %}
-                        <td><a href="{% url 'organizers-transactions' %}?start_date={{value|date:'Y-m-d'}}">
+                        <td><a href="{% url 'organizers-transactions' %}?start_date={{value|date:'Y-m-d'}}&end_date={{value|date:'Y-m-d'}}">
                             {{value|date}}
                         </a></td>
                     {% endif %}

@@ -19,7 +19,6 @@ from parameterized import parameterized
 from .utils import (
     calc_perc_take_rate,
     filter_transactions,
-    get_dates,
     get_organizer_sales,
     get_transactions,
     get_transactions_event,
@@ -248,12 +247,6 @@ class UtilsTestCase(TestCase):
         self.assertIsInstance(organizer_transactions, DataFrame)
         self.assertEqual(len(organizer_transactions), expected_length)
 
-    def test_get_dates(self):
-        with patch('pandas.read_csv', return_value=read_csv(TRANSACTIONS_EXAMPLE_PATH)):
-            dates = get_dates()
-        self.assertIsInstance(dates, list)
-        self.assertEqual(len(dates), 12)
-
     @parameterized.expand([
         ('66220941', 5, 3500),
         ('98415193', 6, 3402),
@@ -396,8 +389,7 @@ class ViewsTest(TestCase):
 
     def test_dashboard_view_returns_200_when_logged(self):
         URL = reverse('dashboard')
-        with patch('pandas.read_csv', return_value=read_csv(TRANSACTIONS_EXAMPLE_PATH)):
-            response = self.logged_client.get(URL)
+        response = self.logged_client.get(URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], Dashboard.template_name)
 
@@ -423,7 +415,6 @@ class ViewsTest(TestCase):
         URL = reverse('organizers-transactions')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.logged_client.get(URL, kwargs)
@@ -448,7 +439,6 @@ class ViewsTest(TestCase):
     def test_organizer_transactions_view_returns_200_when_logged(self, eventholder_user_id, expected_length):
         URL = reverse('organizer-transactions', kwargs={'organizer_id': eventholder_user_id})
         with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
@@ -478,7 +468,6 @@ class ViewsTest(TestCase):
         URL = '{}?email={}'.format(reverse('transactions-search'), email)
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.logged_client.get(URL)
@@ -495,7 +484,6 @@ class ViewsTest(TestCase):
         URL = reverse('top-organizers')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.logged_client.get(URL)
@@ -511,7 +499,6 @@ class ViewsTest(TestCase):
     def test_top_events_view_returns_200_when_logged(self):
         URL = reverse('top-events')
         with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -538,14 +525,11 @@ class ViewsTest(TestCase):
         URL = reverse('event-details', kwargs={'event_id': event_id})
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-
-
         )):
             response = self.logged_client.get(URL)
         self.assertEqual(response.status_code, 200)
@@ -562,7 +546,6 @@ class ViewsTest(TestCase):
         kwargs = {'groupby': 'day'}
         URL = reverse('transactions-grouped')
         with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
