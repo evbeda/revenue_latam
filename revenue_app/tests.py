@@ -357,50 +357,54 @@ class UtilsTestCase(TestCase):
         self.assertTrue(str(type(response)), "_excel.reader")
 
     @parameterized.expand([
-            ('497321858',
-                {'sale__payment_amount__epp': 4555.3,
-                'sale__eb_tax__epp': 61.7,
-                'sale__ap_organizer__gts__epp': 4200.0,
-                'sale__ap_organizer__royalty__epp': 0,
-                'sale__gtf_esf__epp': 293.6,
-                'sale__gtf_esf__offline': 0,
-                'refund__payment_amount__epp': 0,
-                'refund__gtf_epp__gtf_esf__epp': 0,
-                'refund__ap_organizer__gts__epp': 0,
-                'refund__eb_tax__epp': 0}),
-            ('696421958',
-                {'sale__payment_amount__epp': 6270.0,
-                'sale__eb_tax__epp': 0,
-                'sale__ap_organizer__gts__epp': 5831.7,
-                'sale__ap_organizer__royalty__epp': 0,
-                'sale__gtf_esf__epp': 438.3,
-                'sale__gtf_esf__offline': 0,
-                'refund__payment_amount__epp': 0,
-                'refund__gtf_epp__gtf_esf__epp': 0,
-                'refund__ap_organizer__gts__epp': 0,
-                'refund__eb_tax__epp': 0}),
-            ('434444537',
-                {'sale__payment_amount__epp': 1188.0,
-                'sale__eb_tax__epp': 0,
-                'sale__ap_organizer__gts__epp': 1080.0,
-                'sale__ap_organizer__royalty__epp': 0,
-                'sale__gtf_esf__epp': 108.0,
-                'sale__gtf_esf__offline': 0,
-                'refund__payment_amount__epp': 0,
-                'refund__gtf_epp__gtf_esf__epp': 0,
-                'refund__ap_organizer__gts__epp': 0,
-                'refund__eb_tax__epp': 0}),
-            ('506285738',
-                {'sale__payment_amount__epp': 18150.0,
-                'sale__eb_tax__epp': 0,
-                'sale__ap_organizer__gts__epp': 16698.0,
-                'sale__ap_organizer__royalty__epp': 0,
-                'sale__gtf_esf__epp': 1452.0,
-                'sale__gtf_esf__offline': 0,
-                'refund__payment_amount__epp': 0,
-                'refund__gtf_epp__gtf_esf__epp': 0,
-                'refund__ap_organizer__gts__epp': 0,
-                'refund__eb_tax__epp': 0}),
+        ('497321858', {
+            'sale__payment_amount__epp': 4555.3,
+            'sale__eb_tax__epp': 61.7,
+            'sale__ap_organizer__gts__epp': 4200.0,
+            'sale__ap_organizer__royalty__epp': 0,
+            'sale__gtf_esf__epp': 293.6,
+            'sale__gtf_esf__offline': 0,
+            'refund__payment_amount__epp': 0,
+            'refund__gtf_epp__gtf_esf__epp': 0,
+            'refund__ap_organizer__gts__epp': 0,
+            'refund__eb_tax__epp': 0,
+        }),
+        ('696421958', {
+            'sale__payment_amount__epp': 6270.0,
+            'sale__eb_tax__epp': 0,
+            'sale__ap_organizer__gts__epp': 5831.7,
+            'sale__ap_organizer__royalty__epp': 0,
+            'sale__gtf_esf__epp': 438.3,
+            'sale__gtf_esf__offline': 0,
+            'refund__payment_amount__epp': 0,
+            'refund__gtf_epp__gtf_esf__epp': 0,
+            'refund__ap_organizer__gts__epp': 0,
+            'refund__eb_tax__epp': 0,
+        }),
+        ('434444537', {
+            'sale__payment_amount__epp': 1188.0,
+            'sale__eb_tax__epp': 0,
+            'sale__ap_organizer__gts__epp': 1080.0,
+            'sale__ap_organizer__royalty__epp': 0,
+            'sale__gtf_esf__epp': 108.0,
+            'sale__gtf_esf__offline': 0,
+            'refund__payment_amount__epp': 0,
+            'refund__gtf_epp__gtf_esf__epp': 0,
+            'refund__ap_organizer__gts__epp': 0,
+            'refund__eb_tax__epp': 0,
+        }),
+        ('506285738', {
+            'sale__payment_amount__epp': 18150.0,
+            'sale__eb_tax__epp': 0,
+            'sale__ap_organizer__gts__epp': 16698.0,
+            'sale__ap_organizer__royalty__epp': 0,
+            'sale__gtf_esf__epp': 1452.0,
+            'sale__gtf_esf__offline': 0,
+            'refund__payment_amount__epp': 0,
+            'refund__gtf_epp__gtf_esf__epp': 0,
+            'refund__ap_organizer__gts__epp': 0,
+            'refund__eb_tax__epp': 0,
+        }),
     ])
     def test_summarize_dataframe(self, organizer_id, expected_total):
         with patch('pandas.read_csv', side_effect=(
@@ -486,11 +490,11 @@ class ViewsTest(TestCase):
         self.assertEqual(response.url, '/accounts/login/?next={}'.format(URL))
 
     @parameterized.expand([
-            (497321858, 5),
-            (696421958, 6),
-            (434444537, 4),
-            (506285738, 5),
-            (634364434, 7),
+        (497321858, 5),
+        (696421958, 6),
+        (434444537, 4),
+        (506285738, 5),
+        (634364434, 7),
     ])
     def test_organizer_transactions_view_returns_200_when_logged(self, eventholder_user_id, expected_length):
         URL = reverse('organizer-transactions', kwargs={'organizer_id': eventholder_user_id})
@@ -514,19 +518,20 @@ class ViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
 
     @parameterized.expand([
-        ('arg_domain@superdomain.org.ar',),
-        ('some_fake_mail@gmail.com',),
-        ('wow_fake_mail@hotmail.com',),
-        ('another_fake_mail@gmail.com',),
-        ('personalized_domain@wowdomain.com.br',),
+        ('arg_domain@superdomain.org.ar', 7),
+        ('some_fake_mail@gmail.com', 5),
+        ('wow_fake_mail@hotmail.com', 4),
+        ('another_fake_mail@gmail.com', 6),
+        ('personalized_domain@wowdomain.com.br', 5),
     ])
-    def test_transactions_search_view_returns_200_when_logged(self, email):
+    def test_transactions_search_view_returns_200_when_logged(self, email, expected_length):
         URL = '{}?email={}'.format(reverse('transactions-search'), email)
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.logged_client.get(URL)
+        self.assertEqual(len(response.context['transactions']), expected_length)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsSearch.template_name)
 
@@ -543,6 +548,8 @@ class ViewsTest(TestCase):
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.logged_client.get(URL)
+        self.assertEqual(len(response.context['top_ars']), 2)
+        self.assertEqual(len(response.context['top_brl']), 3)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TopOrganizersLatam.template_name)
 
@@ -559,6 +566,8 @@ class ViewsTest(TestCase):
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.logged_client.get(URL)
+        self.assertEqual(len(response.context['top_event_ars']), 2)
+        self.assertEqual(len(response.context['top_event_brl']), 3)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TopEventsLatam.template_name)
 
@@ -571,13 +580,13 @@ class ViewsTest(TestCase):
         self.assertEqual(response.url, '/accounts/login/?next={}'.format(URL))
 
     @parameterized.expand([
-        (66220941,),
-        (98415193,),
-        (17471621,),
-        (35210860,),
-        (88128252,),
+        (66220941, 5),
+        (98415193, 6),
+        (17471621, 4),
+        (35210860, 5),
+        (88128252, 7),
     ])
-    def test_events_transactions_view_returns_200_when_logged(self, event_id):
+    def test_events_transactions_view_returns_200_when_logged(self, event_id, expected_length):
         URL = reverse('event-details', kwargs={'event_id': event_id})
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
@@ -588,6 +597,7 @@ class ViewsTest(TestCase):
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.logged_client.get(URL)
+        self.assertEqual(len(response.context['transactions']), expected_length)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsEvent.template_name)
 
@@ -606,6 +616,7 @@ class ViewsTest(TestCase):
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.logged_client.get(URL, kwargs)
+        self.assertEqual(len(response.context['transactions']), 31)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsGrouped.template_name)
 
