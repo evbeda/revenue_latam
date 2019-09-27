@@ -32,18 +32,8 @@
           Filter by date
             <form method="get">
                 <input type="hidden" name="groupby" value="{{request.GET.groupby}}">
-                <select name="start_date">
-                    <option value=""></option>
-                    {% for date in dates_list %}
-                    <option value="{{ date }}">{{ date }}</option>
-                    {% endfor %}
-                </select>
-                <select name="end_date">
-                    <option value=""></option>
-                    {% for date in dates_list %}
-                    <option value="{{ date }}">{{ date }}</option>
-                    {% endfor %}
-                </select>
+                <input type="date" class="form-control" name="start_date" value={{request.GET.start_date}}>
+                <input type="date" class="form-control" name="end_date" value={{request.GET.end_date}}>
                 {% csrf_token %}
                 <button type="submit" class="mt-1 btn btn-evb-orange btn-sm">Apply</button>
             </form>

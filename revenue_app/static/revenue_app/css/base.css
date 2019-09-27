@@ -53,7 +53,7 @@ body {
 
 /* Sidebar */
 #sidebar-wrapper {
-  min-width: 150px;
+  min-width: 220px;
   transition: all 0.4s;
   overflow: hidden;
   flex: 1;

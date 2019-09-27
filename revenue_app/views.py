@@ -8,7 +8,6 @@ from django.http import HttpResponse
 from django.views.generic import TemplateView
 
 from .utils import (
-    get_dates,
     get_transactions_event,
     get_top_events,
     get_top_organizers,
@@ -110,18 +109,11 @@ EVENT_COLUMNS = [
 ]
 
 
-class TransactionsView(TemplateView):
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['dates_list'] = get_dates()
-        return context
-
-
-class Dashboard(LoginRequiredMixin, TransactionsView):
+class Dashboard(LoginRequiredMixin, TemplateView):
     template_name = 'revenue_app/dashboard.html'
 
 
-class OrganizersTransactions(LoginRequiredMixin, TransactionsView):
+class OrganizersTransactions(LoginRequiredMixin, TemplateView):
     template_name = 'revenue_app/organizers_transactions.html'
 
     def get_context_data(self, **kwargs):
@@ -130,7 +122,7 @@ class OrganizersTransactions(LoginRequiredMixin, TransactionsView):
         return context
 
 
-class OrganizerTransactions(LoginRequiredMixin, TransactionsView):
+class OrganizerTransactions(LoginRequiredMixin, TemplateView):
     template_name = 'revenue_app/organizer_transactions.html'
 
     def get_context_data(self, *args, **kwargs):
@@ -146,7 +138,7 @@ class OrganizerTransactions(LoginRequiredMixin, TransactionsView):
         return context
 
 
-class TransactionsSearch(LoginRequiredMixin, TransactionsView):
+class TransactionsSearch(LoginRequiredMixin, TemplateView):
     template_name = 'revenue_app/organizer_transactions.html'
 
     def get_context_data(self, *args, **kwargs):
@@ -157,7 +149,7 @@ class TransactionsSearch(LoginRequiredMixin, TransactionsView):
         return context
 
 
-class TopOrganizersLatam(LoginRequiredMixin, TransactionsView):
+class TopOrganizersLatam(LoginRequiredMixin, TemplateView):
     template_name = 'revenue_app/top_organizers.html'
 
     def get_context_data(self, **kwargs):
@@ -168,7 +160,7 @@ class TopOrganizersLatam(LoginRequiredMixin, TransactionsView):
         return context
 
 
-class TransactionsEvent(LoginRequiredMixin, TransactionsView):
+class TransactionsEvent(LoginRequiredMixin, TemplateView):
     template_name = 'revenue_app/event.html'
 
     def get_context_data(self, **kwargs):
@@ -187,7 +179,7 @@ class TransactionsEvent(LoginRequiredMixin, TransactionsView):
         return context
 
 
-class TopEventsLatam(LoginRequiredMixin, TransactionsView):
+class TopEventsLatam(LoginRequiredMixin, TemplateView):
     template_name = 'revenue_app/top_events.html'
 
     def get_context_data(self, **kwargs):
@@ -198,7 +190,7 @@ class TopEventsLatam(LoginRequiredMixin, TransactionsView):
         return context
 
 
-class TransactionsGrouped(LoginRequiredMixin, TransactionsView):
+class TransactionsGrouped(LoginRequiredMixin, TemplateView):
     template_name = 'revenue_app/transactions_grouped.html'
 
     def get_context_data(self, **kwargs):
