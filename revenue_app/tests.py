@@ -29,6 +29,7 @@ from .utils import (
     random_color,
     transactions,
     organizer_details,
+    summarize_dataframe,
 )
 
 from .views import (
@@ -354,6 +355,61 @@ class UtilsTestCase(TestCase):
         )):
             response = client.get(URL)
         self.assertTrue(str(type(response)), "_excel.reader")
+
+    @parameterized.expand([
+            ('497321858',
+                {'sale__payment_amount__epp': 4555.3,
+                'sale__eb_tax__epp': 61.7,
+                'sale__ap_organizer__gts__epp': 4200.0,
+                'sale__ap_organizer__royalty__epp': 0,
+                'sale__gtf_esf__epp': 293.6,
+                'sale__gtf_esf__offline': 0,
+                'refund__payment_amount__epp': 0,
+                'refund__gtf_epp__gtf_esf__epp': 0,
+                'refund__ap_organizer__gts__epp': 0,
+                'refund__eb_tax__epp': 0}),
+            ('696421958',
+                {'sale__payment_amount__epp': 6270.0,
+                'sale__eb_tax__epp': 0,
+                'sale__ap_organizer__gts__epp': 5831.7,
+                'sale__ap_organizer__royalty__epp': 0,
+                'sale__gtf_esf__epp': 438.3,
+                'sale__gtf_esf__offline': 0,
+                'refund__payment_amount__epp': 0,
+                'refund__gtf_epp__gtf_esf__epp': 0,
+                'refund__ap_organizer__gts__epp': 0,
+                'refund__eb_tax__epp': 0}),
+            ('434444537',
+                {'sale__payment_amount__epp': 1188.0,
+                'sale__eb_tax__epp': 0,
+                'sale__ap_organizer__gts__epp': 1080.0,
+                'sale__ap_organizer__royalty__epp': 0,
+                'sale__gtf_esf__epp': 108.0,
+                'sale__gtf_esf__offline': 0,
+                'refund__payment_amount__epp': 0,
+                'refund__gtf_epp__gtf_esf__epp': 0,
+                'refund__ap_organizer__gts__epp': 0,
+                'refund__eb_tax__epp': 0}),
+            ('506285738',
+                {'sale__payment_amount__epp': 18150.0,
+                'sale__eb_tax__epp': 0,
+                'sale__ap_organizer__gts__epp': 16698.0,
+                'sale__ap_organizer__royalty__epp': 0,
+                'sale__gtf_esf__epp': 1452.0,
+                'sale__gtf_esf__offline': 0,
+                'refund__payment_amount__epp': 0,
+                'refund__gtf_epp__gtf_esf__epp': 0,
+                'refund__ap_organizer__gts__epp': 0,
+                'refund__eb_tax__epp': 0}),
+    ])
+    def test_summarize_dataframe(self, organizer_id, expected_total):
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            organizer = transactions(eventholder_user_id=organizer_id)
+        total_organizer = summarize_dataframe(organizer)
+        self.assertEqual(total_organizer, expected_total)
 
     @parameterized.expand([
         ('497321858', {'email': 'some_fake_mail@gmail.com', 'name': 'Fake 1'}),
