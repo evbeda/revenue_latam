@@ -14,6 +14,8 @@ from .utils import (
     get_top_organizers,
     random_color,
     transactions,
+    summarize_dataframe,
+    organizer_details,
 )
 
 FULL_COLUMNS = [
@@ -134,10 +136,13 @@ class OrganizerTransactions(LoginRequiredMixin, TransactionsView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         eventholder_user_id = self.kwargs['organizer_id']
-        context['transactions'] = transactions(
+        organizer_transactions = transactions(
             eventholder_user_id=eventholder_user_id,
             **self.request.GET.dict(),
         )[ORGANIZER_COLUMNS]
+        context['transactions'] = organizer_transactions
+        context['organizer_details'] = organizer_details(eventholder_user_id)
+        context['organizer_total'] = summarize_dataframe(organizer_transactions)
         return context
 
 
@@ -169,15 +174,16 @@ class TransactionsEvent(LoginRequiredMixin, TransactionsView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['event_id'] = self.kwargs['event_id']
-        transactions_event, event_paidtix = get_transactions_event(
+        transactions_event, event_paidtix, event_total = get_transactions_event(
             self.kwargs['event_id'],
             **self.request.GET.dict(),
         )
         if len(transactions_event) > 0:
             context['organizer_id'] = transactions_event.iloc[0]['eventholder_user_id']
-            context['organizer_email'] = transactions_event.iloc[0]['email']
+            context['organizer_details'] = organizer_details(context['organizer_id'])
         context['transactions'] = transactions_event[EVENT_COLUMNS]
-        context['event_paidtix'] = event_paidtix.iloc[0]
+        context['event_total'] = event_total
+        context['event_paidtix'] = event_paidtix.iloc[0] if len(event_paidtix) > 0 else ''
         return context
 
 

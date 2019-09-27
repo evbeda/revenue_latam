@@ -42,6 +42,8 @@
                     <td><a href="{% url 'organizer-transactions' organizer_id=transaction.eventholder_user_id %}">{{value}}</a></td>
                 {% elif key == 'event_id' %}
                     <td><a href="{% url 'event-details' event_id=value %}">{{value}}</a></td>
+                {% elif key == 'eb_perc_take_rate'  %}
+                    <td>{{value}}%</td>
                 {% else %}
                     <td>{{value}}</td>
                 {% endif %}
