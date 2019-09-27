@@ -19,7 +19,7 @@ from revenue_app.views import (
 urlpatterns = [
     url(r'^$', Dashboard.as_view(), name='dashboard'),
     url(r'transactions/$', OrganizersTransactions.as_view(), name='organizers-transactions'),
-    url(r'organizers/(?P<organizer_id>[0-9]+)/$', OrganizerTransactions.as_view(), name='organizer-transactions'),
+    url(r'organizer/(?P<organizer_id>[0-9]+)/$', OrganizerTransactions.as_view(), name='organizer-transactions'),
     url(r'transactions/search/$', TransactionsSearch.as_view(), name='transactions-search'),
     url(r'transactions/grouped/$', TransactionsGrouped.as_view(), name='transactions-grouped'),
     url(r'organizers/top/', TopOrganizersLatam.as_view(), name='top-organizers'),

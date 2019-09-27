@@ -29,6 +29,7 @@ from .utils import (
     merge_transactions,
     random_color,
     transactions,
+    organizer_details,
 )
 
 from .views import (
@@ -266,7 +267,7 @@ class UtilsTestCase(TestCase):
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            transactions_event, paidtix = get_transactions_event(event_id)
+            transactions_event, paidtix, total = get_transactions_event(event_id)
         self.assertIsInstance(transactions_event, DataFrame)
         self.assertEqual(len(transactions_event), transactions_qty)
         self.assertIsInstance(paidtix, Series)
@@ -361,6 +362,22 @@ class UtilsTestCase(TestCase):
             response = client.get(URL)
         self.assertTrue(str(type(response)), "_excel.reader")
 
+    @parameterized.expand([
+        ('497321858', {'email': 'some_fake_mail@gmail.com', 'name': 'Fake 1'}),
+        ('696421958', {'email': 'another_fake_mail@gmail.com', 'name': 'Fake 2'}),
+        ('434444537', {'email': 'wow_fake_mail@hotmail.com', 'name': 'Wow Such Fake'}),
+        ('506285738', {'email': 'personalized_domain@wowdomain.com.br', 'name': 'Br Fake'}),
+        ('634364434', {'email': 'arg_domain@superdomain.org.ar', 'name': 'Ar Fake'}),
+    ])
+    def test_organizer_details(self, organizer_id, details_organizer):
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = organizer_details(organizer_id)
+        self.assertEqual(response, details_organizer)
+
 
 class ViewsTest(TestCase):
     def setUp(self):
@@ -422,20 +439,24 @@ class ViewsTest(TestCase):
         self.assertEqual(response.url, '/accounts/login/?next={}'.format(URL))
 
     @parameterized.expand([
-        (66220941,),
-        (98415193,),
-        (17471621,),
-        (35210860,),
-        (88128252,),
+            (497321858, 5),
+            (696421958, 6),
+            (434444537, 4),
+            (506285738, 5),
+            (634364434, 7),
     ])
-    def test_organizer_transactions_view_returns_200_when_logged(self, eventholder_user_id):
+    def test_organizer_transactions_view_returns_200_when_logged(self, eventholder_user_id, expected_length):
         URL = reverse('organizer-transactions', kwargs={'organizer_id': eventholder_user_id})
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.logged_client.get(URL)
+        self.assertEqual(len(response.context['transactions']), expected_length)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], OrganizerTransactions.template_name)
 
@@ -520,6 +541,11 @@ class ViewsTest(TestCase):
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+
+
         )):
             response = self.logged_client.get(URL)
         self.assertEqual(response.status_code, 200)

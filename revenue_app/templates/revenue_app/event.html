@@ -3,20 +3,52 @@
 {% block content %}
 <div class="row">
     <div class="col-md-12">
-		<h1><b>Event details</b></h1>
-		{% if request.GET.start_date %}
-			<h5>from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
-		{% endif %}
-		<div style="margin-bottom: 20px">
-			<h5><b>Event ID: </b>{{event_id}}</h5>
-			<h5><b>Event PaidTix: </b>{{event_paidtix}}</h5>
-			<h5><b>Organizer ID:</b> {{organizer_id}}</h5>
-			<h5><b>E-mail: </b>{{organizer_email}}</h5>
+	{% if request.GET.start_date %}
+	<h5>from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
+	{% endif %}
+	<div class="mb-4"><h1><b>Event details</b></h1></div>
+	<div class="row">
+	    <div class="col-lg-4 mb-3 d-flex align-items-stretch">
+		<div class="card">
+		    <div class="card-body">
+			<h5 class="card-title"><b>Details</b></h5>
+			<p class="card-text"><b>Event ID:</b>{{event_id}}</p>
+			<p class="card-text"><b>Event PaidTix:</b> {{event_paidtix}}</p>
+			<p class="card-text"><b>Organizer ID: </b>{{organizer_id}}</p>
+			<p class="card-text"><b>Name: </b>{{organizer_details.name}}</p>
+			<p class="card-text"><b>E-mail: </b>{{organizer_details.email}}</p>
+		    </div>
 		</div>
+	    </div>
+	    <div class="col-lg-4 mb-3 d-flex align-items-stretch">
+		<div class="card">
+		    <div class="card-body">
+			<h5 class="card-title"><b>Total sale details</b></h5>
+			<p class="card-text"><b>sale__payment_amount__epp:</b> ${{event_total.sale__payment_amount__epp}}</p>
+			<p class="card-text"><b>sale__eb_tax__epp: </b>${{event_total.sale__eb_tax__epp}}</p>
+			<p class="card-text"><b>sale__ap_organizer__gts__epp: </b>${{event_total.sale__ap_organizer__gts__epp}}</p>
+			<p class="card-text"><b>sale__ap_organizer__royalty__epp:</b> ${{event_total.sale__ap_organizer__royalty__epp}}</p>
+			<p class="card-text"><b>sale__gtf_esf__epp: </b>${{event_total.sale__gtf_esf__epp}}</p>
+			<p class="card-text"><b>sale__gtf_esf__offline: </b>${{event_total.sale__gtf_esf__offline}}</p>
+		    </div>
+		</div>
+	    </div>
+	    <div class="col-lg-4 mb-3 d-flex align-items-stretch">
+		<div class="card">
+		    <div class="card-body">
+			<h5 class="card-title"><b>Total refunds details</b></h5>
+			<p class="card-text"><b>refund__payment_amount__epp: </b>${{event_total.refund__payment_amount__epp}}</p>
+			<p class="card-text"><b>refund__gtf_epp__gtf_esf__epp: </b>${{event_total.refund__gtf_epp__gtf_esf__epp}}</p>
+			<p class="card-text"><b>refund__ap_organizer__gts__epp: </b>${{event_total.refund__ap_organizer__gts__epp}}</p>
+			<p class="card-text"><b>refund__eb_tax__epp: </b>${{event_total.refund__eb_tax__epp}}</p>
+		    </div>
+		</div>
+	    </div>
+	</div>
     </div>
 </div>
 <div class="row">
-	{% include 'revenue_app/_dynamic_table.html' %}
+    {% include 'revenue_app/_dynamic_table.html' %}
 </div>
 
 {% endblock content %}

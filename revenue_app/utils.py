@@ -3,6 +3,83 @@ import numpy as np
 import pandas as pd
 from random import randint
 
+FULL_COLUMNS = [
+    'eventholder_user_id',
+    'transaction_created_date',
+    'payment_processor',
+    'currency',
+    # Vertical (not found yet)
+    # Subvertical (not found yet)
+    'event_id',
+    'email',
+    'sale__payment_amount__epp',
+    'sale__gtf_esf__epp',
+    'sale__eb_tax__epp',
+    'sale__ap_organizer__gts__epp',
+    'sale__ap_organizer__royalty__epp',
+    'sale__gtf_esf__offline',
+    'refund__payment_amount__epp',
+    'refund__gtf_epp__gtf_esf__epp',
+    'refund__eb_tax__epp',
+    'refund__ap_organizer__gts__epp',
+    'sales_flag',
+    'eb_perc_take_rate',
+    # 'refund__ap_organizer__royalty__epp', (not found yet)
+]
+
+NUMBER_COLUMNS = [
+    'sale__payment_amount__epp',
+    'sale__gtf_esf__epp',
+    'sale__eb_tax__epp',
+    'sale__ap_organizer__gts__epp',
+    'sale__ap_organizer__royalty__epp',
+    'sale__gtf_esf__offline',
+    'refund__payment_amount__epp',
+    'refund__gtf_epp__gtf_esf__epp',
+    'refund__eb_tax__epp',
+    'refund__ap_organizer__gts__epp',
+    # 'eb_perc_take_rate',
+]
+
+ORGANIZER_FILTER_COLUMNS = [
+    'transaction_created_date',
+    'payment_processor',
+    'currency',
+    'event_id',
+    'eb_perc_take_rate',
+    'sale__payment_amount__epp',
+    'sale__gtf_esf__epp',
+    'sale__eb_tax__epp',
+    'sale__ap_organizer__gts__epp',
+    'sale__ap_organizer__royalty__epp',
+    'sale__gtf_esf__offline',
+    'refund__payment_amount__epp',
+    'refund__gtf_epp__gtf_esf__epp',
+    'refund__eb_tax__epp',
+    'refund__ap_organizer__gts__epp',
+]
+
+DATE_FILTER_COLUMNS = [
+    'transaction_created_date',
+    'email',
+    'sales_flag',
+    'payment_processor',
+    'currency',
+    'event_id',
+    'eb_perc_take_rate',
+    'sale__payment_amount__epp',
+    'sale__gtf_esf__epp',
+    'sale__eb_tax__epp',
+    'sale__ap_organizer__gts__epp',
+    'sale__ap_organizer__royalty__epp',
+    'sale__gtf_esf__offline',
+    'refund__payment_amount__epp',
+    'refund__gtf_epp__gtf_esf__epp',
+    'refund__eb_tax__epp',
+    'refund__ap_organizer__gts__epp',
+    # 'refund__ap_organizer__royalty__epp', (not found yet)
+]
+
 
 def get_rollups():
     return pd.read_excel('datasets/Revenue Queries.xlsx', sheet_name=0, header=1, usecols=range(0, 53))
@@ -134,7 +211,8 @@ def get_transactions_event(event_id, **kwargs):
     transactions_event = transactions(event_id=event_id, **kwargs)
     organizers_sales = get_organizer_sales()
     paidtix = organizers_sales[organizers_sales['event_id'] == event_id]['PaidTix']
-    return (transactions_event, paidtix)
+    total = summarize_dataframe(transactions_event)
+    return (transactions_event, paidtix, total)
 
 
 def get_dates():
@@ -172,3 +250,20 @@ def get_top_events(filtered_transactions):
 
 def random_color():
     return f"rgba({randint(0, 255)}, {randint(0, 255)}, {randint(0, 255)}, 0.2)"
+
+def summarize_dataframe(dataframe):
+    dic = {}
+    for column in dataframe.columns.tolist():
+        if column in NUMBER_COLUMNS:
+            dic[column] = dataframe[column].sum().round(2)
+    return dic
+
+def organizer_details(organizer_id):
+    details = {}
+    organizer_transactions = transactions()
+    organizer_transactions = organizer_transactions[organizer_transactions['eventholder_user_id'] == organizer_id].head(1)
+    details['email'] = organizer_transactions['email'].to_string(index=False).strip()
+    organizer_sales = get_organizer_sales()
+    organizer_sales = organizer_sales[organizer_sales['email'] == details['email']]
+    details['name'] = organizer_sales.iloc[0]['organizer_name'] if len(organizer_sales) > 0 else ''
+    return details
