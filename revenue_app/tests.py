@@ -17,6 +17,7 @@ from pandas.core.series import Series
 from parameterized import parameterized
 
 from .utils import (
+    calc_gtv,
     calc_perc_take_rate,
     filter_transactions,
     get_organizer_sales,
@@ -278,8 +279,8 @@ class UtilsTestCase(TestCase):
         top_brl = get_top_organizers(trx[trx['currency'] == 'BRL'])
         self.assertIsInstance(top_ars, DataFrame)
         self.assertIsInstance(top_brl, DataFrame)
-        self.assertEqual(len(top_ars), 2)
-        self.assertEqual(len(top_brl), 3)
+        self.assertEqual(len(top_ars), 3)
+        self.assertEqual(len(top_brl), 4)
 
     def test_calc_perc_take_rate(self):
         transactions = self.transactions
@@ -287,6 +288,13 @@ class UtilsTestCase(TestCase):
         result = calc_perc_take_rate(transactions)
         self.assertEqual(len(initial_columns) + 1, len(result.columns))
         self.assertIn('eb_perc_take_rate', result.columns)
+
+    def test_calc_gtv(self):
+        transactions = self.transactions
+        initial_columns = transactions.columns
+        result = calc_gtv(transactions)
+        self.assertEqual(len(initial_columns) + 1, len(result.columns))
+        self.assertIn('gtv', result.columns)
 
     @parameterized.expand([
         ({}, 27),
@@ -548,8 +556,8 @@ class ViewsTest(TestCase):
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.logged_client.get(URL)
-        self.assertEqual(len(response.context['top_ars']), 2)
-        self.assertEqual(len(response.context['top_brl']), 3)
+        self.assertEqual(len(response.context['top_ars']), 3)
+        self.assertEqual(len(response.context['top_brl']), 4)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TopOrganizersLatam.template_name)
 
