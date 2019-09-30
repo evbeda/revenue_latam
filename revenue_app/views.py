@@ -108,6 +108,14 @@ EVENT_COLUMNS = [
     # 'refund__ap_organizer__royalty__epp', (not found yet)
 ]
 
+TOP_ORGANIZERS_COLUMNS = [
+    'eventholder_user_id',
+    'email',
+    'eb_perc_take_rate',
+    'sale__gtf_esf__epp',
+    'gtv',
+]
+
 
 class Dashboard(LoginRequiredMixin, TemplateView):
     template_name = 'revenue_app/dashboard.html'
@@ -155,8 +163,8 @@ class TopOrganizersLatam(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         trx = transactions(**(self.request.GET.dict()))
-        context['top_ars'] = get_top_organizers(trx[trx['currency'] == 'ARS'])
-        context['top_brl'] = get_top_organizers(trx[trx['currency'] == 'BRL'])
+        context['top_ars'] = get_top_organizers(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_COLUMNS]
+        context['top_brl'] = get_top_organizers(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_COLUMNS]
         return context
 
 
@@ -201,17 +209,19 @@ class TransactionsGrouped(LoginRequiredMixin, TemplateView):
 
 def top_organizers_json_data(request):
     trx = transactions()
-    colors = [random_color() for _ in range(10)]
+    colors = [random_color() for _ in range(11)]
+    top_organizers_ars = get_top_organizers(trx[trx['currency'] == 'ARS'])
+    top_organizers_brl = get_top_organizers(trx[trx['currency'] == 'BRL'])
     res = json.dumps({
         'arg': {
-            'labels': get_top_organizers(trx[trx['currency'] == 'ARS'])['email'].tolist(),
-            'data': get_top_organizers(trx[trx['currency'] == 'ARS'])['sale__gtf_esf__epp'].tolist(),
+            'labels': top_organizers_ars['email'].tolist(),
+            'data': top_organizers_ars['sale__gtf_esf__epp'].tolist(),
             'backgroundColor': colors,
             'borderColor': [color.replace('0.2', '1') for color in colors]
         },
         'brl': {
-            'labels': get_top_organizers(trx[trx['currency'] == 'BRL'])['email'].tolist(),
-            'data': get_top_organizers(trx[trx['currency'] == 'BRL'])['sale__gtf_esf__epp'].tolist(),
+            'labels': top_organizers_brl['email'].tolist(),
+            'data': top_organizers_brl['sale__gtf_esf__epp'].tolist(),
             'backgroundColor': colors,
             'borderColor': [color.replace('0.2', '1') for color in colors]
         },

@@ -171,6 +171,7 @@ footer a {
 
 /* Charts */
 .chart-container {
+  min-height: 300px;
   text-align: -webkit-center;
   text-align: -moz-center;
   max-width: 100%;

@@ -134,11 +134,18 @@ def calc_perc_take_rate(transactions):
     return transactions
 
 
+def calc_gtv(transactions):
+    transactions['gtv'] = transactions['sale__gtf_esf__epp'] + transactions['sale__ap_organizer__gts__epp']
+    transactions.gtv.replace(np.nan, 0.00, regex=True, inplace=True)
+    return transactions
+
+
 def transactions(**kwargs):
     transactions = get_transactions()
     organizers_sales = get_organizer_sales()
     merged = merge_transactions(transactions, organizers_sales)
     merged = calc_perc_take_rate(merged)
+    merged = calc_gtv(merged)
     filtered = filter_transactions(merged, **kwargs)
     if kwargs.get('groupby'):
         filtered = group_transactions(filtered, kwargs.get('groupby'))
@@ -155,13 +162,21 @@ def get_transactions_event(event_id, **kwargs):
 
 def get_top_organizers(filtered_transactions):
     ordered = filtered_transactions.groupby(
-        ['eventholder_user_id', 'email'],
-    ).agg({'sale__gtf_esf__epp': sum}).sort_values(
+        ['eventholder_user_id', 'email', 'eb_perc_take_rate'],
+    ).agg({
+        'sale__gtf_esf__epp': sum,
+        'gtv': sum,
+    }).sort_values(
         by='sale__gtf_esf__epp',
         ascending=False,
-    ).round(2)
-    top = ordered.head(10)
-    return top.reset_index(level=[0, 1])
+    ).round(2).reset_index()
+    top = ordered.head(10).copy()
+    top.loc[len(top), ['email', 'sale__gtf_esf__epp', 'gtv']] = [
+        'Others',
+        ordered[10:].sale__gtf_esf__epp.sum().round(2),
+        ordered[10:].gtv.sum().round(2),
+    ]
+    return top
 
 
 def get_top_events(filtered_transactions):
