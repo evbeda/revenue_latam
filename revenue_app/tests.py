@@ -48,10 +48,15 @@ TRANSACTIONS_EXAMPLE_PATH = 'revenue_app/tests/transactions_example.csv'
 ORGANIZER_SALES_EXAMPLE_PATH = 'revenue_app/tests/organizer_sales_example.csv'
 
 BASE_ORGANIZER_SALES_COLUMNS = [
+    'transaction_created_date',
     'email',
     'organizer_name',
-    'sales_flag',
     'event_id',
+    'event_title',
+    'sales_flag',
+    'sales_vertical',
+    'vertical',
+    'sub_vertical',
     'GTSntv',
     'GTFntv',
     'PaidTix',
@@ -86,33 +91,12 @@ MERGED_TRANSACTIONS_COLUMNS = [
     'sales_flag',
     'payment_processor',
     'currency',
-    # Vertical (not found yet)
-    # Subvertical (not found yet)
+    'PaidTix',
+    'sales_vertical',
+    'vertical',
+    'sub_vertical',
     'event_id',
-    'sale__payment_amount__epp',
-    'sale__gtf_esf__epp',
-    'sale__eb_tax__epp',
-    'sale__ap_organizer__gts__epp',
-    'sale__ap_organizer__royalty__epp',
-    'sale__gtf_esf__offline',
-    'refund__payment_amount__epp',
-    'refund__gtf_epp__gtf_esf__epp',
-    'refund__eb_tax__epp',
-    'refund__ap_organizer__gts__epp',
-    # 'refund__ap_organizer__royalty__epp', (not found yet)
-]
-
-FULL_TRANSACTIONS_COLUMNS = [
-    'eventholder_user_id',
-    'transaction_created_date',
-    'email',
-    'sales_flag',
-    'payment_processor',
-    'currency',
-    # Vertical (not found yet)
-    # Subvertical (not found yet)
-    'event_id',
-    'eb_perc_take_rate',
+    'event_title',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
     'sale__eb_tax__epp',
@@ -171,7 +155,7 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(merged_transactions), 27)
 
     @parameterized.expand([
-        ('day', 31),
+        ('day', 27),
         ('week', 5),
         ('semi-month', 2),
         ('month', 1),
@@ -200,9 +184,9 @@ class UtilsTestCase(TestCase):
         ({'organizer_id': '434444537'}, 4),
         ({'organizer_id': '506285738'}, 5),
         ({'organizer_id': '634364434'}, 7),
-        ({'start_date': date(2018, 8, 3), 'end_date': None}, 1),
+        ({'start_date': date(2018, 8, 3), 'end_date': None}, 2),
         ({'start_date': date(2018, 8, 5), 'end_date': None}, 2),
-        ({'start_date': date(2018, 8, 3), 'end_date': date(2018, 8, 16)}, 4),
+        ({'start_date': date(2018, 8, 3), 'end_date': date(2018, 8, 16)}, 17),
         ({'start_date': date(2018, 8, 5), 'end_date': date(2018, 8, 3)}, 0),
         ({'email': 'arg_domain@superdomain.org.ar'}, 7),
         ({'email': 'some_fake_mail@gmail.com'}, 5),
@@ -216,18 +200,17 @@ class UtilsTestCase(TestCase):
         ({'event_id': '88128252'}, 7),
         ({'invalid_key': 'something'}, 27),
         ({'eventholder_user_id': '', 'organizer_id': '', 'start_date': '', 'end_date': ''}, 27),
-        ({'eventholder_user_id': '696421958'}, 6),
-        ({'eventholder_user_id': '696421958', 'start_date': '2018-08-02'}, 4),
-        ({'eventholder_user_id': '696421958', 'start_date': '2018-08-02', 'invalid_key': 'something'}, 4),
-        ({'organizer_id': '696421958', 'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 5),
-        ({'start_date': '2018-08-02'}, 7),
-        ({'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 10),
+        ({'eventholder_user_id': '696421958', 'start_date': '2018-08-06'}, 1),
+        ({'eventholder_user_id': '696421958', 'start_date': '2018-08-06', 'invalid_key': 'something'}, 1),
+        ({'organizer_id': '696421958', 'start_date': '2018-08-06', 'end_date': '2018-08-10'}, 5),
+        ({'start_date': '2018-08-02'}, 2),
+        ({'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 8),
         ({'start_date': '2018-08-05', 'end_date': '2018-08-02'}, 0),
         ({'end_date': '2018-08-05'}, 27),
         ({'email': 'personalized_domain@wowdomain.com.br'}, 5),
         ({'event_id': '88128252'}, 7),
-        ({'groupby': 'day'}, 31),
-        ({'groupby': 'day', 'start_date': '2018-08-02', 'end_date': '2018-08-15'}, 4),
+        ({'groupby': 'day'}, 27),
+        ({'groupby': 'day', 'start_date': '2018-08-02', 'end_date': '2018-08-15'}, 10),
         ({'groupby': 'week'}, 5),
         ({'groupby': 'semi-month'}, 2),
         ({'groupby': 'month'}, 1),
@@ -302,12 +285,12 @@ class UtilsTestCase(TestCase):
         ({'eventholder_user_id': '', 'organizer_id': '', 'start_date': '', 'end_date': ''}, 27),
         ({'eventholder_user_id': '696421958'}, 6),
         ({'eventholder_user_id': '	696421958 '}, 6),
-        ({'eventholder_user_id': '696421958', 'start_date': '2018-08-02'}, 4),
-        ({'eventholder_user_id': '696421958', 'start_date': '2018-08-02', 'invalid_key': 'something'}, 4),
-        ({'organizer_id': '696421958', 'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 5),
-        ({'organizer_id': ' 696421958	', 'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 5),
-        ({'start_date': '2018-08-02'}, 7),
-        ({'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 10),
+        ({'eventholder_user_id': '696421958', 'start_date': '2018-08-06'}, 1),
+        ({'eventholder_user_id': '696421958', 'start_date': '2018-08-06', 'invalid_key': 'something'}, 1),
+        ({'organizer_id': '696421958', 'start_date': '2018-08-06', 'end_date': '2018-08-10'}, 5),
+        ({'organizer_id': ' 696421958	', 'start_date': '2018-08-06', 'end_date': '2018-08-10'}, 5),
+        ({'start_date': '2018-08-02'}, 2),
+        ({'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 8),
         ({'start_date': '2018-08-05', 'end_date': '2018-08-02'}, 0),
         ({'end_date': '2018-08-05'}, 27),
         ({'email': 'personalized_domain@wowdomain.com.br'}, 5),
@@ -624,7 +607,7 @@ class ViewsTest(TestCase):
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.logged_client.get(URL, kwargs)
-        self.assertEqual(len(response.context['transactions']), 31)
+        self.assertEqual(len(response.context['transactions']), 27)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsGrouped.template_name)
 
