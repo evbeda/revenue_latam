@@ -40,6 +40,12 @@ def get_organizer_sales():
     organizer_sales = pd.read_csv('datasets/organizer_sales.csv').replace(np.nan, '', regex=True)
     if 'organizer_email' in organizer_sales.columns:
         organizer_sales.rename(columns={'organizer_email': 'email'}, inplace=True)
+    if 'trx_date' in organizer_sales.columns:
+        organizer_sales.rename(columns={'trx_date': 'transaction_created_date'}, inplace=True)
+        organizer_sales['transaction_created_date'] = pd.to_datetime(
+            organizer_sales['transaction_created_date'],
+            format="%Y-%m-%d",
+        )
     organizer_sales['event_id'] = organizer_sales['event_id'].apply(str)
     return organizer_sales
 
@@ -88,11 +94,23 @@ def filter_transactions(transactions=None, **kwargs):
 
 def merge_transactions(transactions, organizer_sales):
     merged = transactions.merge(
-        organizer_sales[['email', 'sales_flag']].drop_duplicates(),
-        on=['email'],
+        organizer_sales[[
+            'transaction_created_date',
+            'email',
+            'event_id',
+            'event_title',
+            'sales_flag',
+            'sales_vertical',
+            'vertical',
+            'sub_vertical',
+            'PaidTix',
+        ]].drop_duplicates(),
+        on=['transaction_created_date', 'email', 'event_id'],
         how='left',
     )
-    merged.replace(np.nan, 'unknown', regex=True, inplace=True)
+    merged.PaidTix.replace(np.nan, 0, regex=True, inplace=True)
+    merged['PaidTix'] = merged['PaidTix'].astype(int)
+    merged.replace(np.nan, 'n/a', regex=True, inplace=True)
     merged.sort_values(
         by=['transaction_created_date', 'eventholder_user_id', 'event_id'],
         inplace=True,
@@ -151,7 +169,7 @@ def transactions(**kwargs):
         filtered = group_transactions(filtered, kwargs.get('groupby'))
     return filtered.round(2)
 
-
+# TODO: refactor using the new query result
 def get_transactions_event(event_id, **kwargs):
     transactions_event = transactions(event_id=event_id, **kwargs)
     organizers_sales = get_organizer_sales()

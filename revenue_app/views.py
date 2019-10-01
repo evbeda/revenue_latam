@@ -18,14 +18,19 @@ from .utils import (
 )
 
 FULL_COLUMNS = [
-    'eventholder_user_id',
     'transaction_created_date',
+    'eventholder_user_id',
+    'email',
+    'sales_flag',
     'payment_processor',
     'currency',
-    # Vertical (not found yet)
-    # Subvertical (not found yet)
+    'PaidTix',
+    'sales_vertical',
+    'vertical',
+    'sub_vertical',
     'event_id',
-    'email',
+    'event_title',
+    'eb_perc_take_rate',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
     'sale__eb_tax__epp',
@@ -36,8 +41,6 @@ FULL_COLUMNS = [
     'refund__gtf_epp__gtf_esf__epp',
     'refund__eb_tax__epp',
     'refund__ap_organizer__gts__epp',
-    'sales_flag',
-    'eb_perc_take_rate',
     # 'refund__ap_organizer__royalty__epp', (not found yet)
 ]
 
@@ -48,9 +51,12 @@ TRANSACTIONS_COLUMNS = [
     'sales_flag',
     'payment_processor',
     'currency',
-    # Vertical (not found yet)
-    # Subvertical (not found yet)
+    'PaidTix',
+    'sales_vertical',
+    'vertical',
+    'sub_vertical',
     'event_id',
+    'event_title',
     'eb_perc_take_rate',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
@@ -67,12 +73,15 @@ TRANSACTIONS_COLUMNS = [
 
 ORGANIZER_COLUMNS = [
     'transaction_created_date',
+    'event_id',
+    'event_title',
     'sales_flag',
     'payment_processor',
     'currency',
-    # Vertical (not found yet)
-    # Subvertical (not found yet)
-    'event_id',
+    'PaidTix',
+    'sales_vertical',
+    'vertical',
+    'sub_vertical',
     'eb_perc_take_rate',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
@@ -89,11 +98,15 @@ ORGANIZER_COLUMNS = [
 
 EVENT_COLUMNS = [
     'transaction_created_date',
+    'eventholder_user_id',
+    'email',
     'sales_flag',
     'payment_processor',
     'currency',
-    # Vertical (not found yet)
-    # Subvertical (not found yet)
+    'PaidTix',
+    'sales_vertical',
+    'vertical',
+    'sub_vertical',
     'eb_perc_take_rate',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
