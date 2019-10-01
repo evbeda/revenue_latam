@@ -60,6 +60,14 @@
           groupby_select.selectedIndex = i;
         }
       }
+
+      var currency_select = document.getElementById("currency-select");
+      var currency_param = getURLParam('currency');
+      for (i=0; i<currency_select.options.length; i++) {
+        if (currency_select.options[i].value == currency_param) {
+          currency_select.selectedIndex = i;
+        }
+      }
     </script>
     {% block scripts %}
     {% endblock scripts %}

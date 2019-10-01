@@ -1,5 +1,4 @@
 from datetime import date
-from django.contrib.auth.models import User
 from django.template import (
     Context,
     Template,
@@ -16,24 +15,24 @@ from pandas.core.frame import DataFrame
 from pandas.core.series import Series
 from parameterized import parameterized
 
-from .utils import (
+from revenue_app.utils import (
     calc_gtv,
     calc_perc_take_rate,
     filter_transactions,
     get_organizer_sales,
+    get_top_events,
+    get_top_organizers,
     get_transactions,
     get_transactions_event,
-    get_top_organizers,
-    get_top_events,
     group_transactions,
     merge_transactions,
-    random_color,
-    transactions,
     organizer_details,
+    random_color,
     summarize_dataframe,
+    transactions,
 )
 
-from .views import (
+from revenue_app.views import (
     Dashboard,
     OrganizerTransactions,
     OrganizersTransactions,
@@ -175,11 +174,6 @@ class UtilsTestCase(TestCase):
         ({'eventholder_user_id': '434444537'}, 4),
         ({'eventholder_user_id': '696421958'}, 6),
         ({'eventholder_user_id': '506285738'}, 5),
-        ({'organizer_id': '497321858'}, 5),
-        ({'organizer_id': '696421958'}, 6),
-        ({'organizer_id': '434444537'}, 4),
-        ({'organizer_id': '506285738'}, 5),
-        ({'organizer_id': '634364434'}, 7),
         ({'start_date': date(2018, 8, 3), 'end_date': None}, 2),
         ({'start_date': date(2018, 8, 5), 'end_date': None}, 2),
         ({'start_date': date(2018, 8, 3), 'end_date': date(2018, 8, 16)}, 17),
@@ -195,10 +189,11 @@ class UtilsTestCase(TestCase):
         ({'event_id': '35210860'}, 5),
         ({'event_id': '88128252'}, 7),
         ({'invalid_key': 'something'}, 27),
-        ({'eventholder_user_id': '', 'organizer_id': '', 'start_date': '', 'end_date': ''}, 27),
+        ({'eventholder_user_id': '', 'start_date': '', 'end_date': ''}, 27),
+        ({'eventholder_user_id': '696421958'}, 6),
         ({'eventholder_user_id': '696421958', 'start_date': '2018-08-06'}, 1),
         ({'eventholder_user_id': '696421958', 'start_date': '2018-08-06', 'invalid_key': 'something'}, 1),
-        ({'organizer_id': '696421958', 'start_date': '2018-08-06', 'end_date': '2018-08-10'}, 5),
+        ({'eventholder_user_id': '696421958', 'start_date': '2018-08-07', 'end_date': '2018-08-09'}, 3),
         ({'start_date': '2018-08-02'}, 2),
         ({'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 8),
         ({'start_date': '2018-08-05', 'end_date': '2018-08-02'}, 0),
@@ -278,13 +273,13 @@ class UtilsTestCase(TestCase):
     @parameterized.expand([
         ({}, 27),
         ({'invalid_key': 'something'}, 27),
-        ({'eventholder_user_id': '', 'organizer_id': '', 'start_date': '', 'end_date': ''}, 27),
+        ({'eventholder_user_id': '', 'start_date': '', 'end_date': ''}, 27),
         ({'eventholder_user_id': '696421958'}, 6),
         ({'eventholder_user_id': '	696421958 '}, 6),
         ({'eventholder_user_id': '696421958', 'start_date': '2018-08-06'}, 1),
         ({'eventholder_user_id': '696421958', 'start_date': '2018-08-06', 'invalid_key': 'something'}, 1),
-        ({'organizer_id': '696421958', 'start_date': '2018-08-06', 'end_date': '2018-08-10'}, 5),
-        ({'organizer_id': ' 696421958	', 'start_date': '2018-08-06', 'end_date': '2018-08-10'}, 5),
+        ({'eventholder_user_id': '696421958', 'start_date': '2018-08-07', 'end_date': '2018-08-10'}, 4),
+        ({'eventholder_user_id': ' 696421958	', 'start_date': '2018-08-07', 'end_date': '2018-08-10'}, 4),
         ({'start_date': '2018-08-02'}, 2),
         ({'start_date': '2018-08-02', 'end_date': '2018-08-05'}, 8),
         ({'start_date': '2018-08-05', 'end_date': '2018-08-02'}, 0),
@@ -393,12 +388,12 @@ class UtilsTestCase(TestCase):
             'refund__ap_organizer__royalty__epp': 0,
         }),
     ])
-    def test_summarize_dataframe(self, organizer_id, expected_total):
+    def test_summarize_dataframe(self, eventholder_user_id, expected_total):
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            organizer = transactions(eventholder_user_id=organizer_id)
+            organizer = transactions(eventholder_user_id=eventholder_user_id)
         total_organizer = summarize_dataframe(organizer)
         self.assertEqual(total_organizer, expected_total)
 
@@ -409,13 +404,13 @@ class UtilsTestCase(TestCase):
         ('506285738', {'email': 'personalized_domain@wowdomain.com.br', 'name': 'Br Fake'}),
         ('634364434', {'email': 'arg_domain@superdomain.org.ar', 'name': 'Ar Fake'}),
     ])
-    def test_organizer_details(self, organizer_id, details_organizer):
+    def test_organizer_details(self, eventholder_user_id, details_organizer):
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            response = organizer_details(organizer_id)
+            response = organizer_details(eventholder_user_id)
         self.assertEqual(response, details_organizer)
 
 
@@ -454,7 +449,7 @@ class ViewsTest(TestCase):
         (634364434, 7),
     ])
     def test_organizer_transactions_view_returns_200(self, eventholder_user_id, expected_length):
-        URL = reverse('organizer-transactions', kwargs={'organizer_id': eventholder_user_id})
+        URL = reverse('organizer-transactions', kwargs={'eventholder_user_id': eventholder_user_id})
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),

@@ -153,7 +153,7 @@ class OrganizerTransactions(TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        eventholder_user_id = self.kwargs['organizer_id']
+        eventholder_user_id = self.kwargs['eventholder_user_id']
         organizer_transactions = transactions(
             eventholder_user_id=eventholder_user_id,
             **self.request.GET.dict(),
@@ -197,8 +197,8 @@ class TransactionsEvent(TemplateView):
             **self.request.GET.dict(),
         )
         if len(transactions_event) > 0:
-            context['organizer_id'] = transactions_event.iloc[0]['eventholder_user_id']
-            context['organizer_details'] = organizer_details(context['organizer_id'])
+            context['eventholder_user_id'] = transactions_event.iloc[0]['eventholder_user_id']
+            context['organizer_details'] = organizer_details(context['eventholder_user_id'])
         context['transactions'] = transactions_event[EVENT_COLUMNS]
         context['event_total'] = event_total
         context['event_paidtix'] = event_paidtix.iloc[0] if len(event_paidtix) > 0 else ''

@@ -8,10 +8,10 @@
         <a href="{% url 'top-organizers' %}" class="list-group-item list-group-item-action">Top Organizers</a>
         <a href="{% url 'top-events' %}" class="list-group-item list-group-item-action">Top Events</a>
         <a href="#" class="list-group-item list-group-item-action flex-column cursor-default">
-            Grouped by
+            Group transactions by
             <form method="get" action="{% url 'transactions-grouped' %}">
-                <select id="groupby-select" name="groupby">
-                    <option value="">--------</option>
+                <select id="groupby-select" name="groupby" class="form-control">
+                    <option value="" disabled selected>--------</option>
                     <option value="day">Day</option>
                     <option value="week">Week</option>
                     <option value="semi-month">Semi-Month</option>
@@ -28,11 +28,16 @@
             </form>
         </a>
         <a href="#" class="list-group-item list-group-item-action flex-column cursor-default">
-          Filter by date
+            Filters:
             <form method="get">
                 <input type="hidden" name="groupby" value="{{request.GET.groupby}}">
                 <input type="date" class="form-control" name="start_date" value={{request.GET.start_date}}>
                 <input type="date" class="form-control" name="end_date" value={{request.GET.end_date}}>
+                <select id="currency-select" class="form-control" name="currency" placeholder="Currency">
+                    <option value="" disabled selected>Currency</option>
+                    <option value="ARS">ARS</option>
+                    <option value="BRL">BRL</option>
+                </select>
                 {% csrf_token %}
                 <button type="submit" class="mt-1 btn btn-evb-orange btn-sm">Apply</button>
             </form>

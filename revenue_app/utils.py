@@ -25,8 +25,6 @@ def get_rollups():
 
 def get_transactions():
     transactions = pd.read_csv('datasets/transactions.csv').replace(np.nan, '', regex=True)
-    if 'sale__eb_tax__epp__1' in transactions.columns:
-        transactions.drop('sale__eb_tax__epp__1', axis=1, inplace=True)
     transactions['transaction_created_date'] = pd.to_datetime(
         transactions['transaction_created_date'],
     )
@@ -51,23 +49,11 @@ def get_organizer_sales():
 def filter_transactions(transactions=None, **kwargs):
     if transactions is None:
         transactions = get_transactions()
-    conditions = []
-    if kwargs.get('event_id'):
-        conditions.insert(
-            0,
-            transactions['event_id'] == kwargs.get('event_id').strip()
-        )
-    if kwargs.get('email'):
-        conditions.insert(
-            0,
-            transactions['email'] == kwargs.get('email').strip()
-        )
-    if kwargs.get('eventholder_user_id') or kwargs.get('organizer_id'):
-        conditions.insert(
-            0,
-            transactions['eventholder_user_id'] ==
-            (kwargs.get('eventholder_user_id') or kwargs.get('organizer_id')).strip()
-        )
+    conditions = [
+        transactions[key] == kwargs.get(key).strip()
+        for key in kwargs
+        if key in ['event_id', 'email', 'currency', 'eventholder_user_id'] and kwargs.get(key)
+    ]
     if kwargs.get('start_date'):
         start_date = np.datetime64(kwargs['start_date'], 'D')
         if kwargs.get('end_date'):
@@ -228,11 +214,11 @@ def summarize_dataframe(dataframe):
     return dic
 
 
-def organizer_details(organizer_id):
+def organizer_details(eventholder_user_id):
     details = {}
     organizer_transactions = transactions()
     organizer_transactions = organizer_transactions[
-        organizer_transactions['eventholder_user_id'] == organizer_id
+        organizer_transactions['eventholder_user_id'] == eventholder_user_id
     ].head(1)
     details['email'] = organizer_transactions['email'].to_string(index=False).strip()
     organizer_sales = get_organizer_sales()
