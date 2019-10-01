@@ -1,6 +1,28 @@
 trx_date,organizer_email,organizer_name,event_id,event_title,sales_flag,sales_vertical,vertical,sub_vertical,GTSntv,GTFntv,PaidTix
-2018-08-01,arg_domain@superdomain.org.ar,Ar Fake,88128252,Event Name 1,sales,Argentina,Music/Promoters,Other - Music,1276426,81474,481
+2018-08-21,arg_domain@superdomain.org.ar,Ar Fake,88128252,Event Name 1,sales,Argentina,Music/Promoters,Other - Music,1276426,81474,481
+2018-08-22,arg_domain@superdomain.org.ar,Ar Fake,88128252,Event Name 1,sales,Argentina,Music/Promoters,Other - Music,1276426,81474,481
+2018-08-23,arg_domain@superdomain.org.ar,Ar Fake,88128252,Event Name 1,sales,Argentina,Music/Promoters,Other - Music,1276426,81474,481
+2018-08-24,arg_domain@superdomain.org.ar,Ar Fake,88128252,Event Name 1,sales,Argentina,Music/Promoters,Other - Music,1276426,81474,481
+2018-08-25,arg_domain@superdomain.org.ar,Ar Fake,88128252,Event Name 1,sales,Argentina,Music/Promoters,Other - Music,1276426,81474,481
+2018-08-26,arg_domain@superdomain.org.ar,Ar Fake,88128252,Event Name 1,sales,Argentina,Music/Promoters,Other - Music,1276426,81474,481
+2018-08-27,arg_domain@superdomain.org.ar,Ar Fake,88128252,Event Name 1,sales,Argentina,Music/Promoters,Other - Music,1276426,81474,481
 2018-08-01,some_fake_mail@gmail.com,Fake 1,66220941,Event Name 2,sales,Argentina,Registration,,2963145,142215,3500
-2018-08-01,wow_fake_mail@hotmail.com,Wow Such Fake,17471621,Event Name 3,sales,Brazil,Music/Promoters,Music Festival,1876658.5,90069.5,2250
-2018-08-01,another_fake_mail@gmail.com,Fake 2,98415193,Event Name 4,SSO,Brazil,Registration,Business & Professional,2944430.4,141316.8,3402
-2018-08-01,personalized_domain@wowdomain.com.br,Br Fake,35210860,Event Name 5,SSO,Brazil,Festivals/Special Events,Other,1194000,83460.6,39
+2018-08-02,some_fake_mail@gmail.com,Fake 1,66220941,Event Name 2,sales,Argentina,Registration,,2963145,142215,3500
+2018-08-03,some_fake_mail@gmail.com,Fake 1,66220941,Event Name 2,sales,Argentina,Registration,,2963145,142215,3500
+2018-08-04,some_fake_mail@gmail.com,Fake 1,66220941,Event Name 2,sales,Argentina,Registration,,2963145,142215,3500
+2018-08-05,some_fake_mail@gmail.com,Fake 1,66220941,Event Name 2,sales,Argentina,Registration,,2963145,142215,3500
+2018-08-02,wow_fake_mail@hotmail.com,Wow Such Fake,17471621,Event Name 3,sales,Brazil,Music/Promoters,Music Festival,1876658.5,90069.5,2250
+2018-08-03,wow_fake_mail@hotmail.com,Wow Such Fake,17471621,Event Name 3,sales,Brazil,Music/Promoters,Music Festival,1876658.5,90069.5,2250
+2018-08-04,wow_fake_mail@hotmail.com,Wow Such Fake,17471621,Event Name 3,sales,Brazil,Music/Promoters,Music Festival,1876658.5,90069.5,2250
+2018-08-05,wow_fake_mail@hotmail.com,Wow Such Fake,17471621,Event Name 3,sales,Brazil,Music/Promoters,Music Festival,1876658.5,90069.5,2250
+2018-08-06,another_fake_mail@gmail.com,Fake 2,98415193,Event Name 4,SSO,Brazil,Registration,Business & Professional,2944430.4,141316.8,3402
+2018-08-07,another_fake_mail@gmail.com,Fake 2,98415193,Event Name 4,SSO,Brazil,Registration,Business & Professional,2944430.4,141316.8,3402
+2018-08-08,another_fake_mail@gmail.com,Fake 2,98415193,Event Name 4,SSO,Brazil,Registration,Business & Professional,2944430.4,141316.8,3402
+2018-08-09,another_fake_mail@gmail.com,Fake 2,98415193,Event Name 4,SSO,Brazil,Registration,Business & Professional,2944430.4,141316.8,3402
+2018-08-10,another_fake_mail@gmail.com,Fake 2,98415193,Event Name 4,SSO,Brazil,Registration,Business & Professional,2944430.4,141316.8,3402
+2018-08-11,another_fake_mail@gmail.com,Fake 2,98415193,Event Name 4,SSO,Brazil,Registration,Business & Professional,2944430.4,141316.8,3402
+2018-08-06,personalized_domain@wowdomain.com.br,Br Fake,35210860,Event Name 5,SSO,Brazil,Festivals/Special Events,Other,1194000,83460.6,39
+2018-08-07,personalized_domain@wowdomain.com.br,Br Fake,35210860,Event Name 5,SSO,Brazil,Festivals/Special Events,Other,1194000,83460.6,39
+2018-08-08,personalized_domain@wowdomain.com.br,Br Fake,35210860,Event Name 5,SSO,Brazil,Festivals/Special Events,Other,1194000,83460.6,39
+2018-08-09,personalized_domain@wowdomain.com.br,Br Fake,35210860,Event Name 5,SSO,Brazil,Festivals/Special Events,Other,1194000,83460.6,39
+2018-08-10,personalized_domain@wowdomain.com.br,Br Fake,35210860,Event Name 5,SSO,Brazil,Festivals/Special Events,Other,1194000,83460.6,39

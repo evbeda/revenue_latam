@@ -40,8 +40,8 @@
                     {% endif %}
                 {% elif key in 'eventholder_user_id,email' %}
                     <td><a href="{% url 'organizer-transactions' organizer_id=transaction.eventholder_user_id %}">{{value}}</a></td>
-                {% elif key == 'event_id' %}
-                    <td><a href="{% url 'event-details' event_id=value %}">{{value}}</a></td>
+                {% elif key in 'event_id,event_title' %}
+                    <td><a href="{% url 'event-details' event_id=transaction.event_id %}">{{value}}</a></td>
                 {% elif key == 'eb_perc_take_rate'  %}
                     <td>{{value}}%</td>
                 {% else %}
