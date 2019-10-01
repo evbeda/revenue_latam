@@ -8,106 +8,112 @@
 {% endif %}
 <br>
 <div class="row">
-    <div class="col-lg-6">
-	<table class="table table-hover">
-	    <thead>
-		<tr>
-		    <th scope="col">Event ID</th>
-		    <th scope="col">sale__payment_amount__epp</th>
-		</tr>
-	    </thead>
-	    <tbody>
-		{% for tuples in top_event_ars.itertuples %}
-		<tr>
-		    <td><a href="{% url 'event-details' event_id=tuples.event_id %}">{{tuples.event_id}}</a></td>
-		    <td>{{tuples.sale__payment_amount__epp}}</td>
-		</tr>
-		{% endfor %}
-	    </tbody>
-	</table>
+    <div class="col-12">
+        {% include 'revenue_app/_dynamic_table.html' with transactions=top_event_ars %}
     </div>
-	<div class="col-lg-6 chart-container">
+</div>
+<div class="row">
+    <div class="col"></div>
+	<div class="col-7 chart-container">
 		<canvas id="chart_arg"></canvas>
 	</div>
+    <div class="col"></div>
 </div>
 <br>
 <hr class="mb-4 mt-4">
-<br><h1 class="text-center">Top 10 Brazil Events</h1>
+<br>
+<h1 class="text-center">Top 10 Brazil Events</h1>
 {% if request.GET.start_date %}
 	<h5 class="text-center">from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
 {% endif %}
 <br>
 <div class="row">
-	<div class="col-lg-6 chart-container">
+    <div class="col-12">
+        {% include 'revenue_app/_dynamic_table.html' with transactions=top_event_brl %}
+    </div>
+</div>
+<div class="row">
+    <div class="col"></div>
+	<div class="col-lg-7 chart-container">
 		<canvas id="chart_brl"></canvas>
 	</div>
-    <div class="col-lg-6">
-	<table class="table table-hover">
-	    <thead>
-		<tr>
-		    <th scope="col">Event ID</th>
-		    <th scope="col">sale__payment_amount__epp</th>
-		</tr>
-	    </thead>
-	    <tbody>
-		{% for tuples in top_event_brl.itertuples %}
-		<tr>
-		    <td><a href="{% url 'event-details' event_id=tuples.event_id %}">{{tuples.event_id}}</a></td>
-		    <td>{{tuples.sale__payment_amount__epp}}</td>
-		</tr>
-		{% endfor %}
-	    </tbody>
-	</table>
-    </div>
+    <div class="col"></div>
 </div>
 {% endblock content %}
 
 {% block scripts %}
 {{ block.super }}
 <script type="text/javascript" src="{% static 'js/Chart.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/chartjs-plugin-datalabels.min.js' %}"></script>
 <script type="text/javascript">
-  $.get('{% url "json_top_events" %}', function(data) {
-	var ctx_ars = $("#chart_arg").get(0).getContext("2d");
-	new Chart(ctx_ars, {
-	  type: 'doughnut',
-	  data: {
-		  labels: data.arg.labels,
-		  datasets: [{
-			  label: "Top Argentina Events",
-			  data: data.arg.data,
-			  fill: false,
-			  backgroundColor: data.arg.backgroundColor,
-			  borderColor: data.arg.borderColor,
-			  borderWidth: 1,
-		  }]
-	  },
-	  options: {
-		  legend: { position: 'bottom' },
-		  responsive: true,
-		  maintainAspectRatio: false,
-	  },
-	});
+  Chart.plugins.unregister(ChartDataLabels);
 
-	var ctx_brl = $("#chart_brl").get(0).getContext("2d");
-	new Chart(ctx_brl, {
-	  type: 'doughnut',
-	  data: {
-		  labels: data.brl.labels,
-		  datasets: [{
-			  label: "Top Brazil Organizers",
-			  data: data.brl.data,
-			  fill: false,
-			  backgroundColor: data.brl.backgroundColor,
-			  borderColor: data.brl.borderColor,
-			  borderWidth: 1,
-		  }]
-	  },
-	  options: {
-		  legend: { position: 'bottom' },
-		  responsive: true,
-		  maintainAspectRatio: false,
-	  },
-	});
+  $.get('{% url "json_top_events" %}', function(data) {
+    var ctx_ars = $("#chart_arg").get(0).getContext("2d");
+    new Chart(ctx_ars, {
+      type: 'doughnut',
+      data: {
+        labels: data.arg.labels,
+        datasets: [{
+          label: "Top Argentina Events",
+          data: data.arg.data,
+          fill: false,
+          backgroundColor: data.arg.backgroundColor,
+          borderColor: data.arg.borderColor,
+          borderWidth: 1,
+        }]
+      },
+      plugins: [ChartDataLabels],
+      options: {
+        legend: { position: 'right', align: 'center' },
+        plugins: {
+          datalabels: {
+            formatter: (value, ctx) => {
+              let sum = 0;
+              let dataArr = ctx.chart.data.datasets[0].data;
+              dataArr.map(data => { sum += data; });
+              let percentage = (value*100/sum).toFixed(2) + "%";
+              return percentage;
+            }
+          }
+        },
+        responsive: true,
+        maintainAspectRatio: false,
+      },
+    });
+
+    var ctx_brl = $("#chart_brl").get(0).getContext("2d");
+    new Chart(ctx_brl, {
+      type: 'doughnut',
+      data: {
+        labels: data.brl.labels,
+        datasets: [{
+          label: "Top Brazil Organizers",
+          data: data.brl.data,
+          fill: false,
+          backgroundColor: data.brl.backgroundColor,
+          borderColor: data.brl.borderColor,
+          borderWidth: 1,
+        }]
+      },
+      plugins: [ChartDataLabels],
+      options: {
+        legend: { position: 'right', align: 'center' },
+        plugins: {
+          datalabels: {
+            formatter: (value, ctx) => {
+              let sum = 0;
+              let dataArr = ctx.chart.data.datasets[0].data;
+              dataArr.map(data => { sum += data; });
+              let percentage = (value*100/sum).toFixed(2) + "%";
+              return percentage;
+            }
+          }
+        },
+        responsive: true,
+        maintainAspectRatio: false,
+      },
+    });
   });
 </script>
 {% endblock scripts %}
