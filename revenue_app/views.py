@@ -129,6 +129,16 @@ TOP_ORGANIZERS_COLUMNS = [
     'gtv',
 ]
 
+TOP_EVENTS_COLUMNS = [
+    'eventholder_user_id',
+    'email',
+    'event_id',
+    'event_title',
+    'eb_perc_take_rate',
+    'sale__gtf_esf__epp',
+    'gtv',
+]
+
 
 class Dashboard(LoginRequiredMixin, TemplateView):
     template_name = 'revenue_app/dashboard.html'
@@ -205,9 +215,9 @@ class TopEventsLatam(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        trx = transactions()
-        context['top_event_ars'] = get_top_events(trx[trx['currency'] == 'ARS'])
-        context['top_event_brl'] = get_top_events(trx[trx['currency'] == 'BRL'])
+        trx = transactions(**(self.request.GET.dict()))
+        context['top_event_ars'] = get_top_events(trx[trx['currency'] == 'ARS'])[:10][TOP_EVENTS_COLUMNS]
+        context['top_event_brl'] = get_top_events(trx[trx['currency'] == 'BRL'])[:10][TOP_EVENTS_COLUMNS]
         return context
 
 
@@ -244,17 +254,19 @@ def top_organizers_json_data(request):
 
 def top_events_json_data(request):
     trx = transactions()
-    colors = [random_color() for _ in range(10)]
+    colors = [random_color() for _ in range(11)]
+    top_events_ars = get_top_events(trx[trx['currency'] == 'ARS'])
+    top_events_brl = get_top_events(trx[trx['currency'] == 'BRL'])
     res = json.dumps({
         'arg': {
-            'labels': get_top_events(trx[trx['currency'] == 'ARS'])['event_id'].tolist(),
-            'data': get_top_events(trx[trx['currency'] == 'ARS'])['sale__payment_amount__epp'].tolist(),
+            'labels': [event_title[:30] for event_title in top_events_ars['event_title'].tolist()],
+            'data': top_events_ars['sale__gtf_esf__epp'].tolist(),
             'backgroundColor': colors,
             'borderColor': [color.replace('0.2', '1') for color in colors]
         },
         'brl': {
-            'labels': get_top_events(trx[trx['currency'] == 'BRL'])['event_id'].tolist(),
-            'data': get_top_events(trx[trx['currency'] == 'BRL'])['sale__payment_amount__epp'].tolist(),
+            'labels': top_events_brl['event_id'].tolist(),
+            'data': top_events_brl['sale__gtf_esf__epp'].tolist(),
             'backgroundColor': colors,
             'borderColor': [color.replace('0.2', '1') for color in colors]
         },

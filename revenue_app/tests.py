@@ -313,8 +313,8 @@ class UtilsTestCase(TestCase):
         top_brl = get_top_events(trx[trx['currency'] == 'BRL'])
         self.assertIsInstance(top_ars, DataFrame)
         self.assertIsInstance(top_brl, DataFrame)
-        self.assertEqual(len(top_ars), 2)
-        self.assertEqual(len(top_brl), 3)
+        self.assertEqual(len(top_ars), 3)
+        self.assertEqual(len(top_brl), 4)
 
     def test_random_color(self):
         color = random_color()
@@ -557,8 +557,8 @@ class ViewsTest(TestCase):
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.logged_client.get(URL)
-        self.assertEqual(len(response.context['top_event_ars']), 2)
-        self.assertEqual(len(response.context['top_event_brl']), 3)
+        self.assertEqual(len(response.context['top_event_ars']), 3)
+        self.assertEqual(len(response.context['top_event_brl']), 4)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TopEventsLatam.template_name)
 

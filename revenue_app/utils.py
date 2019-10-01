@@ -169,6 +169,7 @@ def transactions(**kwargs):
         filtered = group_transactions(filtered, kwargs.get('groupby'))
     return filtered.round(2)
 
+
 # TODO: refactor using the new query result
 def get_transactions_event(event_id, **kwargs):
     transactions_event = transactions(event_id=event_id, **kwargs)
@@ -199,13 +200,22 @@ def get_top_organizers(filtered_transactions):
 
 def get_top_events(filtered_transactions):
     ordered = filtered_transactions.groupby(
-        ['event_id']
-    ).agg({'sale__payment_amount__epp': sum}).sort_values(
-        by='sale__payment_amount__epp',
+        ['event_id', 'event_title', 'eventholder_user_id', 'email', 'eb_perc_take_rate'],
+    ).agg({
+        'sale__gtf_esf__epp': sum,
+        'gtv': sum,
+    }).sort_values(
+        by='sale__gtf_esf__epp',
         ascending=False,
-    ).round(2)
-    top = ordered.head(10)
-    return top.reset_index(level=0)
+    ).round(2).reset_index()
+    top = ordered.head(10).copy()
+    top.loc[len(top), ['event_title', 'event_id', 'sale__gtf_esf__epp', 'gtv']] = [
+        'Others',
+        'Others',
+        ordered[10:].sale__gtf_esf__epp.sum().round(2),
+        ordered[10:].gtv.sum().round(2),
+    ]
+    return top
 
 
 def random_color():
