@@ -10,11 +10,11 @@ NUMBER_COLUMNS = [
     'sale__eb_tax__epp',
     'sale__ap_organizer__gts__epp',
     'sale__ap_organizer__royalty__epp',
-    'sale__gtf_esf__offline',
     'refund__payment_amount__epp',
     'refund__gtf_epp__gtf_esf__epp',
     'refund__eb_tax__epp',
     'refund__ap_organizer__gts__epp',
+    'refund__ap_organizer__royalty__epp',
     # 'eb_perc_take_rate',
 ]
 
@@ -29,7 +29,6 @@ def get_transactions():
         transactions.drop('sale__eb_tax__epp__1', axis=1, inplace=True)
     transactions['transaction_created_date'] = pd.to_datetime(
         transactions['transaction_created_date'],
-        format="%m/%d/%Y",
     )
     transactions['eventholder_user_id'] = transactions['eventholder_user_id'].apply(str)
     transactions['event_id'] = transactions['event_id'].apply(str)
@@ -44,7 +43,6 @@ def get_organizer_sales():
         organizer_sales.rename(columns={'trx_date': 'transaction_created_date'}, inplace=True)
         organizer_sales['transaction_created_date'] = pd.to_datetime(
             organizer_sales['transaction_created_date'],
-            format="%Y-%m-%d",
         )
     organizer_sales['event_id'] = organizer_sales['event_id'].apply(str)
     return organizer_sales

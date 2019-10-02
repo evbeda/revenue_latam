@@ -3,7 +3,6 @@ from datetime import datetime
 import json
 import xlwt
 
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.views.generic import TemplateView
 
@@ -36,12 +35,11 @@ FULL_COLUMNS = [
     'sale__eb_tax__epp',
     'sale__ap_organizer__gts__epp',
     'sale__ap_organizer__royalty__epp',
-    'sale__gtf_esf__offline',
     'refund__payment_amount__epp',
     'refund__gtf_epp__gtf_esf__epp',
     'refund__eb_tax__epp',
     'refund__ap_organizer__gts__epp',
-    # 'refund__ap_organizer__royalty__epp', (not found yet)
+    'refund__ap_organizer__royalty__epp',
 ]
 
 TRANSACTIONS_COLUMNS = [
@@ -63,12 +61,11 @@ TRANSACTIONS_COLUMNS = [
     'sale__eb_tax__epp',
     'sale__ap_organizer__gts__epp',
     'sale__ap_organizer__royalty__epp',
-    'sale__gtf_esf__offline',
     'refund__payment_amount__epp',
     'refund__gtf_epp__gtf_esf__epp',
     'refund__eb_tax__epp',
     'refund__ap_organizer__gts__epp',
-    # 'refund__ap_organizer__royalty__epp', (not found yet)
+    'refund__ap_organizer__royalty__epp',
 ]
 
 ORGANIZER_COLUMNS = [
@@ -88,12 +85,11 @@ ORGANIZER_COLUMNS = [
     'sale__eb_tax__epp',
     'sale__ap_organizer__gts__epp',
     'sale__ap_organizer__royalty__epp',
-    'sale__gtf_esf__offline',
     'refund__payment_amount__epp',
     'refund__gtf_epp__gtf_esf__epp',
     'refund__eb_tax__epp',
     'refund__ap_organizer__gts__epp',
-    # 'refund__ap_organizer__royalty__epp', (not found yet)
+    'refund__ap_organizer__royalty__epp',
 ]
 
 EVENT_COLUMNS = [
@@ -113,12 +109,11 @@ EVENT_COLUMNS = [
     'sale__eb_tax__epp',
     'sale__ap_organizer__gts__epp',
     'sale__ap_organizer__royalty__epp',
-    'sale__gtf_esf__offline',
     'refund__payment_amount__epp',
     'refund__gtf_epp__gtf_esf__epp',
     'refund__eb_tax__epp',
     'refund__ap_organizer__gts__epp',
-    # 'refund__ap_organizer__royalty__epp', (not found yet)
+    'refund__ap_organizer__royalty__epp',
 ]
 
 TOP_ORGANIZERS_COLUMNS = [
@@ -140,11 +135,11 @@ TOP_EVENTS_COLUMNS = [
 ]
 
 
-class Dashboard(LoginRequiredMixin, TemplateView):
+class Dashboard(TemplateView):
     template_name = 'revenue_app/dashboard.html'
 
 
-class OrganizersTransactions(LoginRequiredMixin, TemplateView):
+class OrganizersTransactions(TemplateView):
     template_name = 'revenue_app/organizers_transactions.html'
 
     def get_context_data(self, **kwargs):
@@ -153,7 +148,7 @@ class OrganizersTransactions(LoginRequiredMixin, TemplateView):
         return context
 
 
-class OrganizerTransactions(LoginRequiredMixin, TemplateView):
+class OrganizerTransactions(TemplateView):
     template_name = 'revenue_app/organizer_transactions.html'
 
     def get_context_data(self, *args, **kwargs):
@@ -169,7 +164,7 @@ class OrganizerTransactions(LoginRequiredMixin, TemplateView):
         return context
 
 
-class TransactionsSearch(LoginRequiredMixin, TemplateView):
+class TransactionsSearch(TemplateView):
     template_name = 'revenue_app/organizer_transactions.html'
 
     def get_context_data(self, *args, **kwargs):
@@ -180,7 +175,7 @@ class TransactionsSearch(LoginRequiredMixin, TemplateView):
         return context
 
 
-class TopOrganizersLatam(LoginRequiredMixin, TemplateView):
+class TopOrganizersLatam(TemplateView):
     template_name = 'revenue_app/top_organizers.html'
 
     def get_context_data(self, **kwargs):
@@ -191,7 +186,7 @@ class TopOrganizersLatam(LoginRequiredMixin, TemplateView):
         return context
 
 
-class TransactionsEvent(LoginRequiredMixin, TemplateView):
+class TransactionsEvent(TemplateView):
     template_name = 'revenue_app/event.html'
 
     def get_context_data(self, **kwargs):
@@ -210,7 +205,7 @@ class TransactionsEvent(LoginRequiredMixin, TemplateView):
         return context
 
 
-class TopEventsLatam(LoginRequiredMixin, TemplateView):
+class TopEventsLatam(TemplateView):
     template_name = 'revenue_app/top_events.html'
 
     def get_context_data(self, **kwargs):
@@ -221,7 +216,7 @@ class TopEventsLatam(LoginRequiredMixin, TemplateView):
         return context
 
 
-class TransactionsGrouped(LoginRequiredMixin, TemplateView):
+class TransactionsGrouped(TemplateView):
     template_name = 'revenue_app/transactions_grouped.html'
 
     def get_context_data(self, **kwargs):
