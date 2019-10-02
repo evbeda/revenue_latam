@@ -21,6 +21,7 @@ from .utils import (
     calc_perc_take_rate,
     filter_transactions,
     get_organizer_sales,
+    get_summarized_data,
     get_transactions,
     get_transactions_event,
     get_top_organizers,
@@ -422,6 +423,21 @@ class UtilsTestCase(TestCase):
             response = organizer_details(organizer_id)
         self.assertEqual(response, details_organizer)
 
+    def test_get_summarized_data(self):
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            summarized_data = get_summarized_data()
+        self.assertEqual(summarized_data['Total Organizers'], 5)
+        self.assertEqual(summarized_data['Total Events'], 5)
+        self.assertEqual(summarized_data['Total PaidTix'], 50474)
+        self.assertEqual(summarized_data['Total GTF'], 4200.17)
+        self.assertEqual(summarized_data['Total GTV'], 59309.87)
+        self.assertEqual(summarized_data['ATV'], 1.09)
+        self.assertEqual(summarized_data['Avg EB Perc Take Rate'], 7.25)
+
 
 class ViewsTest(TestCase):
     def setUp(self):
@@ -440,9 +456,25 @@ class ViewsTest(TestCase):
 
     def test_dashboard_view_returns_200_when_logged(self):
         URL = reverse('dashboard')
-        response = self.logged_client.get(URL)
+        context_dict = [
+            'Total Organizers',
+            'Total Events',
+            'Total PaidTix',
+            'Total GTF',
+            'Total GTV',
+            'ATV',
+            'Avg EB Perc Take Rate'
+        ]
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.logged_client.get(URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], Dashboard.template_name)
+        for elem in context_dict:
+            self.assertIn(elem, response.context['summarized_data'])
 
     @parameterized.expand([
         ({},),
