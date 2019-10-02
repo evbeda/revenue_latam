@@ -120,7 +120,9 @@ def group_transactions(transactions, by):
     }
     if isinstance(by, str):
         if by in time_groupby:
-            grouped = transactions.set_index("transaction_created_date").resample(time_groupby[by]).sum().reset_index()
+            grouped = transactions.set_index("transaction_created_date").groupby(
+                ['currency', pd.Grouper(freq=time_groupby[by])]
+            ).sum().reset_index()
         elif by in custom_groupby:
             grouped = transactions.groupby(custom_groupby[by], as_index=False).sum()
     else:

@@ -113,12 +113,12 @@ class UtilsTestCase(TestCase):
 
     @property
     def transactions(self):
-        with patch('pandas.read_csv', return_value=read_csv(TRANSACTIONS_EXAMPLE_PATH)):
+        with patch('revenue_app.utils.pd.read_csv', return_value=read_csv(TRANSACTIONS_EXAMPLE_PATH)):
             return get_transactions()
 
     @property
     def organizer_sales(self):
-        with patch('pandas.read_csv', return_value=read_csv(ORGANIZER_SALES_EXAMPLE_PATH)):
+        with patch('revenue_app.utils.pd.read_csv', return_value=read_csv(ORGANIZER_SALES_EXAMPLE_PATH)):
             return get_organizer_sales()
 
     def test_get_transactions(self):
@@ -151,12 +151,12 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(merged_transactions), 27)
 
     @parameterized.expand([
-        ('day', 27),
+        ('day', 22),
         ('week', 5),
-        ('semi-month', 2),
-        ('month', 1),
-        ('quarter', 1),
-        ('year', 1),
+        ('semi-month', 3),
+        ('month', 2),
+        ('quarter', 2),
+        ('year', 2),
         ('eventholder_user_id', 5),
         (['eventholder_user_id', 'email'], 5),
         ('event_id', 5),
@@ -201,13 +201,13 @@ class UtilsTestCase(TestCase):
         ({'end_date': '2018-08-05'}, 27),
         ({'email': 'personalized_domain@wowdomain.com.br'}, 5),
         ({'event_id': '88128252'}, 7),
-        ({'groupby': 'day'}, 27),
-        ({'groupby': 'day', 'start_date': '2018-08-02', 'end_date': '2018-08-15'}, 10),
+        ({'groupby': 'day'}, 22),
+        ({'groupby': 'day', 'start_date': '2018-08-02', 'end_date': '2018-08-15'}, 14),
         ({'groupby': 'week'}, 5),
-        ({'groupby': 'semi-month'}, 2),
-        ({'groupby': 'month'}, 1),
-        ({'groupby': 'quarter'}, 1),
-        ({'groupby': 'year'}, 1),
+        ({'groupby': 'semi-month'}, 3),
+        ({'groupby': 'month'}, 2),
+        ({'groupby': 'quarter'}, 2),
+        ({'groupby': 'year'}, 2),
         ({'groupby': 'eventholder_user_id'}, 5),
         ({'groupby': ['eventholder_user_id', 'email']}, 5),
         ({'groupby': 'event_id'}, 5),
@@ -216,7 +216,7 @@ class UtilsTestCase(TestCase):
         ({'groupby': 'currency'}, 2),
     ])
     def test_transactions(self, kwargs, expected_length):
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -232,7 +232,7 @@ class UtilsTestCase(TestCase):
         ('88128252', 7, 481),
     ])
     def test_event_transactions(self, event_id, transactions_qty, tickets_qty):
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
@@ -245,7 +245,7 @@ class UtilsTestCase(TestCase):
         self.assertEqual(paidtix.iloc[0], tickets_qty)
 
     def test_get_top_ten_organizers(self):
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -291,12 +291,12 @@ class UtilsTestCase(TestCase):
         ({'event_id': '			88128252		'}, 7),
     ])
     def test_filter_transactions(self, kwargs, expected_length):
-        with patch('pandas.read_csv', return_value=read_csv(TRANSACTIONS_EXAMPLE_PATH)):
+        with patch('revenue_app.utils.pd.read_csv', return_value=read_csv(TRANSACTIONS_EXAMPLE_PATH)):
             filtered_transactions = filter_transactions(**kwargs)
         self.assertEqual(len(filtered_transactions), expected_length)
 
     def test_get_top_ten_events(self):
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -322,7 +322,7 @@ class UtilsTestCase(TestCase):
     def test_download_csv(self):
         URL = reverse('download-csv')
         client = Client()
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -332,7 +332,7 @@ class UtilsTestCase(TestCase):
     def test_download_excel(self):
         URL = reverse('download-excel')
         client = Client()
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -390,7 +390,7 @@ class UtilsTestCase(TestCase):
         }),
     ])
     def test_summarize_dataframe(self, eventholder_user_id, expected_total):
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -406,7 +406,7 @@ class UtilsTestCase(TestCase):
         ('634364434', {'email': 'arg_domain@superdomain.org.ar', 'name': 'Ar Fake'}),
     ])
     def test_organizer_details(self, eventholder_user_id, details_organizer):
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
@@ -482,7 +482,7 @@ class ViewsTest(TestCase):
     ])
     def test_organizers_transactions_view_returns_200(self, kwargs):
         URL = reverse('organizers-transactions')
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -499,7 +499,7 @@ class ViewsTest(TestCase):
     ])
     def test_organizer_transactions_view_returns_200(self, eventholder_user_id, expected_length):
         URL = reverse('organizer-transactions', kwargs={'eventholder_user_id': eventholder_user_id})
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
@@ -520,7 +520,7 @@ class ViewsTest(TestCase):
     ])
     def test_transactions_search_view_returns_200(self, email, expected_length):
         URL = '{}?email={}'.format(reverse('transactions-search'), email)
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -531,7 +531,7 @@ class ViewsTest(TestCase):
 
     def test_top_organizers_view_returns_200(self):
         URL = reverse('top-organizers')
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -543,7 +543,7 @@ class ViewsTest(TestCase):
 
     def test_top_events_view_returns_200(self):
         URL = reverse('top-events')
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -562,7 +562,7 @@ class ViewsTest(TestCase):
     ])
     def test_events_transactions_view_returns_200(self, event_id, expected_length):
         URL = reverse('event-details', kwargs={'event_id': event_id})
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
@@ -578,12 +578,12 @@ class ViewsTest(TestCase):
     def test_transactions_grouped_view_returns_200(self):
         kwargs = {'groupby': 'day'}
         URL = reverse('transactions-grouped')
-        with patch('pandas.read_csv', side_effect=(
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL, kwargs)
-        self.assertEqual(len(response.context['transactions']), 27)
+        self.assertEqual(len(response.context['transactions']), 22)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsGrouped.template_name)
 
