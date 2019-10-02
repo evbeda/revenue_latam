@@ -288,19 +288,19 @@ def dashboard_summary(request):
             'labels': payment_processor.index.to_list(),
             'data': payment_processor.values.tolist(),
             'backgroundColor': colors_pp,
-            'borderColor': [color.replace('0.2', '1') for color in colors_pp]
+            'borderColor': [color.replace('0.2', '1') for color in colors_pp],
         },
         'sales_flag': {
             'labels': sales_flag.index.to_list(),
             'data': sales_flag.values.tolist(),
             'backgroundColor': colors_sf,
-            'borderColor': [color.replace('0.2', '1') for color in colors_sf]
+            'borderColor': [color.replace('0.2', '1') for color in colors_sf],
         },
         'currency': {
             'labels': currency.index.tolist(),
             'data': currency.values.tolist(),
             'backgroundColor': colors_c,
-            'borderColor': [color.replace('0.2', '1') for color in colors_c]
+            'borderColor': [color.replace('0.2', '1') for color in colors_c],
         },
     })
     return HttpResponse(res, content_type="application/json")

@@ -11,9 +11,11 @@
 <br>
 <div class="container mt-4">
   <div class="row">
+    {% for currency, data in summarized_data.items %}
     <div class="col-6">
-      <table class="table table-striped">
-        {% for key, value in summarized_data.items %}
+      <h4>{{currency}}</h4>
+      <table class="table table-striped mt-4">
+        {% for key, value in data.items %}
           <tr>
             <td><b>{{key}}</b></td>
             <td class="text-right">{{value}}</td>
@@ -21,33 +23,31 @@
         {% endfor %}
       </table>
     </div>
+    {% endfor %}
   </div>
 </div>
 <br>
 <div class="row m-3">
-  <div class="col-lg-3">
+  <div class="col-lg-6 mt-3">
     <h4>Payment Processor</h4>
+    <h6>Referred to transactions quantity</h6>
+    <div class="chart-container mt-3">
+      <canvas id="payment_processor"></canvas>
+    </div>
   </div>
-  <div class="col-lg-9 chart-container">
-    <canvas id="payment_processor"></canvas>
-  </div>
-</div>
-<br>
-<div class="row m-3">
-  <div class="col-lg-3">
+  <div class="col-lg-6 mt-3">
     <h4>Sales Flag</h4>
+    <h6>Referred to transactions quantity</h6>
+    <div class="chart-container mt-3">
+      <canvas id="sales_flag"></canvas>
+    </div>
   </div>
-  <div class="col-lg-9 chart-container">
-    <canvas id="sales_flag"></canvas>
-  </div>
-</div>
-<br>
-<div class="row m-3">
-  <div class="col-lg-3">
+  <div class="col-lg-6 mt-3">
     <h4>Currency</h4>
-  </div>
-  <div class="col-lg-9 chart-container">
-    <canvas id="currency"></canvas>
+    <h6>Referred to transactions quantity</h6>
+    <div class="chart-container mt-3">
+      <canvas id="currency"></canvas>
+    </div>
   </div>
 </div>
 {% endblock content %}

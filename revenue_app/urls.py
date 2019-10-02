@@ -2,18 +2,18 @@ from django.conf.urls import url
 
 from revenue_app.views import (
     Dashboard,
+    dashboard_summary,
+    download_csv,
+    download_excel,
     OrganizerTransactions,
     OrganizersTransactions,
-    TransactionsGrouped,
-    TransactionsSearch,
-    TransactionsEvent,
     TopEventsLatam,
     TopOrganizersLatam,
     top_events_json_data,
     top_organizers_json_data,
-    dashboard_summary,
-    download_csv,
-    download_excel,
+    TransactionsGrouped,
+    TransactionsSearch,
+    TransactionsEvent,
 )
 
 
