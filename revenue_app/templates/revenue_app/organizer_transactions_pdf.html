@@ -1,0 +1,76 @@
+<html>
+    <head>
+	{% load static %}
+	{% block layout_style %}
+	<style type="text/css">
+@page {
+    size: A1 landscape; margin: 2cm;
+    margin: 1cm;
+    @frame footer {
+	-pdf-frame-content: footerContent;
+	bottom: 0cm;
+	margin-left: 0cm;
+	margin-right: 0cm;
+	height: 0cm;
+	    }
+	}
+	.page-break{
+	    page-break-after: always;
+	}
+	</style>
+	</style>
+	{% endblock %}
+    </head>
+    <body>
+	<div class="row">
+	    <div class="col-md-12">
+		<div class="mb-4">
+		    <h1>Organizer details</h1>
+		</div>
+		<div class="row">
+		    <div class="col-lg-4 mb-3 d-flex align-items-stretch">
+			<div class="card">
+			    <div class="card-body">
+				<h5 class="card-title"><b>Details</b></h5>
+				<p class="card-text"><b>Organizer ID: </b>{{organizer_id}}</p>
+				<p class="card-text"><b>Name: </b>{{organizer_details.name}}</p>
+				<p class="card-text"><b>E-mail: </b>{{organizer_details.email}}</p>
+			    </div>
+			</div>
+		    </div>
+		    <div class="col-lg-4 mb-3 d-flex align-items-stretch">
+			<div class="card">
+			    <div class="card-body">
+				<h5 class="card-title"><b>Total sale details</b></h5>
+				<p class="card-text"><b>sale__payment_amount__epp:</b> ${{total.sale__payment_amount__epp}}</p>
+				<p class="card-text"><b>sale__eb_tax__epp: </b>${{total.sale__eb_tax__epp}}</p>
+				<p class="card-text"><b>sale__ap_organizer__gts__epp: </b>${{total.sale__ap_organizer__gts__epp}}</p>
+				<p class="card-text"><b>sale__ap_organizer__royalty__epp:</b> ${{total.sale__ap_organizer__royalty__epp}}</p>
+				<p class="card-text"><b>sale__gtf_esf__epp: </b>${{total.sale__gtf_esf__epp}}</p>
+				<p class="card-text"><b>sale__gtf_esf__offline: </b>${{total.sale__gtf_esf__offline}}</p>
+			    </div>
+			</div>
+		    </div>
+		    <div class="col-lg-4 mb-3 d-flex align-items-stretch">
+			<div class="card">
+			    <div class="card-body">
+				<h5 class="card-title"><b>Total refunds details</b></h5>
+				<p class="card-text"><b>refund__payment_amount__epp: </b>${{total.refund__payment_amount__epp}}</p>
+				<p class="card-text"><b>refund__gtf_epp__gtf_esf__epp: </b>${{total.refund__gtf_epp__gtf_esf__epp}}</p>
+				<p class="card-text"><b>refund__ap_organizer__gts__epp: </b>${{total.refund__ap_organizer__gts__epp}}</p>
+				<p class="card-text"><b>refund__eb_tax__epp: </b>${{total.refund__eb_tax__epp}}</p>
+			    </div>
+			</div>
+		    </div>
+		</div>
+	    </div>
+	</div>
+	{% block content %}
+	<div class="row">
+	    <div class="col-12">
+		{% include 'revenue_app/_dynamic_table_pdf.html' %}
+	    </div>
+	</div>
+	{% endblock content %}
+    </body>
+</html>

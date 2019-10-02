@@ -9,7 +9,18 @@
 	{% if request.GET.start_date %}
 	<h5>from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
 	{% endif %}
-	<div class="mb-4"><h1><b>Organizer details</b></h1></div>
+	<div class="mb-4">
+	    <h1>
+		<span><b>Organizer details</b></span>
+		<a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
+		<div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+		  <a class="dropdown-item" href="{% url 'download-csv' %}"><i class="fas fa-file-csv"></i> CSV</a>
+		  <a class="dropdown-item" href="{% url 'render-view' %}?template=organizer_transactions&columns=organizer&type=pdf&organizer_id={{organizer_id}}" target="_blank">
+		      <i class="fas fa-file-pdf"></i> PDF
+		  </a>
+		</div>
+	    </h1>
+	</div>
 	<div class="row">
 	    <div class="col-lg-4 mb-3 d-flex align-items-stretch">
 		<div class="card">

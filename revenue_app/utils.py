@@ -173,10 +173,8 @@ def transactions(**kwargs):
 # TODO: refactor using the new query result
 def get_transactions_event(event_id, **kwargs):
     transactions_event = transactions(event_id=event_id, **kwargs)
-    organizers_sales = get_organizer_sales()
-    paidtix = organizers_sales[organizers_sales['event_id'] == event_id]['PaidTix']
     total = summarize_dataframe(transactions_event)
-    return (transactions_event, paidtix, total)
+    return transactions_event
 
 
 def get_top_organizers(filtered_transactions):

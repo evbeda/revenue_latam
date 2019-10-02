@@ -5,7 +5,11 @@ import xlwt
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
-from django.views.generic import TemplateView
+from django.views.generic import View, TemplateView
+from django.core.urlresolvers import resolve
+from .render import Render
+from collections import defaultdict
+
 
 from .utils import (
     get_transactions_event,
@@ -149,7 +153,7 @@ class OrganizersTransactions(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['transactions'] = transactions(**self.request.GET.dict())[TRANSACTIONS_COLUMNS].head(5000)
+        context['transactions'] = transactions(**self.request.GET.dict())[TRANSACTIONS_COLUMNS].head(1000)
         return context
 
 
@@ -197,16 +201,16 @@ class TransactionsEvent(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['event_id'] = self.kwargs['event_id']
-        transactions_event, event_paidtix, event_total = get_transactions_event(
+        transactions_event = get_transactions_event(
             self.kwargs['event_id'],
             **self.request.GET.dict(),
         )
         if len(transactions_event) > 0:
             context['organizer_id'] = transactions_event.iloc[0]['eventholder_user_id']
+            context['event_paidtix'] = transactions_event.iloc[0]['PaidTix']
             context['organizer_details'] = organizer_details(context['organizer_id'])
         context['transactions'] = transactions_event[EVENT_COLUMNS]
-        context['event_total'] = event_total
-        context['event_paidtix'] = event_paidtix.iloc[0] if len(event_paidtix) > 0 else ''
+        context['event_total'] = summarize_dataframe(transactions_event[EVENT_COLUMNS])
         return context
 
 
@@ -228,6 +232,53 @@ class TransactionsGrouped(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context['transactions'] = transactions(**self.request.GET.dict())
         return context
+
+class ExportView(LoginRequiredMixin, View):
+
+    def get(self, request):
+        param = defaultdict(int, self.request.GET.dict())
+        template='revenue_app/{}_pdf.html'.format(param['template'])
+        filetype = param['type']
+        if param['event_id']:
+            trx = self.get_trx(param['columns'], param['event_id'])
+            metadata = self.get_meta_data(trx, param['organizer_id'])
+            params = {
+                'transactions': trx,
+                'request': request,
+                'total': metadata['total'],
+                'organizer_details': metadata['organizer_details'],
+                'organizer_id': param['organizer_id'],
+                'event_id': param['event_id']
+            }
+        elif param['organizer_id']:
+            trx = self.get_trx(param['columns'], param['organizer_id'])
+            metadata = self.get_meta_data(trx, param['organizer_id'])
+            params = {
+                'transactions': trx,
+                'request': request,
+                'total': metadata['total'],
+                'organizer_details': metadata['organizer_details'],
+                'organizer_id': param['organizer_id'],
+            }
+        else:
+            trx = self.get_trx(param['columns'])
+            params = {
+                'transactions': trx,
+                'request': request,
+            }
+        return Render.render(template, filetype, params)
+
+    def get_trx(self, column, pk):
+        if column == 'organizer':
+            return transactions(eventholder_user_id=pk)[ORGANIZER_COLUMNS]
+        elif column == 'event':
+            return get_transactions_event(event_id=pk)[EVENT_COLUMNS]
+
+    def get_meta_data(self, dataframe, organizer_id):
+        metadata = {}
+        metadata['organizer_details'] = organizer_details(organizer_id)
+        metadata['total'] = summarize_dataframe(dataframe)
+        return metadata
 
 
 def top_organizers_json_data(request):

@@ -1,0 +1,40 @@
+<html>
+    <head>
+	{% load static %}
+	{% block layout_style %}
+	<style type="text/css">
+@page {
+    size: A0 landscape; margin: 2cm;
+    margin: 1cm;
+    @frame footer {
+	-pdf-frame-content: footerContent;
+	bottom: 0cm;
+	margin-left: 0cm;
+	margin-right: 0cm;
+	height: 0cm;
+	    }
+	}
+	.page-break{
+	    page-break-after: always;
+	}
+	</style>
+	</style>
+	{% endblock %}
+    </head>
+    <body>
+	<div class="row">
+	    <div class="col-md-12">
+		<div class="mb-4">
+		    <h1>Organizers details</h1>
+		</div>
+	    </div>
+	</div>
+	{% block content %}
+	<div class="row">
+	    <div class="col-12">
+		{% include 'revenue_app/_dynamic_table_pdf.html' %}
+	    </div>
+	</div>
+	{% endblock content %}
+    </body>
+</html>

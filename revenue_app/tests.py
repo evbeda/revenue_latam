@@ -15,6 +15,7 @@ from pandas import read_csv
 from pandas.core.frame import DataFrame
 from pandas.core.series import Series
 from parameterized import parameterized
+from .render import Render
 
 from .utils import (
     calc_gtv,
@@ -42,6 +43,7 @@ from .views import (
     TransactionsEvent,
     TransactionsGrouped,
     TransactionsSearch,
+    ORGANIZER_COLUMNS,
 )
 
 TRANSACTIONS_EXAMPLE_PATH = 'revenue_app/tests/transactions_example.csv'
@@ -245,12 +247,9 @@ class UtilsTestCase(TestCase):
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            transactions_event, paidtix, total = get_transactions_event(event_id)
+            transactions_event = get_transactions_event(event_id)
         self.assertIsInstance(transactions_event, DataFrame)
         self.assertEqual(len(transactions_event), transactions_qty)
-        self.assertIsInstance(paidtix, Series)
-        self.assertEqual(len(paidtix), transactions_qty)
-        self.assertEqual(paidtix.iloc[0], tickets_qty)
 
     def test_get_top_ten_organizers(self):
         with patch('pandas.read_csv', side_effect=(
@@ -422,6 +421,25 @@ class UtilsTestCase(TestCase):
             response = organizer_details(organizer_id)
         self.assertEqual(response, details_organizer)
 
+    @parameterized.expand([
+        ('497321858'),
+        ('696421958'),
+        ('434444537'),
+        ('506285738'),
+        ('634364434'),
+    ])
+    def test_render_organizer_pdf(self, organizer_id):
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            params = {
+                'transactions': transactions(eventholder_user_id=organizer_id)[ORGANIZER_COLUMNS],
+            }
+        response = Render.render('revenue_app/event_pdf.html','pdf', params)
+        self.assertTrue(str(type(response)), "_pdf.reader")
+
+
 
 class ViewsTest(TestCase):
     def setUp(self):
@@ -582,7 +600,6 @@ class ViewsTest(TestCase):
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
@@ -610,6 +627,27 @@ class ViewsTest(TestCase):
         self.assertEqual(len(response.context['transactions']), 27)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsGrouped.template_name)
+
+    def test_render_organizer_view_pdf(self):
+        URL = 'render/?template=organizer_transactions&type=pdf&columns=organizer&organizer_id=497321858'
+        client = Client()
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.logged_client.get(URL)
+        self.assertTrue(str(type(response)), "_pdf.reader")
+
+    def test_render_event_view_pdf(self):
+        URL = 'render/?template=event&type=pdf&columns=event&organizer_id=497321858&event_id=66220941'
+        client = Client()
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.logged_client.get(URL)
+        self.assertTrue(str(type(response)), "_pdf.reader")
+
 
 
 class TemplateTagsTest(TestCase):
@@ -691,3 +729,4 @@ class TemplateTagsTest(TestCase):
             context
         )
         self.assertEqual(rendered, expected)
+
