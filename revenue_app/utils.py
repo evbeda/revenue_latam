@@ -225,3 +225,16 @@ def organizer_details(eventholder_user_id):
     organizer_sales = organizer_sales[organizer_sales['email'] == details['email']]
     details['name'] = organizer_sales.iloc[0]['organizer_name'] if len(organizer_sales) > 0 else ''
     return details
+
+
+def get_summarized_data():
+    trx = transactions()
+    summarized_data = {}
+    summarized_data['Total Organizers'] = len(trx.eventholder_user_id.unique())
+    summarized_data['Total Events'] = len(trx.event_id.unique())
+    summarized_data['Total PaidTix'] = trx.PaidTix.sum()
+    summarized_data['Total GTF'] = round(trx.sale__gtf_esf__epp.sum(), 2)
+    summarized_data['Total GTV'] = round(trx.gtv.sum(), 2)
+    summarized_data['ATV'] = round(trx.sale__ap_organizer__gts__epp.sum() / trx.PaidTix.sum(), 2)
+    summarized_data['Avg EB Perc Take Rate'] = round(trx.eb_perc_take_rate.apply(float).mean(), 2)
+    return summarized_data

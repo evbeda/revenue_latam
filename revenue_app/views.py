@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from django.views.generic import TemplateView
 
 from .utils import (
+    get_summarized_data,
     get_transactions_event,
     get_top_events,
     get_top_organizers,
@@ -138,6 +139,11 @@ TOP_EVENTS_COLUMNS = [
 class Dashboard(TemplateView):
     template_name = 'revenue_app/dashboard.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['summarized_data'] = get_summarized_data()
+        return context
+
 
 class OrganizersTransactions(TemplateView):
     template_name = 'revenue_app/organizers_transactions.html'
@@ -268,6 +274,36 @@ def top_events_json_data(request):
     })
     return HttpResponse(res, content_type="application/json")
 
+def dashboard_summary(request):
+    trx = transactions()
+    colors_pp = [random_color() for _ in range(4)]
+    colors_sf = [random_color() for _ in range(3)]
+    colors_c = [random_color() for _ in range(2)]
+    trx.payment_processor.replace('', 'n/a', regex=True, inplace=True)
+    payment_processor = trx.payment_processor.value_counts()
+    sales_flag = trx.sales_flag.value_counts()
+    currency = trx.currency.value_counts()
+    res = json.dumps({
+        'payment_processor': {
+            'labels': payment_processor.index.to_list(),
+            'data': payment_processor.values.tolist(),
+            'backgroundColor': colors_pp,
+            'borderColor': [color.replace('0.2', '1') for color in colors_pp]
+        },
+        'sales_flag': {
+            'labels': sales_flag.index.to_list(),
+            'data': sales_flag.values.tolist(),
+            'backgroundColor': colors_sf,
+            'borderColor': [color.replace('0.2', '1') for color in colors_sf]
+        },
+        'currency': {
+            'labels': currency.index.tolist(),
+            'data': currency.values.tolist(),
+            'backgroundColor': colors_c,
+            'borderColor': [color.replace('0.2', '1') for color in colors_c]
+        },
+    })
+    return HttpResponse(res, content_type="application/json")
 
 def download_excel(request):
     response = HttpResponse(content_type='application/ms-excel')

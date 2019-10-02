@@ -8,5 +8,155 @@
 
 {% block content %}
 <h1>Dashboard</h1>
-
+<br>
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-6">
+      <table class="table table-striped">
+        {% for key, value in summarized_data.items %}
+          <tr>
+            <td><b>{{key}}</b></td>
+            <td class="text-right">{{value}}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+</div>
+<br>
+<div class="row m-3">
+  <div class="col-lg-3">
+    <h4>Payment Processor</h4>
+  </div>
+  <div class="col-lg-9 chart-container">
+    <canvas id="payment_processor"></canvas>
+  </div>
+</div>
+<br>
+<div class="row m-3">
+  <div class="col-lg-3">
+    <h4>Sales Flag</h4>
+  </div>
+  <div class="col-lg-9 chart-container">
+    <canvas id="sales_flag"></canvas>
+  </div>
+</div>
+<br>
+<div class="row m-3">
+  <div class="col-lg-3">
+    <h4>Currency</h4>
+  </div>
+  <div class="col-lg-9 chart-container">
+    <canvas id="currency"></canvas>
+  </div>
+</div>
 {% endblock content %}
+{% block scripts %}
+  {{ block.super }}
+  <script type="text/javascript" src="{% static 'js/Chart.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/chartjs-plugin-datalabels.min.js' %}"></script>
+  <script type="text/javascript">
+    Chart.plugins.unregister(ChartDataLabels);
+
+    $.get('{% url "json_dashboard_summary" %}', function(data) {
+      var ctx_pp = $("#payment_processor").get(0).getContext("2d");
+      new Chart(ctx_pp, {
+        type: 'doughnut',
+        data: {
+          labels: data.payment_processor.labels,
+          datasets: [{
+            label: "Payment Processor",
+            data: data.payment_processor.data,
+            fill: false,
+            backgroundColor: data.payment_processor.backgroundColor,
+            borderColor: data.payment_processor.borderColor,
+            borderWidth: 1,
+          }]
+        },
+        plugins: [ChartDataLabels],
+        options: {
+          legend: { position: 'right', align: 'center' },
+          plugins: {
+            datalabels: {
+              formatter: (value, ctx) => {
+                let sum = 0;
+                let dataArr = ctx.chart.data.datasets[0].data;
+                dataArr.map(data => { sum += data; });
+                let percentage = (value*100/sum).toFixed(2) + "%";
+                return percentage;
+              }
+            }
+          },
+          responsive: true,
+          maintainAspectRatio: false,
+        },
+      });
+
+      var ctx_sf = $("#sales_flag").get(0).getContext("2d");
+      new Chart(ctx_sf, {
+        type: 'doughnut',
+        data: {
+          labels: data.sales_flag.labels,
+          datasets: [{
+            label: "Sales Flag",
+            data: data.sales_flag.data,
+            fill: false,
+            backgroundColor: data.sales_flag.backgroundColor,
+            borderColor: data.sales_flag.borderColor,
+            borderWidth: 1,
+          }]
+        },
+        plugins: [ChartDataLabels],
+        options: {
+          legend: { position: 'right', align: 'center' },
+          plugins: {
+            datalabels: {
+              formatter: (value, ctx) => {
+                let sum = 0;
+                let dataArr = ctx.chart.data.datasets[0].data;
+                dataArr.map(data => { sum += data; });
+                let percentage = (value*100/sum).toFixed(2) + "%";
+                return percentage;
+              }
+            }
+          },
+          responsive: true,
+          maintainAspectRatio: false,
+        },
+      });
+
+      var ctx_c = $("#currency").get(0).getContext("2d");
+      new Chart(ctx_c, {
+        type: 'doughnut',
+        data: {
+          labels: data.currency.labels,
+          datasets: [{
+            label: "Currency",
+            data: data.currency.data,
+            fill: false,
+            backgroundColor: data.currency.backgroundColor,
+            borderColor: data.currency.borderColor,
+            borderWidth: 1,
+          }]
+        },
+        plugins: [ChartDataLabels],
+        options: {
+          legend: { position: 'right', align: 'center' },
+          plugins: {
+            datalabels: {
+              formatter: (value, ctx) => {
+                let sum = 0;
+                let dataArr = ctx.chart.data.datasets[0].data;
+                dataArr.map(data => { sum += data; });
+                let percentage = (value*100/sum).toFixed(2) + "%";
+                return percentage;
+              }
+            }
+          },
+          responsive: true,
+          maintainAspectRatio: false,
+        },
+      });
+    });
+  </script>
+{% endblock scripts %}

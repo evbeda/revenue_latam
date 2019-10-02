@@ -11,6 +11,7 @@ from revenue_app.views import (
     TopOrganizersLatam,
     top_events_json_data,
     top_organizers_json_data,
+    dashboard_summary,
     download_csv,
     download_excel,
 )
@@ -29,4 +30,5 @@ urlpatterns = [
     url(r'^download/xls$', download_excel, name='download-excel'),
     url(r'^json/top_org_arg/$', top_organizers_json_data, name='json_top_organizers'),
     url(r'^json/top_events_arg/$', top_events_json_data, name='json_top_events'),
+    url(r'^json/dashboard_summary/$', dashboard_summary, name='json_dashboard_summary'),
 ]
