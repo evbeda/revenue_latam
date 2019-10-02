@@ -274,6 +274,7 @@ def top_events_json_data(request):
     })
     return HttpResponse(res, content_type="application/json")
 
+
 def dashboard_summary(request):
     trx = transactions()
     colors_pp = [random_color() for _ in range(4)]
@@ -304,6 +305,7 @@ def dashboard_summary(request):
         },
     })
     return HttpResponse(res, content_type="application/json")
+
 
 def download_excel(request):
     response = HttpResponse(content_type='application/ms-excel')

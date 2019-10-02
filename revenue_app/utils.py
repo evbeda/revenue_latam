@@ -112,10 +112,14 @@ def group_transactions(transactions, by):
         'year': 'Y',
     }
     custom_groupby = {
-        'event_id': ['eventholder_user_id', 'email', 'event_id', 'currency'],
+        'event_id': ['eventholder_user_id', 'email', 'event_id', 'event_title', 'currency'],
         'eventholder_user_id': ['eventholder_user_id', 'email', 'currency'],
         'email': ['eventholder_user_id', 'email', 'currency'],
         'payment_processor': ['payment_processor', 'currency'],
+        'sales_flag': ['sales_flag', 'currency'],
+        'sales_vertical': ['sales_vertical', 'currency'],
+        'vertical': ['vertical', 'currency'],
+        'sub_vertical': ['vertical', 'sub_vertical', 'currency'],
         'currency': ['currency'],
     }
     if isinstance(by, str):
