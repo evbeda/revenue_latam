@@ -18,11 +18,9 @@
     <div class="d-flex flex-fill overflow-auto">
       {% include 'revenue_app/_sidebar.html' %}
       <div id="content">
-        {% if user.is_authenticated %}
         <a href="#" class="btn btn-outline-evb" id="sidebar-toggle">
           <span class="fas fa-chevron-left"></span>
         </a>
-        {% endif %}
         <div class="wrapper">
           {% block content %}
           {% endblock content %}
@@ -52,7 +50,7 @@
           if (pair[0] == variable) {
             return pair[1];
           }
-        } 
+        }
       }
 
       var groupby_select = document.getElementById("groupby-select");

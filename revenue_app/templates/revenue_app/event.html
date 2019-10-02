@@ -25,11 +25,10 @@
 		    <div class="card-body">
 			<h5 class="card-title"><b>Total sale details</b></h5>
 			<p class="card-text"><b>sale__payment_amount__epp:</b> ${{event_total.sale__payment_amount__epp}}</p>
+      <p class="card-text"><b>sale__gtf_esf__epp: </b>${{event_total.sale__gtf_esf__epp}}</p>
+      <p class="card-text"><b>sale__ap_organizer__gts__epp: </b>${{event_total.sale__ap_organizer__gts__epp}}</p>
 			<p class="card-text"><b>sale__eb_tax__epp: </b>${{event_total.sale__eb_tax__epp}}</p>
-			<p class="card-text"><b>sale__ap_organizer__gts__epp: </b>${{event_total.sale__ap_organizer__gts__epp}}</p>
 			<p class="card-text"><b>sale__ap_organizer__royalty__epp:</b> ${{event_total.sale__ap_organizer__royalty__epp}}</p>
-			<p class="card-text"><b>sale__gtf_esf__epp: </b>${{event_total.sale__gtf_esf__epp}}</p>
-			<p class="card-text"><b>sale__gtf_esf__offline: </b>${{event_total.sale__gtf_esf__offline}}</p>
 		    </div>
 		</div>
 	    </div>
@@ -41,6 +40,7 @@
 			<p class="card-text"><b>refund__gtf_epp__gtf_esf__epp: </b>${{event_total.refund__gtf_epp__gtf_esf__epp}}</p>
 			<p class="card-text"><b>refund__ap_organizer__gts__epp: </b>${{event_total.refund__ap_organizer__gts__epp}}</p>
 			<p class="card-text"><b>refund__eb_tax__epp: </b>${{event_total.refund__eb_tax__epp}}</p>
+			<p class="card-text"><b>refund__ap_organizer__royalty__epp: </b>${{event_total.refund__ap_organizer__royalty__epp}}</p>
 		    </div>
 		</div>
 	    </div>
@@ -52,4 +52,3 @@
 </div>
 
 {% endblock content %}
-

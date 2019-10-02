@@ -76,12 +76,11 @@ BASE_TRANSACTION_COLUMNS = [
     'sale__eb_tax__epp',
     'sale__ap_organizer__gts__epp',
     'sale__ap_organizer__royalty__epp',
-    'sale__gtf_esf__offline',
     'refund__payment_amount__epp',
     'refund__gtf_epp__gtf_esf__epp',
     'refund__eb_tax__epp',
     'refund__ap_organizer__gts__epp',
-    # 'refund__ap_organizer__royalty__epp', (not found yet)
+    'refund__ap_organizer__royalty__epp',
 ]
 
 MERGED_TRANSACTIONS_COLUMNS = [
@@ -102,18 +101,15 @@ MERGED_TRANSACTIONS_COLUMNS = [
     'sale__eb_tax__epp',
     'sale__ap_organizer__gts__epp',
     'sale__ap_organizer__royalty__epp',
-    'sale__gtf_esf__offline',
     'refund__payment_amount__epp',
     'refund__gtf_epp__gtf_esf__epp',
     'refund__eb_tax__epp',
     'refund__ap_organizer__gts__epp',
-    # 'refund__ap_organizer__royalty__epp', (not found yet)
+    'refund__ap_organizer__royalty__epp',
 ]
 
 
 class UtilsTestCase(TestCase):
-    def setUp(self):
-        pass
 
     @property
     def transactions(self):
@@ -354,11 +350,11 @@ class UtilsTestCase(TestCase):
             'sale__ap_organizer__gts__epp': 4200.0,
             'sale__ap_organizer__royalty__epp': 0,
             'sale__gtf_esf__epp': 293.6,
-            'sale__gtf_esf__offline': 0,
             'refund__payment_amount__epp': 0,
             'refund__gtf_epp__gtf_esf__epp': 0,
             'refund__ap_organizer__gts__epp': 0,
             'refund__eb_tax__epp': 0,
+            'refund__ap_organizer__royalty__epp': 0,
         }),
         ('696421958', {
             'sale__payment_amount__epp': 6270.0,
@@ -366,11 +362,11 @@ class UtilsTestCase(TestCase):
             'sale__ap_organizer__gts__epp': 5831.7,
             'sale__ap_organizer__royalty__epp': 0,
             'sale__gtf_esf__epp': 438.3,
-            'sale__gtf_esf__offline': 0,
             'refund__payment_amount__epp': 0,
             'refund__gtf_epp__gtf_esf__epp': 0,
             'refund__ap_organizer__gts__epp': 0,
             'refund__eb_tax__epp': 0,
+            'refund__ap_organizer__royalty__epp': 0,
         }),
         ('434444537', {
             'sale__payment_amount__epp': 1188.0,
@@ -378,11 +374,11 @@ class UtilsTestCase(TestCase):
             'sale__ap_organizer__gts__epp': 1080.0,
             'sale__ap_organizer__royalty__epp': 0,
             'sale__gtf_esf__epp': 108.0,
-            'sale__gtf_esf__offline': 0,
             'refund__payment_amount__epp': 0,
             'refund__gtf_epp__gtf_esf__epp': 0,
             'refund__ap_organizer__gts__epp': 0,
             'refund__eb_tax__epp': 0,
+            'refund__ap_organizer__royalty__epp': 0,
         }),
         ('506285738', {
             'sale__payment_amount__epp': 18150.0,
@@ -390,11 +386,11 @@ class UtilsTestCase(TestCase):
             'sale__ap_organizer__gts__epp': 16698.0,
             'sale__ap_organizer__royalty__epp': 0,
             'sale__gtf_esf__epp': 1452.0,
-            'sale__gtf_esf__offline': 0,
             'refund__payment_amount__epp': 0,
             'refund__gtf_epp__gtf_esf__epp': 0,
             'refund__ap_organizer__gts__epp': 0,
             'refund__eb_tax__epp': 0,
+            'refund__ap_organizer__royalty__epp': 0,
         }),
     ])
     def test_summarize_dataframe(self, organizer_id, expected_total):
@@ -425,35 +421,13 @@ class UtilsTestCase(TestCase):
 
 class ViewsTest(TestCase):
     def setUp(self):
-        username = 'test_user'
-        password = 'test_pass'
-        User.objects.create_user(username=username, password=password)
-        self.logged_client = Client()
-        self.logged_client.login(username=username, password=password)
+        self.client = Client()
 
-    def test_dashboard_view_returns_302_when_not_logged(self):
+    def test_dashboard_view_returns_200(self):
         URL = reverse('dashboard')
-        client = Client()
-        response = client.get(URL)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, '/accounts/login/?next={}'.format(URL))
-
-    def test_dashboard_view_returns_200_when_logged(self):
-        URL = reverse('dashboard')
-        response = self.logged_client.get(URL)
+        response = self.client.get(URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], Dashboard.template_name)
-
-    @parameterized.expand([
-        ({},),
-        ({'start_date': '2018-08-02'},),
-    ])
-    def test_organizers_transactions_view_returns_302_when_not_logged(self, kwargs):
-        URL = reverse('organizers-transactions')
-        client = Client()
-        response = client.get(URL)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, '/accounts/login/?next={}'.format(URL))
 
     @parameterized.expand([
         ({},),
@@ -462,23 +436,15 @@ class ViewsTest(TestCase):
         ({'start_date': '2018-08-05', 'end_date': '2018-08-02'},),
         ({'end_date': '2018-08-05'},),
     ])
-    def test_organizers_transactions_view_returns_200_when_logged(self, kwargs):
+    def test_organizers_transactions_view_returns_200(self, kwargs):
         URL = reverse('organizers-transactions')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            response = self.logged_client.get(URL, kwargs)
+            response = self.client.get(URL, kwargs)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], OrganizersTransactions.template_name)
-
-    def test_organizer_transactions_view_returns_302_when_not_logged(self):
-        eventholder_user_id = 497321858
-        URL = reverse('organizer-transactions', kwargs={'organizer_id': eventholder_user_id})
-        client = Client()
-        response = client.get(URL)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, '/accounts/login/?next={}'.format(URL))
 
     @parameterized.expand([
         (497321858, 5),
@@ -487,7 +453,7 @@ class ViewsTest(TestCase):
         (506285738, 5),
         (634364434, 7),
     ])
-    def test_organizer_transactions_view_returns_200_when_logged(self, eventholder_user_id, expected_length):
+    def test_organizer_transactions_view_returns_200(self, eventholder_user_id, expected_length):
         URL = reverse('organizer-transactions', kwargs={'organizer_id': eventholder_user_id})
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
@@ -496,17 +462,10 @@ class ViewsTest(TestCase):
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            response = self.logged_client.get(URL)
+            response = self.client.get(URL)
         self.assertEqual(len(response.context['transactions']), expected_length)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], OrganizerTransactions.template_name)
-
-    def test_transactions_search_view_returns_302_when_not_logged(self):
-        email = 'arg_domain@superdomain.org.ar'
-        URL = '{}?email={}'.format(reverse('transactions-search'), email)
-        client = Client()
-        response = client.get(URL)
-        self.assertEqual(response.status_code, 302)
 
     @parameterized.expand([
         ('arg_domain@superdomain.org.ar', 7),
@@ -515,60 +474,40 @@ class ViewsTest(TestCase):
         ('another_fake_mail@gmail.com', 6),
         ('personalized_domain@wowdomain.com.br', 5),
     ])
-    def test_transactions_search_view_returns_200_when_logged(self, email, expected_length):
+    def test_transactions_search_view_returns_200(self, email, expected_length):
         URL = '{}?email={}'.format(reverse('transactions-search'), email)
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            response = self.logged_client.get(URL)
+            response = self.client.get(URL)
         self.assertEqual(len(response.context['transactions']), expected_length)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsSearch.template_name)
 
-    def test_top_organizers_view_returns_302_when_not_logged(self):
-        URL = reverse('top-organizers')
-        client = Client()
-        response = client.get(URL)
-        self.assertEqual(response.status_code, 302)
-
-    def test_top_organizers_view_returns_200_when_logged(self):
+    def test_top_organizers_view_returns_200(self):
         URL = reverse('top-organizers')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            response = self.logged_client.get(URL)
+            response = self.client.get(URL)
         self.assertEqual(len(response.context['top_ars']), 3)
         self.assertEqual(len(response.context['top_brl']), 4)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TopOrganizersLatam.template_name)
 
-    def test_top_events_view_returns_302_when_not_logged(self):
-        URL = reverse('top-events')
-        client = Client()
-        response = client.get(URL)
-        self.assertEqual(response.status_code, 302)
-
-    def test_top_events_view_returns_200_when_logged(self):
+    def test_top_events_view_returns_200(self):
         URL = reverse('top-events')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            response = self.logged_client.get(URL)
+            response = self.client.get(URL)
         self.assertEqual(len(response.context['top_event_ars']), 3)
         self.assertEqual(len(response.context['top_event_brl']), 4)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TopEventsLatam.template_name)
-
-    def test_events_transactions_view_returns_302_when_not_logged(self):
-        event_id = 66220941
-        URL = reverse('event-details', kwargs={'event_id': event_id})
-        client = Client()
-        response = client.get(URL)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, '/accounts/login/?next={}'.format(URL))
 
     @parameterized.expand([
         (66220941, 5),
@@ -577,7 +516,7 @@ class ViewsTest(TestCase):
         (35210860, 5),
         (88128252, 7),
     ])
-    def test_events_transactions_view_returns_200_when_logged(self, event_id, expected_length):
+    def test_events_transactions_view_returns_200(self, event_id, expected_length):
         URL = reverse('event-details', kwargs={'event_id': event_id})
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
@@ -587,26 +526,19 @@ class ViewsTest(TestCase):
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            response = self.logged_client.get(URL)
+            response = self.client.get(URL)
         self.assertEqual(len(response.context['transactions']), expected_length)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsEvent.template_name)
 
-    def test_transactions_grouped_view_returns_302_when_not_logged(self):
-        groupby = 'day'
-        URL = reverse('transactions-grouped')
-        client = Client()
-        response = client.get(URL, {'groupby': groupby})
-        self.assertEqual(response.status_code, 302)
-
-    def test_transactions_grouped_view_returns_200_when_logged(self):
+    def test_transactions_grouped_view_returns_200(self):
         kwargs = {'groupby': 'day'}
         URL = reverse('transactions-grouped')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            response = self.logged_client.get(URL, kwargs)
+            response = self.client.get(URL, kwargs)
         self.assertEqual(len(response.context['transactions']), 27)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsGrouped.template_name)
