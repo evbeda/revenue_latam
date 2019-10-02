@@ -20,9 +20,9 @@ from revenue_app.utils import (
     calc_perc_take_rate,
     filter_transactions,
     get_organizer_sales,
+    get_summarized_data,
     get_top_events,
     get_top_organizers,
-    get_summarized_data,
     get_transactions,
     get_transactions_event,
     group_transactions,
@@ -414,20 +414,30 @@ class UtilsTestCase(TestCase):
             response = organizer_details(eventholder_user_id)
         self.assertEqual(response, details_organizer)
 
-    def test_get_summarized_data(self):
+    @parameterized.expand([
+        ('ARS', 'Total Organizers', 2),
+        ('ARS', 'Total Events', 2),
+        ('ARS', 'Total PaidTix', 20867),
+        ('ARS', 'Total GTF', 2201.87),
+        ('ARS', 'Total GTV', 33701.87),
+        ('ARS', 'ATV', 1.51),
+        ('ARS', 'Avg EB Perc Take Rate', 6.44),
+        ('BRL', 'Total Organizers', 3),
+        ('BRL', 'Total Events', 3),
+        ('BRL', 'Total PaidTix', 29607),
+        ('BRL', 'Total GTF', 1998.3),
+        ('BRL', 'Total GTV', 25608.0),
+        ('BRL', 'ATV', 0.8),
+        ('BRL', 'Avg EB Perc Take Rate', 7.89),
+    ])
+    def test_get_summarized_data(self, country, data, expected):
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             summarized_data = get_summarized_data()
-        self.assertEqual(summarized_data['Total Organizers'], 5)
-        self.assertEqual(summarized_data['Total Events'], 5)
-        self.assertEqual(summarized_data['Total PaidTix'], 50474)
-        self.assertEqual(summarized_data['Total GTF'], 4200.17)
-        self.assertEqual(summarized_data['Total GTV'], 59309.87)
-        self.assertEqual(summarized_data['ATV'], 1.09)
-        self.assertEqual(summarized_data['Avg EB Perc Take Rate'], 7.25)
+        self.assertEqual(summarized_data[country][data], expected)
 
 
 class ViewsTest(TestCase):
@@ -437,13 +447,20 @@ class ViewsTest(TestCase):
     def test_dashboard_view_returns_200(self):
         URL = reverse('dashboard')
         context_dict = [
-            'Total Organizers',
-            'Total Events',
-            'Total PaidTix',
-            'Total GTF',
-            'Total GTV',
-            'ATV',
-            'Avg EB Perc Take Rate'
+            ('ARS', 'Total Organizers'),
+            ('ARS', 'Total Events'),
+            ('ARS', 'Total PaidTix'),
+            ('ARS', 'Total GTF'),
+            ('ARS', 'Total GTV'),
+            ('ARS', 'ATV'),
+            ('ARS', 'Avg EB Perc Take Rate'),
+            ('BRL', 'Total Organizers'),
+            ('BRL', 'Total Events'),
+            ('BRL', 'Total PaidTix'),
+            ('BRL', 'Total GTF'),
+            ('BRL', 'Total GTV'),
+            ('BRL', 'ATV'),
+            ('BRL', 'Avg EB Perc Take Rate'),
         ]
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
@@ -454,7 +471,7 @@ class ViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], Dashboard.template_name)
         for elem in context_dict:
-            self.assertIn(elem, response.context['summarized_data'])
+            self.assertIn(elem[1], response.context['summarized_data'][elem[0]])
 
     @parameterized.expand([
         ({},),

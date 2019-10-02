@@ -229,12 +229,17 @@ def organizer_details(eventholder_user_id):
 
 def get_summarized_data():
     trx = transactions()
+    currencies = ['ARS', 'BRL']
     summarized_data = {}
-    summarized_data['Total Organizers'] = len(trx.eventholder_user_id.unique())
-    summarized_data['Total Events'] = len(trx.event_id.unique())
-    summarized_data['Total PaidTix'] = trx.PaidTix.sum()
-    summarized_data['Total GTF'] = round(trx.sale__gtf_esf__epp.sum(), 2)
-    summarized_data['Total GTV'] = round(trx.gtv.sum(), 2)
-    summarized_data['ATV'] = round(trx.sale__ap_organizer__gts__epp.sum() / trx.PaidTix.sum(), 2)
-    summarized_data['Avg EB Perc Take Rate'] = round(trx.eb_perc_take_rate.apply(float).mean(), 2)
+    for currency in currencies:
+        filtered = trx[trx['currency'] == currency]
+        summarized_data[currency] = {
+            'Total Organizers': filtered.eventholder_user_id.nunique(),
+            'Total Events': filtered.event_id.nunique(),
+            'Total PaidTix': filtered.PaidTix.sum(),
+            'Total GTF': round(filtered.sale__gtf_esf__epp.sum(), 2),
+            'Total GTV': round(filtered.gtv.sum(), 2),
+            'ATV': round(filtered.sale__ap_organizer__gts__epp.sum() / filtered.PaidTix.sum(), 2),
+            'Avg EB Perc Take Rate': round(filtered.eb_perc_take_rate.apply(float).mean(), 2),
+        }
     return summarized_data
