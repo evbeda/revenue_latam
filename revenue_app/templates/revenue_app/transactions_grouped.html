@@ -1,8 +1,9 @@
 {% extends 'revenue_app/base.html' %}
 {% load static %}
+{% load string_filters %}
 
 {% block content %}
-<h1>Transactions grouped by {{request.GET.groupby}}</h1>
+<h1>Transactions grouped by {{request.GET.groupby|title}}</h1>
 {% if request.GET.start_date %}
     <h5>from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
 {% endif %}

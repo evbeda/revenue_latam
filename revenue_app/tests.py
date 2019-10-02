@@ -162,10 +162,14 @@ class UtilsTestCase(TestCase):
         ('event_id', 5),
         (['payment_processor'], 3),
         ('payment_processor', 4),
+        ('sales_flag', 3),
+        ('sales_vertical', 2),
+        ('vertical', 5),
+        ('sub_vertical', 5),
         ('currency', 2),
     ])
     def test_group_transactions(self, by, expected_length):
-        grouped = group_transactions(self.transactions, by)
+        grouped = group_transactions(merge_transactions(self.transactions, self.organizer_sales), by)
         self.assertEqual(len(grouped), expected_length)
 
     @parameterized.expand([
@@ -213,6 +217,10 @@ class UtilsTestCase(TestCase):
         ({'groupby': 'event_id'}, 5),
         ({'groupby': ['payment_processor']}, 3),
         ({'groupby': 'payment_processor'}, 4),
+        ({'groupby': 'sales_flag'}, 3),
+        ({'groupby': 'sales_vertical'}, 2),
+        ({'groupby': 'vertical'}, 5),
+        ({'groupby': 'sub_vertical'}, 5),
         ({'groupby': 'currency'}, 2),
     ])
     def test_transactions(self, kwargs, expected_length):
@@ -664,6 +672,31 @@ class TemplateTagsTest(TestCase):
         rendered = self.render_template(
             '{% load date_filters %}'
             '{{value|quarter_start}}',
+            context
+        )
+        self.assertEqual(rendered, expected)
+
+    @parameterized.expand([
+        ({'value': 'day'}, 'Day'),
+        ({'value': 'week'}, 'Week'),
+        ({'value': 'semi-month'}, 'Semi Month'),
+        ({'value': 'month'}, 'Month'),
+        ({'value': 'quarter'}, 'Quarter'),
+        ({'value': 'year'}, 'Year'),
+        ({'value': 'eventholder_user_id'}, 'Eventholder User Id'),
+        ({'value': 'email'}, 'Email'),
+        ({'value': 'event_id'}, 'Event Id'),
+        ({'value': 'payment_processor'}, 'Payment Processor'),
+        ({'value': 'sales_flag'}, 'Sales Flag'),
+        ({'value': 'sales_vertical'}, 'Sales Vertical'),
+        ({'value': 'vertical'}, 'Vertical'),
+        ({'value': 'sub_vertical'}, 'Sub Vertical'),
+        ({'value': 'currency'}, 'Currency'),
+    ])
+    def test_title(self, context, expected):
+        rendered = self.render_template(
+            '{% load string_filters %}'
+            '{{value|title}}',
             context
         )
         self.assertEqual(rendered, expected)
