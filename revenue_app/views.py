@@ -1,6 +1,4 @@
 from io import BytesIO
-from django.http import HttpResponse
-from django.template.loader import get_template
 
 from xhtml2pdf import pisa
 import csv
@@ -9,18 +7,18 @@ import json
 import xlwt
 
 from django.http import HttpResponse
+from django.template.loader import get_template
 from django.views.generic import TemplateView, View
 
 from .utils import (
+    get_event_transactions,
+    get_organizer_transactions,
     get_summarized_data,
-    get_transactions_event,
     get_top_events,
     get_top_organizers,
     get_top_organizers_refunds,
     random_color,
     transactions,
-    summarize_dataframe,
-    organizer_details,
 )
 
 FULL_COLUMNS = [
@@ -37,6 +35,7 @@ FULL_COLUMNS = [
     'event_id',
     'event_title',
     'eb_perc_take_rate',
+    'gtv',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
     'sale__eb_tax__epp',
@@ -63,6 +62,7 @@ TRANSACTIONS_COLUMNS = [
     'event_id',
     'event_title',
     'eb_perc_take_rate',
+    'gtv',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
     'sale__eb_tax__epp',
@@ -87,6 +87,7 @@ ORGANIZER_COLUMNS = [
     'vertical',
     'sub_vertical',
     'eb_perc_take_rate',
+    'gtv',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
     'sale__eb_tax__epp',
@@ -102,7 +103,6 @@ ORGANIZER_COLUMNS = [
 EVENT_COLUMNS = [
     'transaction_created_date',
     'eventholder_user_id',
-    'email',
     'sales_flag',
     'payment_processor',
     'currency',
@@ -111,6 +111,7 @@ EVENT_COLUMNS = [
     'vertical',
     'sub_vertical',
     'eb_perc_take_rate',
+    'gtv',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
     'sale__eb_tax__epp',
@@ -172,35 +173,32 @@ class OrganizerTransactions(TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        eventholder_user_id = self.kwargs['eventholder_user_id']
-        organizer_transactions = transactions(
-            eventholder_user_id=eventholder_user_id,
+        transactions, details, sales_refunds = get_organizer_transactions(
+            self.kwargs['eventholder_user_id'],
             **self.request.GET.dict(),
-        )[ORGANIZER_COLUMNS]
-        context['transactions'] = organizer_transactions
-        context['organizer_details'] = organizer_details(eventholder_user_id)
-        context['organizer_total'] = summarize_dataframe(organizer_transactions)
+        )
+        context['details'] = details
+        context['sales_refunds'] = sales_refunds
+        context['transactions'] = transactions[ORGANIZER_COLUMNS]
         return context
+
 
 class OrganizerTransactionsPdf(View):
 
     def get_context_data(self, *args, **kwargs):
         context = {}
-        eventholder_user_id = self.kwargs['eventholder_user_id']
-        organizer_transactions = transactions(
-            eventholder_user_id=eventholder_user_id,
+        transactions, details, sales_refunds = get_organizer_transactions(
+            self.kwargs['eventholder_user_id'],
             **self.request.GET.dict(),
-        )[ORGANIZER_COLUMNS]
-        context['eventholder_user_id'] = eventholder_user_id
-        context['transactions'] = organizer_transactions
-        context['organizer_details'] = organizer_details(eventholder_user_id)
-        context['total'] = summarize_dataframe(organizer_transactions)
+        )
+        context['details'] = details
+        context['sales_refunds'] = sales_refunds
+        context['transactions'] = transactions[ORGANIZER_COLUMNS]
         return context
 
     def get(self, request, *args, **kwargs):
         pdf = render_to_pdf('revenue_app/organizer_transactions_pdf.html', self.get_context_data())
         return HttpResponse(pdf, content_type='application/pdf')
-
 
 
 class TopOrganizersLatam(TemplateView):
@@ -255,17 +253,13 @@ class TransactionsEvent(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['event_id'] = self.kwargs['event_id']
-        transactions_event, event_paidtix, event_total = get_transactions_event(
+        transactions, details, sales_refunds = get_event_transactions(
             self.kwargs['event_id'],
             **self.request.GET.dict(),
         )
-        if len(transactions_event) > 0:
-            context['eventholder_user_id'] = transactions_event.iloc[0]['eventholder_user_id']
-            context['organizer_details'] = organizer_details(context['eventholder_user_id'])
-        context['transactions'] = transactions_event[EVENT_COLUMNS]
-        context['event_total'] = event_total
-        context['event_paidtix'] = event_paidtix.iloc[0] if len(event_paidtix) > 0 else ''
+        context['details'] = details
+        context['sales_refunds'] = sales_refunds
+        context['transactions'] = transactions[EVENT_COLUMNS]
         return context
 
 class TransactionsEventPdf(View):
@@ -273,16 +267,13 @@ class TransactionsEventPdf(View):
     def get_context_data(self, **kwargs):
         context = {}
         context['event_id'] = self.kwargs['event_id']
-        transactions_event, event_paidtix, event_total = get_transactions_event(
+        transactions, details, sales_refunds = get_event_transactions(
             self.kwargs['event_id'],
             **self.request.GET.dict(),
         )
-        if len(transactions_event) > 0:
-            context['eventholder_user_id'] = transactions_event.iloc[0]['eventholder_user_id']
-            context['organizer_details'] = organizer_details(context['eventholder_user_id'])
-        context['transactions'] = transactions_event[EVENT_COLUMNS]
-        context['event_total'] = event_total
-        context['event_paidtix'] = event_paidtix.iloc[0] if len(event_paidtix) > 0 else ''
+        context['details'] = details
+        context['sales_refunds'] = sales_refunds
+        context['transactions'] = transactions[EVENT_COLUMNS]
         return context
 
     def get(self, request, *args, **kwargs):
