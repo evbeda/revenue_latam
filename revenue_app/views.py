@@ -237,6 +237,19 @@ class TopOrganizersRefundsLatam(TemplateView):
         context['top_brl'] = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
         return context
 
+class TopOrganizersRefundsLatamPdf(View):
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        trx = transactions(**(self.request.GET.dict()))
+        context['top_ars'] = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
+        context['top_brl'] = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
+        return context
+
+    def get(self, request, *args, **kwargs):
+        pdf = render_to_pdf('revenue_app/top_organizers_refunds_pdf.html', self.get_context_data())
+        return HttpResponse(pdf, content_type='application/pdf')
+
 class TransactionsEvent(TemplateView):
     template_name = 'revenue_app/event.html'
 

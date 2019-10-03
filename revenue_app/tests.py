@@ -650,6 +650,15 @@ class ViewsTest(TestCase):
             response = self.client.get(URL)
         self.assertTrue(str(type(response)), "_pdf.reader")
 
+    def test_top_organizer_refunds_latam_pdf(self):
+        URL = reverse('download-organizer-refunds-pdf')
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.client.get(URL)
+        self.assertTrue(str(type(response)), "_pdf.reader")
+
 
 
 class TemplateTagsTest(TestCase):
