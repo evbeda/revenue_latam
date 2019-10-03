@@ -1,23 +1,24 @@
-{% extends 'revenue_app/base.html' %}
-{% load static %}
-
+<html>
+    <head>
+	{% load static %}
+	{% block layout_style %}
+	<style type="text/css">
+	@page {
+	    size: A4 landscape;
+	    margin: 1cm;
+	}
+	.page-break{
+	    page-break-after: always;
+	}
+	</style>
+	{% endblock %}
+    </head>
 {% block content %}
-	<div class="dropdown show">
-	    <h1 class="text-center">
-		<span>Top 10 Argentina Events</span>
-		<a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
-		<div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-		  <a class="dropdown-item" href="{% url 'download-top-events-pdf'%}"><i class="fas fa-file-pdf"></i> PDF</a>
-		</div>
-	    </h1>
-    </div>
-{% if request.GET.start_date %}
-	<h5 class="text-center">from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
-{% endif %}
-<br>
+<h1 class="text-center"> Top 10 Argentina Events </h1>
+
 <div class="row">
     <div class="col-12">
-        {% include 'revenue_app/_dynamic_table.html' with transactions=top_event_ars %}
+        {% include 'revenue_app/_dynamic_table_pdf.html' with transactions=top_event_ars %}
     </div>
 </div>
 <div class="row">
@@ -31,13 +32,10 @@
 <hr class="mb-4 mt-4">
 <br>
 <h1 class="text-center">Top 10 Brazil Events</h1>
-{% if request.GET.start_date %}
-	<h5 class="text-center">from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
-{% endif %}
 <br>
 <div class="row">
     <div class="col-12">
-        {% include 'revenue_app/_dynamic_table.html' with transactions=top_event_brl %}
+        {% include 'revenue_app/_dynamic_table_pdf.html' with transactions=top_event_brl %}
     </div>
 </div>
 <div class="row">
@@ -50,7 +48,6 @@
 {% endblock content %}
 
 {% block scripts %}
-{{ block.super }}
 <script type="text/javascript" src="{% static 'js/Chart.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/chartjs-plugin-datalabels.min.js' %}"></script>
 <script type="text/javascript">
@@ -125,3 +122,4 @@
   });
 </script>
 {% endblock scripts %}
+</html>

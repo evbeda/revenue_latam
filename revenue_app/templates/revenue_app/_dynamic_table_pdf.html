@@ -1,0 +1,20 @@
+{% load date_filters %}
+
+<table class="table table-hover table-sm">
+    <thead>
+        <tr>
+            {% for header in transactions.columns %}
+                <th scope="col">{{ header }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for index, transaction in transactions.iterrows %}
+        <tr>
+            {% for key, value in transaction.items %}
+                    <td>{{value}}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
