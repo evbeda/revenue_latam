@@ -41,7 +41,6 @@ from revenue_app.views import (
     TopOrganizersLatam,
     TransactionsEvent,
     TransactionsGrouped,
-    TransactionsSearch,
 )
 
 TRANSACTIONS_EXAMPLE_PATH = 'revenue_app/tests/transactions_example.csv'
@@ -241,6 +240,9 @@ class UtilsTestCase(TestCase):
     ])
     def test_event_transactions(self, event_id, transactions_qty, tickets_qty):
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
@@ -448,6 +450,7 @@ class UtilsTestCase(TestCase):
         self.assertEqual(summarized_data[country][data], expected)
 
 
+
 class ViewsTest(TestCase):
     def setUp(self):
         self.client = Client()
@@ -519,24 +522,6 @@ class ViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], OrganizerTransactions.template_name)
 
-    @parameterized.expand([
-        ('arg_domain@superdomain.org.ar', 7),
-        ('some_fake_mail@gmail.com', 5),
-        ('wow_fake_mail@hotmail.com', 4),
-        ('another_fake_mail@gmail.com', 6),
-        ('personalized_domain@wowdomain.com.br', 5),
-    ])
-    def test_transactions_search_view_returns_200(self, email, expected_length):
-        URL = '{}?email={}'.format(reverse('transactions-search'), email)
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
-        self.assertEqual(len(response.context['transactions']), expected_length)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.template_name[0], TransactionsSearch.template_name)
-
     def test_top_organizers_view_returns_200(self):
         URL = reverse('top-organizers')
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
@@ -594,6 +579,50 @@ class ViewsTest(TestCase):
         self.assertEqual(len(response.context['transactions']), 22)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TransactionsGrouped.template_name)
+
+    def test_organizer_transactions_pdf(self):
+        URL = reverse('download-organizer-pdf', kwargs={'eventholder_user_id':497321858})
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.client.get(URL)
+        self.assertTrue(str(type(response)), "_pdf.reader")
+
+    def test_event_transactions_pdf(self):
+        URL = reverse('download-event-pdf', kwargs={'event_id':66220941})
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.client.get(URL)
+        self.assertTrue(str(type(response)), "_pdf.reader")
+
+    def test_top_organizers_latam_pdf(self):
+        URL = reverse('download-top-organizers-pdf')
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.client.get(URL)
+        self.assertTrue(str(type(response)), "_pdf.reader")
+
+    def test_top_events_latam_pdf(self):
+        URL = reverse('download-top-events-pdf')
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.client.get(URL)
+        self.assertTrue(str(type(response)), "_pdf.reader")
+
 
 
 class TemplateTagsTest(TestCase):

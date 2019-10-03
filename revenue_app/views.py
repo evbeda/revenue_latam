@@ -1,10 +1,15 @@
+from io import BytesIO
+from django.http import HttpResponse
+from django.template.loader import get_template
+
+from xhtml2pdf import pisa
 import csv
 from datetime import datetime
 import json
 import xlwt
 
 from django.http import HttpResponse
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 
 from .utils import (
     get_summarized_data,
@@ -169,16 +174,25 @@ class OrganizerTransactions(TemplateView):
         context['organizer_total'] = summarize_dataframe(organizer_transactions)
         return context
 
-
-class TransactionsSearch(TemplateView):
-    template_name = 'revenue_app/organizer_transactions.html'
+class OrganizerTransactionsPdf(View):
 
     def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(*args, **kwargs)
-        context['transactions'] = transactions(
+        context = {}
+        eventholder_user_id = self.kwargs['eventholder_user_id']
+        organizer_transactions = transactions(
+            eventholder_user_id=eventholder_user_id,
             **self.request.GET.dict(),
         )[ORGANIZER_COLUMNS]
+        context['eventholder_user_id'] = eventholder_user_id
+        context['transactions'] = organizer_transactions
+        context['organizer_details'] = organizer_details(eventholder_user_id)
+        context['total'] = summarize_dataframe(organizer_transactions)
         return context
+
+    def get(self, request, *args, **kwargs):
+        pdf = render_to_pdf('revenue_app/organizer_transactions_pdf.html', self.get_context_data())
+        return HttpResponse(pdf, content_type='application/pdf')
+
 
 
 class TopOrganizersLatam(TemplateView):
@@ -190,6 +204,19 @@ class TopOrganizersLatam(TemplateView):
         context['top_ars'] = get_top_organizers(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_COLUMNS]
         context['top_brl'] = get_top_organizers(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_COLUMNS]
         return context
+
+class TopOrganizersLatamPdf(View):
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        trx = transactions(**(self.request.GET.dict()))
+        context['top_ars'] = get_top_organizers(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_COLUMNS]
+        context['top_brl'] = get_top_organizers(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_COLUMNS]
+        return context
+
+    def get(self, request, *args, **kwargs):
+        pdf = render_to_pdf('revenue_app/top_organizers_pdf.html', self.get_context_data())
+        return HttpResponse(pdf, content_type='application/pdf')
 
 
 class TransactionsEvent(TemplateView):
@@ -210,6 +237,27 @@ class TransactionsEvent(TemplateView):
         context['event_paidtix'] = event_paidtix.iloc[0] if len(event_paidtix) > 0 else ''
         return context
 
+class TransactionsEventPdf(View):
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context['event_id'] = self.kwargs['event_id']
+        transactions_event, event_paidtix, event_total = get_transactions_event(
+            self.kwargs['event_id'],
+            **self.request.GET.dict(),
+        )
+        if len(transactions_event) > 0:
+            context['eventholder_user_id'] = transactions_event.iloc[0]['eventholder_user_id']
+            context['organizer_details'] = organizer_details(context['eventholder_user_id'])
+        context['transactions'] = transactions_event[EVENT_COLUMNS]
+        context['event_total'] = event_total
+        context['event_paidtix'] = event_paidtix.iloc[0] if len(event_paidtix) > 0 else ''
+        return context
+
+    def get(self, request, *args, **kwargs):
+        pdf = render_to_pdf('revenue_app/event_pdf.html', self.get_context_data())
+        return HttpResponse(pdf, content_type='application/pdf')
+
 
 class TopEventsLatam(TemplateView):
     template_name = 'revenue_app/top_events.html'
@@ -220,6 +268,19 @@ class TopEventsLatam(TemplateView):
         context['top_event_ars'] = get_top_events(trx[trx['currency'] == 'ARS'])[:10][TOP_EVENTS_COLUMNS]
         context['top_event_brl'] = get_top_events(trx[trx['currency'] == 'BRL'])[:10][TOP_EVENTS_COLUMNS]
         return context
+
+class TopEventsLatamPdf(View):
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        trx = transactions(**(self.request.GET.dict()))
+        context['top_event_ars'] = get_top_events(trx[trx['currency'] == 'ARS'])[:10][TOP_EVENTS_COLUMNS]
+        context['top_event_brl'] = get_top_events(trx[trx['currency'] == 'BRL'])[:10][TOP_EVENTS_COLUMNS]
+        return context
+
+    def get(self, request, *args, **kwargs):
+        pdf = render_to_pdf('revenue_app/top_events_pdf.html', self.get_context_data())
+        return HttpResponse(pdf, content_type='application/pdf')
 
 
 class TransactionsGrouped(TemplateView):
@@ -337,3 +398,12 @@ def download_csv(request):
     for transaction in organizer_transactions:
         writer.writerow(transaction)
     return response
+
+def render_to_pdf(template_src, context_dict={}):
+    template = get_template(template_src)
+    html  = template.render(context_dict)
+    result = BytesIO()
+    pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+    if not pdf.err:
+        return HttpResponse(result.getvalue(), content_type='application/pdf')
+    return None

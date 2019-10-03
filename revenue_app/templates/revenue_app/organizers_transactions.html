@@ -10,19 +10,12 @@
 	  <a class="dropdown-item" href="{% url 'download-csv' %}"><i class="fas fa-file-csv"></i> CSV</a>
 	  <a class="dropdown-item" href="{% url 'download-excel' %}"><i class="fas fa-file-excel"></i> Excel</a>
 	</div>
-    </div>
 </h1>
+    </div>
 {% if request.GET.start_date %}
 	<h5>from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
 {% endif %}
 <br>
-<div class="row">
-	<form class="form-inline" action="{% url 'transactions-search' %}" method="get" accept-charset="utf-8">
-		<i class="fas fa-search" aria-hidden="true"></i>
-		<input class="form-control form-control-md m-3" name="email" type="text" placeholder="Enter organizer email"
-		aria-label="Search">
-	</form>
-</div>
 <div class="row">
     <div class="col-12">
         {% include 'revenue_app/_dynamic_table.html' %}

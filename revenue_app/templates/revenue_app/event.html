@@ -6,7 +6,15 @@
 	{% if request.GET.start_date %}
 	<h5>from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
 	{% endif %}
-	<div class="mb-4"><h1><b>Event details</b></h1></div>
+	<div class="dropdown show">
+	    <h1>
+		<span>Event details</span>
+		<a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
+		<div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+		  <a class="dropdown-item" href="{% url 'download-event-pdf' event_id=event_id%}" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+		</div>
+	    </h1>
+    </div>
 	<div class="row">
 	    <div class="col-lg-4 mb-3 d-flex align-items-stretch">
 		<div class="card">
@@ -25,8 +33,8 @@
 		    <div class="card-body">
 			<h5 class="card-title"><b>Total sale details</b></h5>
 			<p class="card-text"><b>sale__payment_amount__epp:</b> ${{event_total.sale__payment_amount__epp}}</p>
-      <p class="card-text"><b>sale__gtf_esf__epp: </b>${{event_total.sale__gtf_esf__epp}}</p>
-      <p class="card-text"><b>sale__ap_organizer__gts__epp: </b>${{event_total.sale__ap_organizer__gts__epp}}</p>
+		        <p class="card-text"><b>sale__gtf_esf__epp: </b>${{event_total.sale__gtf_esf__epp}}</p>
+		        <p class="card-text"><b>sale__ap_organizer__gts__epp: </b>${{event_total.sale__ap_organizer__gts__epp}}</p>
 			<p class="card-text"><b>sale__eb_tax__epp: </b>${{event_total.sale__eb_tax__epp}}</p>
 			<p class="card-text"><b>sale__ap_organizer__royalty__epp:</b> ${{event_total.sale__ap_organizer__royalty__epp}}</p>
 		    </div>
