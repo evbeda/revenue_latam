@@ -8,9 +8,9 @@ import xlwt
 
 from django.http import HttpResponse
 from django.template.loader import get_template
-from django.views.generic import TemplateView, View
+from django.views.generic import TemplateView
 
-from .utils import (
+from revenue_app.utils import (
     get_event_transactions,
     get_organizer_transactions,
     get_summarized_data,
@@ -164,7 +164,9 @@ class OrganizersTransactions(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['transactions'] = transactions(**self.request.GET.dict())[TRANSACTIONS_COLUMNS].head(5000)
+        trx = transactions(**self.request.GET.dict())[TRANSACTIONS_COLUMNS]
+        context['transactions'] = trx.head(5000)
+        self.request.session['transactions'] = trx
         return context
 
 
@@ -180,21 +182,10 @@ class OrganizerTransactions(TemplateView):
         context['details'] = details
         context['sales_refunds'] = sales_refunds
         context['transactions'] = transactions[ORGANIZER_COLUMNS]
+        self.request.session['transactions'] = transactions
         return context
 
 
-class OrganizerTransactionsPdf(View):
-
-    def get_context_data(self, *args, **kwargs):
-        context = {}
-        transactions, details, sales_refunds = get_organizer_transactions(
-            self.kwargs['eventholder_user_id'],
-            **self.request.GET.dict(),
-        )
-        context['details'] = details
-        context['sales_refunds'] = sales_refunds
-        context['transactions'] = transactions[ORGANIZER_COLUMNS]
-        return context
 class OrganizerTransactionsPdf(OrganizerTransactions):
 
     def get(self, request, *args, **kwargs):
@@ -213,8 +204,8 @@ class TopOrganizersLatam(TemplateView):
         context['top_brl'] = get_top_organizers(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_COLUMNS]
         return context
 
-class TopOrganizersLatamPdf(TopOrganizersLatam):
 
+class TopOrganizersLatamPdf(TopOrganizersLatam):
     def get(self, request, *args, **kwargs):
         context = super().get_context_data(**kwargs)
         pdf = render_to_pdf('revenue_app/top_organizers_pdf.html', context)
@@ -227,16 +218,19 @@ class TopOrganizersRefundsLatam(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         trx = transactions(**(self.request.GET.dict()))
-        context['top_ars'] = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
-        context['top_brl'] = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
+        context['top_ars'] = \
+            get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
+        context['top_brl'] = \
+            get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
         return context
 
-class TopOrganizersRefundsLatamPdf(TopOrganizersRefundsLatam):
 
+class TopOrganizersRefundsLatamPdf(TopOrganizersRefundsLatam):
     def get(self, request, *args, **kwargs):
         context = super().get_context_data(**kwargs)
         pdf = render_to_pdf('revenue_app/top_organizers_refunds_pdf.html', context)
         return HttpResponse(pdf, content_type='application/pdf')
+
 
 class TransactionsEvent(TemplateView):
     template_name = 'revenue_app/event.html'
@@ -250,10 +244,11 @@ class TransactionsEvent(TemplateView):
         context['details'] = details
         context['sales_refunds'] = sales_refunds
         context['transactions'] = transactions[EVENT_COLUMNS]
+        self.request.session['transactions'] = transactions
         return context
 
-class TransactionsEventPdf(TransactionsEvent):
 
+class TransactionsEventPdf(TransactionsEvent):
     def get(self, request, *args, **kwargs):
         context = super().get_context_data(**kwargs)
         pdf = render_to_pdf('revenue_app/event_pdf.html', context)
@@ -270,8 +265,8 @@ class TopEventsLatam(TemplateView):
         context['top_event_brl'] = get_top_events(trx[trx['currency'] == 'BRL'])[:10][TOP_EVENTS_COLUMNS]
         return context
 
-class TopEventsLatamPdf(TopEventsLatam):
 
+class TopEventsLatamPdf(TopEventsLatam):
     def get(self, request, *args, **kwargs):
         context = super().get_context_data(**kwargs)
         pdf = render_to_pdf('revenue_app/top_events_pdf.html', context)
@@ -283,7 +278,9 @@ class TransactionsGrouped(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['transactions'] = transactions(**self.request.GET.dict())
+        trx = transactions(**self.request.GET.dict())
+        context['transactions'] = trx
+        self.request.session['transactions'] = trx
         return context
 
 
@@ -308,6 +305,7 @@ def top_organizers_json_data(request):
     })
     return HttpResponse(res, content_type="application/json")
 
+
 def top_organizers_refunds_json_data(request):
     trx = transactions()
     colors = [random_color() for _ in range(11)]
@@ -328,7 +326,6 @@ def top_organizers_refunds_json_data(request):
         },
     })
     return HttpResponse(res, content_type="application/json")
-
 
 
 def top_events_json_data(request):
@@ -385,40 +382,45 @@ def dashboard_summary(request):
     return HttpResponse(res, content_type="application/json")
 
 
-def download_excel(request):
+def download_excel(request, xls_name):
     response = HttpResponse(content_type='application/ms-excel')
-    response['Content-Disposition'] = 'attachment; filename="transactions{}.xls"'.format(datetime.now())
+    response['Content-Disposition'] = 'attachment; filename="{}_{}.xls"'.format(xls_name, datetime.now())
     workbook = xlwt.Workbook(encoding='utf-8')
     worksheet = workbook.add_sheet('Transactions')
-    organizers_transactions = transactions()
+    organizers_transactions = request.session.get('transactions')
     transactions_list = organizers_transactions.values.tolist()
+    columns = organizers_transactions.columns.tolist()
+    date_column_idx = columns.index('transaction_created_date')
     row_num = 0
     font_style = xlwt.XFStyle()
     font_style.font.bold = True
-    for col_num in range(len(FULL_COLUMNS)):
-        worksheet.write(row_num, col_num, FULL_COLUMNS[col_num], font_style)
+    for col_num, col_name in enumerate(columns):
+        worksheet.write(row_num, col_num, col_name, font_style)
     for row_list in transactions_list:
-        row_list[1] = row_list[1].strftime("%Y-%m-%d")
+        row_list[date_column_idx] = row_list[date_column_idx].strftime("%Y-%m-%d")
         row_num += 1
-        for col_num in range(len(row_list)):
-            worksheet.write(row_num, col_num, row_list[col_num])
+        for col_num, row_value in enumerate(row_list):
+            worksheet.write(row_num, col_num, row_value)
     workbook.save(response)
     return response
 
 
-def download_csv(request):
+def download_csv(request, csv_name):
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="transactions{}.csv"'.format(datetime.now())
+    response['Content-Disposition'] = 'attachment; filename="{}_{}.csv"'.format(csv_name, datetime.now())
     writer = csv.writer(response)
-    organizer_transactions = transactions().values.tolist()
-    writer.writerow(FULL_COLUMNS)
-    for transaction in organizer_transactions:
+    organizers_transactions = request.session.get('transactions')
+    columns = organizers_transactions.columns.tolist()
+    values = organizers_transactions.values.tolist()
+    writer.writerow(columns)
+    for transaction in values:
         writer.writerow(transaction)
     return response
 
+
 def render_to_pdf(template_src, context_dict={}):
     template = get_template(template_src)
-    html  = template.render(context_dict)
+    html = template.render(context_dict)
     result = BytesIO()
     pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
     if not pdf.err:

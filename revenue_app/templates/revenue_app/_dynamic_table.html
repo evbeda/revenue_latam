@@ -17,7 +17,7 @@
                         <td><a href="{% url 'organizers-transactions' %}?start_date={{value|week_start|date:'Y-m-d'}}&end_date={{value|date:'Y-m-d'}}">
                             from {{value|week_start|date}}<br/>to {{value|date}}
                         </a></td>
-                    {% elif request.GET.groupby == 'semi-month' %}
+                    {% elif request.GET.groupby == 'semi_month' %}
                         <td><a href="{% url 'organizers-transactions' %}?start_date={{value|date:'Y-m-d'}}&end_date={{value|semimonth_end|date:'Y-m-d'}}">
                             from {{value|date}}<br/>to {{value|semimonth_end|date}}
                         </a></td>

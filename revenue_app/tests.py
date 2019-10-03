@@ -154,7 +154,7 @@ class UtilsTestCase(TestCase):
     @parameterized.expand([
         ('day', 22),
         ('week', 5),
-        ('semi-month', 3),
+        ('semi_month', 3),
         ('month', 2),
         ('quarter', 2),
         ('year', 2),
@@ -209,7 +209,7 @@ class UtilsTestCase(TestCase):
         ({'groupby': 'day'}, 22),
         ({'groupby': 'day', 'start_date': '2018-08-02', 'end_date': '2018-08-15'}, 14),
         ({'groupby': 'week'}, 5),
-        ({'groupby': 'semi-month'}, 3),
+        ({'groupby': 'semi_month'}, 3),
         ({'groupby': 'month'}, 2),
         ({'groupby': 'quarter'}, 2),
         ({'groupby': 'year'}, 2),
@@ -357,26 +357,6 @@ class UtilsTestCase(TestCase):
         for c in color_list[:-1]:
             self.assertTrue(0 <= int(c) <= 255)
 
-    def test_download_csv(self):
-        URL = reverse('download-csv')
-        client = Client()
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = client.get(URL)
-        self.assertTrue(str(type(response)), "_csv.reader")
-
-    def test_download_excel(self):
-        URL = reverse('download-excel')
-        client = Client()
-        with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = client.get(URL)
-        self.assertTrue(str(type(response)), "_excel.reader")
-
     @parameterized.expand([
         ('497321858', {
             'PaidTix': 17500,
@@ -447,40 +427,35 @@ class UtilsTestCase(TestCase):
             'Organizer ID': '497321858',
             'Organizer Name': 'Fake 1',
             'Email': 'some_fake_mail@gmail.com',
-            }
-        ),
+        }),
         ('98415193', '98415193', {
             'Event ID': '98415193',
             'Event Title': 'Event Name 4',
             'Organizer ID': '98415193',
             'Organizer Name': 'Fake 2',
             'Email': 'another_fake_mail@gmail.com',
-            }
-        ),
-        ('17471621', '434444537',{
+        }),
+        ('17471621', '434444537', {
             'Event ID': '17471621',
             'Event Title': 'Event Name 3',
             'Organizer ID': '434444537',
             'Organizer Name': 'Wow Such Fake',
             'Email': 'wow_fake_mail@hotmail.com',
-            }
-        ),
+        }),
         ('35210860', '506285738', {
             'Event ID': '35210860',
             'Event Title': 'Event Name 5',
             'Organizer ID': '506285738',
             'Organizer Name': 'Br Fake',
             'Email': 'personalized_domain@wowdomain.com.br',
-            }
-        ),
+        }),
         ('88128252', '634364434', {
             'Event ID': '88128252',
             'Event Title': 'Event Name 1',
             'Organizer ID': '634364434',
             'Organizer Name': 'Ar Fake',
             'Email': 'arg_domain@superdomain.org.ar',
-            }
-        ),
+        }),
     ])
     def test_event_details(self, event_id, eventholder_user_id, details_organizer):
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
@@ -513,7 +488,6 @@ class UtilsTestCase(TestCase):
         )):
             summarized_data = get_summarized_data()
         self.assertEqual(summarized_data[country][data], expected)
-
 
 
 class ViewsTest(TestCase):
@@ -653,7 +627,7 @@ class ViewsTest(TestCase):
         self.assertEqual(response.template_name[0], TransactionsGrouped.template_name)
 
     def test_organizer_transactions_pdf(self):
-        URL = reverse('download-organizer-pdf', kwargs={'eventholder_user_id':497321858})
+        URL = reverse('download-organizer-pdf', kwargs={'eventholder_user_id': 497321858})
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
@@ -663,7 +637,7 @@ class ViewsTest(TestCase):
         self.assertTrue(str(type(response)), "_pdf.reader")
 
     def test_event_transactions_pdf(self):
-        URL = reverse('download-event-pdf', kwargs={'event_id':66220941})
+        URL = reverse('download-event-pdf', kwargs={'event_id': 66220941})
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
@@ -699,6 +673,103 @@ class ViewsTest(TestCase):
             response = self.client.get(URL)
         self.assertTrue(str(type(response)), "_pdf.reader")
 
+    @parameterized.expand([
+        (
+            reverse('organizers-transactions'),
+            (
+                read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            ),
+            'transactions'
+        ),
+        (
+            reverse('organizer-transactions', kwargs={'eventholder_user_id': 497321858}),
+            (
+                read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            ),
+            'organizer_497321858'
+        ),
+        (
+            reverse('transactions-grouped') + '?groupby=week',
+            (
+                read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            ),
+            'transactions_grouped_by_week'
+        ),
+        (
+            reverse('event-details', kwargs={'event_id': 98415193}),
+            (
+                read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            ),
+            'event_98415193'
+        ),
+    ])
+    def test_download_csv(self, url_from, patches, csv_name):
+        URL = reverse('download-csv', kwargs={'csv_name': csv_name})
+        client = Client()
+        with patch('revenue_app.utils.pd.read_csv', side_effect=patches):
+            # load an URL that set session['transactions']
+            client.get(url_from)
+        response = client.get(URL)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+        self.assertIn('attachment; filename=', response['Content-Disposition'])
+        self.assertIn(csv_name, response['Content-Disposition'])
+        self.assertIn('.csv', response['Content-Disposition'])
+        self.assertEqual(response.status_code, 200)
+
+    @parameterized.expand([
+        (
+            reverse('organizers-transactions'),
+            (
+                read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            ),
+            'transactions'
+        ),
+        (
+            reverse('organizer-transactions', kwargs={'eventholder_user_id': 497321858}),
+            (
+                read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            ),
+            'organizer_497321858'
+        ),
+        (
+            reverse('transactions-grouped') + '?groupby=week',
+            (
+                read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            ),
+            'transactions_grouped_by_week'
+        ),
+        (
+            reverse('event-details', kwargs={'event_id': 98415193}),
+            (
+                read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+                read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            ),
+            'event_98415193'
+        ),
+    ])
+    def test_download_excel(self, url_from, patches, xls_name):
+        URL = reverse('download-excel', kwargs={'xls_name': xls_name})
+        client = Client()
+        with patch('revenue_app.utils.pd.read_csv', side_effect=patches):
+            # load an URL that set session['transactions']
+            client.get(url_from)
+        response = client.get(URL)
+        self.assertEqual(response['Content-Type'], 'application/ms-excel')
+        self.assertIn('attachment; filename=', response['Content-Disposition'])
+        self.assertIn(xls_name, response['Content-Disposition'])
+        self.assertIn('.xls', response['Content-Disposition'])
+        self.assertEqual(response.status_code, 200)
 
 
 class TemplateTagsTest(TestCase):
@@ -784,7 +855,7 @@ class TemplateTagsTest(TestCase):
     @parameterized.expand([
         ({'value': 'day'}, 'Day'),
         ({'value': 'week'}, 'Week'),
-        ({'value': 'semi-month'}, 'Semi Month'),
+        ({'value': 'semi_month'}, 'Semi Month'),
         ({'value': 'month'}, 'Month'),
         ({'value': 'quarter'}, 'Quarter'),
         ({'value': 'year'}, 'Year'),

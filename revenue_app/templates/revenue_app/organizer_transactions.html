@@ -3,49 +3,51 @@
 {% block content %}
 <div class="row">
     <div class="col-md-12">
-    	{% if request.GET.start_date %}
-    	 <h5>from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
-    	{% endif %}
-    <div class="dropdown show">
-      <h1>
-        <span>Organizer Details</span>
-        <a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
-        <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-          <a class="dropdown-item" href="{% url 'download-organizer-pdf' eventholder_user_id=eventholder_user_id%}" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+        {% if request.GET.start_date %}
+        <h5>from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
+        {% endif %}
+        <div class="dropdown show">
+            <h1>
+                <span>Organizer details</span>
+                <a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                    <a class="dropdown-item" href="{% url 'download-csv' csv_name='organizer_'|add:eventholder_user_id %}"><i class="fas fa-file-csv"></i> CSV</a>
+                    <a class="dropdown-item" href="{% url 'download-excel' xls_name='organizer_'|add:eventholder_user_id %}"><i class="fas fa-file-excel"></i> Excel</a>
+                    <a class="dropdown-item" href="{% url 'download-organizer-pdf' eventholder_user_id=eventholder_user_id%}" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+                </div>
+            </h1>
         </div>
-      </h1>
-    </div>
-    <div class="row">
-      <div class="col-6 mb-3">
-        <table class="table table-striped mt-4">
-          {% for key, value in details.items %}
-            <tr>
-              <td><b>{{key}}</b></td>
-              <td class="text-right">{{value}}</td>
-            </tr>
-          {% endfor %}
-        </table>
-      </div>
-    </div>
-  	<div class="row">
-      {% for name, data in sales_refunds.items %}
-        <div class="col-6 mb-3">
-          <h4>{{name}}</h4>
-          <table class="table table-striped mt-4">
-            {% for key, value in data.items %}
-              <tr>
-                <td><b>{{key}}</b></td>
-                <td class="text-right">{{value}}</td>
-              </tr>
+        <div class="row">
+            <div class="col-6 mb-3">
+                <table class="table table-striped mt-4">
+                {% for key, value in details.items %}
+                    <tr>
+                        <td class="summarized-key"><b>{{key}}</b></td>
+                        <td class="text-right">{{value}}</td>
+                    </tr>
+                {% endfor %}
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            {% for name, data in sales_refunds.items %}
+                <div class="col-6 mb-3">
+                    <h4>{{name}}</h4>
+                    <table class="table table-striped mt-4">
+                        {% for key, value in data.items %}
+                        <tr>
+                            <td><b>{{key}}</b></td>
+                            <td class="text-right">{{value}}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
             {% endfor %}
-          </table>
-  	     </div>
-      {% endfor %}
-  	</div>
-  </div>
+        </div>
+    </div>
 </div>
 <div class="row">
-  {% include 'revenue_app/_dynamic_table.html' %}
+    {% include 'revenue_app/_dynamic_table.html' %}
 </div>
 
 {% endblock content %}
