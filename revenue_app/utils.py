@@ -5,6 +5,7 @@ from random import randint
 
 
 NUMBER_COLUMNS = [
+    'PaidTix',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
     'sale__eb_tax__epp',
@@ -160,13 +161,77 @@ def transactions(**kwargs):
     return filtered.round(2)
 
 
-# TODO: refactor using the new query result
-def get_transactions_event(event_id, **kwargs):
-    transactions_event = transactions(event_id=event_id, **kwargs)
-    organizers_sales = get_organizer_sales()
-    paidtix = organizers_sales[organizers_sales['event_id'] == event_id]['PaidTix']
-    total = summarize_dataframe(transactions_event)
-    return (transactions_event, paidtix, total)
+def event_details(event_id, eventholder_user_id):
+    organizer_sales = get_organizer_sales()
+    organizer_sales = organizer_sales[organizer_sales['event_id'] == event_id]
+    details = {
+        'Event ID': event_id,
+        'Event Title': organizer_sales.iloc[0]['event_title'] if len(organizer_sales) > 0 else '',
+        'Organizer ID': eventholder_user_id,
+        'Organizer Name': organizer_sales.iloc[0]['organizer_name'] if len(organizer_sales) > 0 else '',
+        'Email': organizer_sales.iloc[0]['email'] if len(organizer_sales) > 0 else '',
+    }
+    return details
+
+
+def summarize_dataframe(dataframe):
+    return {
+        column: dataframe[column].sum().round(2)
+        for column in dataframe.columns.tolist()
+        if column in NUMBER_COLUMNS
+    }
+
+
+def get_event_transactions(event_id, **kwargs):
+    event_transactions = transactions(event_id=event_id)
+    filtered = filter_transactions(event_transactions, **kwargs)
+    event_total = summarize_dataframe(filtered)
+    if len(event_transactions) > 0:
+        details = event_details(
+            event_id,
+            event_transactions.iloc[0]['eventholder_user_id'],
+        )
+        details['PaidTix'] = event_total['PaidTix']
+        details['AVG Ticket Value'] = \
+            round(event_total['sale__payment_amount__epp'] / event_total['PaidTix'], 2) if event_total['PaidTix'] > 0 else 0
+        details['AVG PaidTix/Day'] = \
+            round(event_total['PaidTix'] / len(filtered), 2) if len(filtered) > 0 else 0
+    sales_refunds = {
+        'Total Sales Detail': {
+            k:v for k,v in event_total.items() if 'sale' in k
+        },
+        'Total Refunds Detail': {
+            k:v for k,v in event_total.items() if 'refund' in k
+        },
+    }
+    return filtered, details, sales_refunds
+
+
+def get_organizer_transactions(eventholder_user_id, **kwargs):
+    organizer_transactions = transactions(eventholder_user_id=eventholder_user_id)
+    filtered = filter_transactions(organizer_transactions, **kwargs)
+    event_total = summarize_dataframe(filtered)
+    organizer_sales = get_organizer_sales()
+    if len(organizer_transactions) > 0:
+        details = {
+            'Organizer ID': eventholder_user_id,
+            'Organizer Name': organizer_sales.iloc[0]['organizer_name'] if len(organizer_sales) > 0 else '',
+            'Email': organizer_transactions.iloc[0]['email'],
+            'PaidTix': event_total['PaidTix'],
+            'AVG Ticket Value': \
+            round(event_total['sale__payment_amount__epp'] / event_total['PaidTix'], 2) if event_total['PaidTix'] > 0 else 0,
+            'AVG PaidTix/Day': \
+            round(event_total['PaidTix'] / len(group_transactions(filtered, 'day')), 2) if len(group_transactions(filtered, 'day')) > 0 else 0,
+        }
+    sales_refunds = {
+        'Total Sales Detail': {
+            k:v for k,v in event_total.items() if 'sale' in k
+        },
+        'Total Refunds Detail': {
+            k:v for k,v in event_total.items() if 'refund' in k
+        },
+    }
+    return filtered, details, sales_refunds
 
 
 def get_top_organizers(filtered_transactions):
@@ -226,27 +291,6 @@ def get_top_events(filtered_transactions):
 
 def random_color():
     return f"rgba({randint(0, 255)}, {randint(0, 255)}, {randint(0, 255)}, 0.2)"
-
-
-def summarize_dataframe(dataframe):
-    dic = {}
-    for column in dataframe.columns.tolist():
-        if column in NUMBER_COLUMNS:
-            dic[column] = dataframe[column].sum().round(2)
-    return dic
-
-
-def organizer_details(eventholder_user_id):
-    details = {}
-    organizer_transactions = transactions()
-    organizer_transactions = organizer_transactions[
-        organizer_transactions['eventholder_user_id'] == eventholder_user_id
-    ].head(1)
-    details['email'] = organizer_transactions['email'].to_string(index=False).strip()
-    organizer_sales = get_organizer_sales()
-    organizer_sales = organizer_sales[organizer_sales['email'] == details['email']]
-    details['name'] = organizer_sales.iloc[0]['organizer_name'] if len(organizer_sales) > 0 else ''
-    return details
 
 
 def get_summarized_data():

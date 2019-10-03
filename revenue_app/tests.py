@@ -12,23 +12,23 @@ from unittest.mock import patch
 
 from pandas import read_csv
 from pandas.core.frame import DataFrame
-from pandas.core.series import Series
 from parameterized import parameterized
 
 from revenue_app.utils import (
     calc_gtv,
     calc_perc_take_rate,
+    event_details,
     filter_transactions,
+    get_event_transactions,
     get_organizer_sales,
+    get_organizer_transactions,
     get_summarized_data,
     get_top_events,
     get_top_organizers,
     get_top_organizers_refunds,
     get_transactions,
-    get_transactions_event,
     group_transactions,
     merge_transactions,
-    organizer_details,
     random_color,
     summarize_dataframe,
     transactions,
@@ -234,27 +234,40 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(organizer_transactions), expected_length)
 
     @parameterized.expand([
-        ('66220941', 5, 3500),
-        ('98415193', 6, 3402),
-        ('17471621', 4, 2250),
-        ('35210860', 5, 39),
-        ('88128252', 7, 481),
+        ('66220941', 5, 17500),
+        ('98415193', 6, 20412),
+        ('17471621', 4, 9000),
+        ('35210860', 5, 195),
+        ('88128252', 7, 3367),
     ])
-    def test_event_transactions(self, event_id, transactions_qty, tickets_qty):
+    def test_get_event_transactions(self, event_id, transactions_qty, tickets_qty):
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            transactions, details, sales_refunds = get_event_transactions(event_id)
+        self.assertIsInstance(transactions, DataFrame)
+        self.assertEqual(len(transactions), transactions_qty)
+        self.assertEqual(details['PaidTix'], tickets_qty)
+
+    @parameterized.expand([
+        ('497321858', 5, 17500),
+        ('696421958', 6, 20412),
+        ('434444537', 4, 9000),
+        ('506285738', 5, 195),
+        ('634364434', 7, 3367),
+    ])
+    def test_get_organizer_transactions(self, eventholder_user_id, transactions_qty, tickets_qty):
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            transactions_event, paidtix, total = get_transactions_event(event_id)
-        self.assertIsInstance(transactions_event, DataFrame)
-        self.assertEqual(len(transactions_event), transactions_qty)
-        self.assertIsInstance(paidtix, Series)
-        self.assertEqual(len(paidtix), transactions_qty)
-        self.assertEqual(paidtix.iloc[0], tickets_qty)
+            transactions, details, sales_refunds = get_organizer_transactions(eventholder_user_id)
+        self.assertIsInstance(transactions, DataFrame)
+        self.assertEqual(len(transactions), transactions_qty)
+        self.assertEqual(details['PaidTix'], tickets_qty)
 
     def test_get_top_ten_organizers(self):
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
@@ -366,6 +379,7 @@ class UtilsTestCase(TestCase):
 
     @parameterized.expand([
         ('497321858', {
+            'PaidTix': 17500,
             'sale__payment_amount__epp': 4555.3,
             'sale__eb_tax__epp': 61.7,
             'sale__ap_organizer__gts__epp': 4200.0,
@@ -378,6 +392,7 @@ class UtilsTestCase(TestCase):
             'refund__ap_organizer__royalty__epp': 0,
         }),
         ('696421958', {
+            'PaidTix': 20412,
             'sale__payment_amount__epp': 6270.0,
             'sale__eb_tax__epp': 0,
             'sale__ap_organizer__gts__epp': 5831.7,
@@ -390,6 +405,7 @@ class UtilsTestCase(TestCase):
             'refund__ap_organizer__royalty__epp': 0,
         }),
         ('434444537', {
+            'PaidTix': 9000,
             'sale__payment_amount__epp': 1188.0,
             'sale__eb_tax__epp': 0,
             'sale__ap_organizer__gts__epp': 1080.0,
@@ -402,6 +418,7 @@ class UtilsTestCase(TestCase):
             'refund__ap_organizer__royalty__epp': 0,
         }),
         ('506285738', {
+            'PaidTix': 195,
             'sale__payment_amount__epp': 18150.0,
             'sale__eb_tax__epp': 0,
             'sale__ap_organizer__gts__epp': 16698.0,
@@ -424,19 +441,52 @@ class UtilsTestCase(TestCase):
         self.assertEqual(total_organizer, expected_total)
 
     @parameterized.expand([
-        ('497321858', {'email': 'some_fake_mail@gmail.com', 'name': 'Fake 1'}),
-        ('696421958', {'email': 'another_fake_mail@gmail.com', 'name': 'Fake 2'}),
-        ('434444537', {'email': 'wow_fake_mail@hotmail.com', 'name': 'Wow Such Fake'}),
-        ('506285738', {'email': 'personalized_domain@wowdomain.com.br', 'name': 'Br Fake'}),
-        ('634364434', {'email': 'arg_domain@superdomain.org.ar', 'name': 'Ar Fake'}),
+        ('66220941', '497321858', {
+            'Event ID': '66220941',
+            'Event Title': 'Event Name 2',
+            'Organizer ID': '497321858',
+            'Organizer Name': 'Fake 1',
+            'Email': 'some_fake_mail@gmail.com',
+            }
+        ),
+        ('98415193', '98415193', {
+            'Event ID': '98415193',
+            'Event Title': 'Event Name 4',
+            'Organizer ID': '98415193',
+            'Organizer Name': 'Fake 2',
+            'Email': 'another_fake_mail@gmail.com',
+            }
+        ),
+        ('17471621', '434444537',{
+            'Event ID': '17471621',
+            'Event Title': 'Event Name 3',
+            'Organizer ID': '434444537',
+            'Organizer Name': 'Wow Such Fake',
+            'Email': 'wow_fake_mail@hotmail.com',
+            }
+        ),
+        ('35210860', '506285738', {
+            'Event ID': '35210860',
+            'Event Title': 'Event Name 5',
+            'Organizer ID': '506285738',
+            'Organizer Name': 'Br Fake',
+            'Email': 'personalized_domain@wowdomain.com.br',
+            }
+        ),
+        ('88128252', '634364434', {
+            'Event ID': '88128252',
+            'Event Title': 'Event Name 1',
+            'Organizer ID': '634364434',
+            'Organizer Name': 'Ar Fake',
+            'Email': 'arg_domain@superdomain.org.ar',
+            }
+        ),
     ])
-    def test_organizer_details(self, eventholder_user_id, details_organizer):
+    def test_event_details(self, event_id, eventholder_user_id, details_organizer):
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
-            response = organizer_details(eventholder_user_id)
+            response = event_details(event_id, eventholder_user_id)
         self.assertEqual(response, details_organizer)
 
     @parameterized.expand([
@@ -528,8 +578,6 @@ class ViewsTest(TestCase):
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL)
@@ -586,9 +634,6 @@ class ViewsTest(TestCase):
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL)
         self.assertEqual(len(response.context['transactions']), expected_length)
@@ -612,8 +657,6 @@ class ViewsTest(TestCase):
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL)
@@ -622,9 +665,6 @@ class ViewsTest(TestCase):
     def test_event_transactions_pdf(self):
         URL = reverse('download-event-pdf', kwargs={'event_id':66220941})
         with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
