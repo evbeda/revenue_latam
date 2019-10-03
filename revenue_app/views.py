@@ -16,6 +16,7 @@ from .utils import (
     get_transactions_event,
     get_top_events,
     get_top_organizers,
+    get_top_organizers_refunds,
     random_color,
     transactions,
     summarize_dataframe,
@@ -130,6 +131,13 @@ TOP_ORGANIZERS_COLUMNS = [
     'gtv',
 ]
 
+TOP_ORGANIZERS_REFUNDS_COLUMNS = [
+    'eventholder_user_id',
+    'email',
+    'refund__gtf_epp__gtf_esf__epp',
+]
+
+
 TOP_EVENTS_COLUMNS = [
     'eventholder_user_id',
     'email',
@@ -218,6 +226,16 @@ class TopOrganizersLatamPdf(View):
         pdf = render_to_pdf('revenue_app/top_organizers_pdf.html', self.get_context_data())
         return HttpResponse(pdf, content_type='application/pdf')
 
+
+class TopOrganizersRefundsLatam(TemplateView):
+    template_name = 'revenue_app/top_organizers_refunds.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        trx = transactions(**(self.request.GET.dict()))
+        context['top_ars'] = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
+        context['top_brl'] = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
+        return context
 
 class TransactionsEvent(TemplateView):
     template_name = 'revenue_app/event.html'
@@ -312,6 +330,28 @@ def top_organizers_json_data(request):
         },
     })
     return HttpResponse(res, content_type="application/json")
+
+def top_organizers_refunds_json_data(request):
+    trx = transactions()
+    colors = [random_color() for _ in range(11)]
+    top_organizers_ars = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])
+    top_organizers_brl = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])
+    res = json.dumps({
+        'arg': {
+            'labels': top_organizers_ars['email'].tolist(),
+            'data': top_organizers_ars['refund__gtf_epp__gtf_esf__epp'].tolist(),
+            'backgroundColor': colors,
+            'borderColor': [color.replace('0.2', '1') for color in colors]
+        },
+        'brl': {
+            'labels': top_organizers_brl['email'].tolist(),
+            'data': top_organizers_brl['refund__gtf_epp__gtf_esf__epp'].tolist(),
+            'backgroundColor': colors,
+            'borderColor': [color.replace('0.2', '1') for color in colors]
+        },
+    })
+    return HttpResponse(res, content_type="application/json")
+
 
 
 def top_events_json_data(request):

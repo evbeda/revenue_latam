@@ -23,6 +23,7 @@ from revenue_app.utils import (
     get_summarized_data,
     get_top_events,
     get_top_organizers,
+    get_top_organizers_refunds,
     get_transactions,
     get_transactions_event,
     group_transactions,
@@ -41,6 +42,7 @@ from revenue_app.views import (
     TopOrganizersLatam,
     TransactionsEvent,
     TransactionsGrouped,
+    TopOrganizersRefundsLatam,
 )
 
 TRANSACTIONS_EXAMPLE_PATH = 'revenue_app/tests/transactions_example.csv'
@@ -262,6 +264,19 @@ class UtilsTestCase(TestCase):
             trx = transactions()
         top_ars = get_top_organizers(trx[trx['currency'] == 'ARS'])
         top_brl = get_top_organizers(trx[trx['currency'] == 'BRL'])
+        self.assertIsInstance(top_ars, DataFrame)
+        self.assertIsInstance(top_brl, DataFrame)
+        self.assertEqual(len(top_ars), 3)
+        self.assertEqual(len(top_brl), 4)
+
+    def test_get_top_ten_organizers_refunds(self):
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            trx = transactions()
+        top_ars = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])
+        top_brl = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])
         self.assertIsInstance(top_ars, DataFrame)
         self.assertIsInstance(top_brl, DataFrame)
         self.assertEqual(len(top_ars), 3)
@@ -533,6 +548,18 @@ class ViewsTest(TestCase):
         self.assertEqual(len(response.context['top_brl']), 4)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], TopOrganizersLatam.template_name)
+
+    def test_top_organizers_refunds_view_returns_200(self):
+        URL = reverse('top-organizers-refunds')
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.client.get(URL)
+        self.assertEqual(len(response.context['top_ars']), 3)
+        self.assertEqual(len(response.context['top_brl']), 4)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.template_name[0], TopOrganizersRefundsLatam.template_name)
 
     def test_top_events_view_returns_200(self):
         URL = reverse('top-events')
