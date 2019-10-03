@@ -16,6 +16,7 @@ from .utils import (
     get_transactions_event,
     get_top_events,
     get_top_organizers,
+    get_top_organizers_refunds,
     random_color,
     transactions,
     summarize_dataframe,
@@ -130,6 +131,12 @@ TOP_ORGANIZERS_COLUMNS = [
     'gtv',
 ]
 
+TOP_ORGANIZERS_REFUNDS_COLUMNS = [
+    'eventholder_user_id',
+    'email',
+    'refund__gtf_epp__gtf_esf__epp',
+]
+
 TOP_EVENTS_COLUMNS = [
     'eventholder_user_id',
     'email',
@@ -149,7 +156,6 @@ class Dashboard(TemplateView):
         context['summarized_data'] = get_summarized_data()
         return context
 
-
 class OrganizersTransactions(TemplateView):
     template_name = 'revenue_app/organizers_transactions.html'
 
@@ -157,7 +163,6 @@ class OrganizersTransactions(TemplateView):
         context = super().get_context_data(**kwargs)
         context['transactions'] = transactions(**self.request.GET.dict())[TRANSACTIONS_COLUMNS].head(5000)
         return context
-
 
 class OrganizerTransactions(TemplateView):
     template_name = 'revenue_app/organizer_transactions.html'
@@ -193,8 +198,6 @@ class OrganizerTransactionsPdf(View):
         pdf = render_to_pdf('revenue_app/organizer_transactions_pdf.html', self.get_context_data())
         return HttpResponse(pdf, content_type='application/pdf')
 
-
-
 class TopOrganizersLatam(TemplateView):
     template_name = 'revenue_app/top_organizers.html'
 
@@ -218,6 +221,28 @@ class TopOrganizersLatamPdf(View):
         pdf = render_to_pdf('revenue_app/top_organizers_pdf.html', self.get_context_data())
         return HttpResponse(pdf, content_type='application/pdf')
 
+class TopOrganizersRefundsLatam(TemplateView):
+    template_name = 'revenue_app/top_organizers_refunds.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        trx = transactions(**(self.request.GET.dict()))
+        context['top_ars'] = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
+        context['top_brl'] = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
+        return context
+
+class TopOrganizersLatamPdf(View):
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        trx = transactions(**(self.request.GET.dict()))
+        context['top_ars'] = get_top_organizers(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_COLUMNS]
+        context['top_brl'] = get_top_organizers(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_COLUMNS]
+        return context
+
+    def get(self, request, *args, **kwargs):
+        pdf = render_to_pdf('revenue_app/top_organizers_pdf.html', self.get_context_data())
+        return HttpResponse(pdf, content_type='application/pdf')
 
 class TransactionsEvent(TemplateView):
     template_name = 'revenue_app/event.html'
@@ -258,6 +283,67 @@ class TransactionsEventPdf(View):
         pdf = render_to_pdf('revenue_app/event_pdf.html', self.get_context_data())
         return HttpResponse(pdf, content_type='application/pdf')
 
+class TopEventsLatam(TemplateView):
+    template_name = 'revenue_app/top_events.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        trx = transactions(**(self.request.GET.dict()))
+        context['top_event_ars'] = get_top_events(trx[trx['currency'] == 'ARS'])[:10][TOP_EVENTS_COLUMNS]
+        context['top_event_brl'] = get_top_events(trx[trx['currency'] == 'BRL'])[:10][TOP_EVENTS_COLUMNS]
+        return context
+
+class TopEventsLatamPdf(View):
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        trx = transactions(**(self.request.GET.dict()))
+        context['top_event_ars'] = get_top_events(trx[trx['currency'] == 'ARS'])[:10][TOP_EVENTS_COLUMNS]
+        context['top_event_brl'] = get_top_events(trx[trx['currency'] == 'BRL'])[:10][TOP_EVENTS_COLUMNS]
+        return context
+
+    def get(self, request, *args, **kwargs):
+        pdf = render_to_pdf('revenue_app/top_events_pdf.html', self.get_context_data())
+        return HttpResponse(pdf, content_type='application/pdf')
+
+class TransactionsEvent(TemplateView):
+    template_name = 'revenue_app/event.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['event_id'] = self.kwargs['event_id']
+        transactions_event, event_paidtix, event_total = get_transactions_event(
+            self.kwargs['event_id'],
+            **self.request.GET.dict(),
+        )
+        if len(transactions_event) > 0:
+            context['eventholder_user_id'] = transactions_event.iloc[0]['eventholder_user_id']
+            context['organizer_details'] = organizer_details(context['eventholder_user_id'])
+        context['transactions'] = transactions_event[EVENT_COLUMNS]
+        context['event_total'] = event_total
+        context['event_paidtix'] = event_paidtix.iloc[0] if len(event_paidtix) > 0 else ''
+        return context
+
+class TransactionsEventPdf(View):
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context['event_id'] = self.kwargs['event_id']
+        transactions_event, event_paidtix, event_total = get_transactions_event(
+            self.kwargs['event_id'],
+            **self.request.GET.dict(),
+        )
+        if len(transactions_event) > 0:
+            context['eventholder_user_id'] = transactions_event.iloc[0]['eventholder_user_id']
+            context['organizer_details'] = organizer_details(context['eventholder_user_id'])
+        context['transactions'] = transactions_event[EVENT_COLUMNS]
+        context['event_total'] = event_total
+        context['event_paidtix'] = event_paidtix.iloc[0] if len(event_paidtix) > 0 else ''
+        return context
+
+    def get(self, request, *args, **kwargs):
+        pdf = render_to_pdf('revenue_app/event_pdf.html', self.get_context_data())
+        return HttpResponse(pdf, content_type='application/pdf')
 
 class TopEventsLatam(TemplateView):
     template_name = 'revenue_app/top_events.html'
@@ -282,7 +368,6 @@ class TopEventsLatamPdf(View):
         pdf = render_to_pdf('revenue_app/top_events_pdf.html', self.get_context_data())
         return HttpResponse(pdf, content_type='application/pdf')
 
-
 class TransactionsGrouped(TemplateView):
     template_name = 'revenue_app/transactions_grouped.html'
 
@@ -290,7 +375,6 @@ class TransactionsGrouped(TemplateView):
         context = super().get_context_data(**kwargs)
         context['transactions'] = transactions(**self.request.GET.dict())
         return context
-
 
 def top_organizers_json_data(request):
     trx = transactions()
@@ -313,6 +397,26 @@ def top_organizers_json_data(request):
     })
     return HttpResponse(res, content_type="application/json")
 
+def top_organizers_refunds_json_data(request):
+    trx = transactions()
+    colors = [random_color() for _ in range(11)]
+    top_organizers_ars = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])
+    top_organizers_brl = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])
+    res = json.dumps({
+        'arg': {
+            'labels': top_organizers_ars['email'].tolist(),
+            'data': top_organizers_ars['refund__gtf_epp__gtf_esf__epp'].tolist(),
+            'backgroundColor': colors,
+            'borderColor': [color.replace('0.2', '1') for color in colors]
+        },
+        'brl': {
+            'labels': top_organizers_brl['email'].tolist(),
+            'data': top_organizers_brl['refund__gtf_epp__gtf_esf__epp'].tolist(),
+            'backgroundColor': colors,
+            'borderColor': [color.replace('0.2', '1') for color in colors]
+        },
+    })
+    return HttpResponse(res, content_type="application/json")
 
 def top_events_json_data(request):
     trx = transactions()
@@ -334,7 +438,6 @@ def top_events_json_data(request):
         },
     })
     return HttpResponse(res, content_type="application/json")
-
 
 def dashboard_summary(request):
     trx = transactions()
@@ -367,7 +470,6 @@ def dashboard_summary(request):
     })
     return HttpResponse(res, content_type="application/json")
 
-
 def download_excel(request):
     response = HttpResponse(content_type='application/ms-excel')
     response['Content-Disposition'] = 'attachment; filename="transactions{}.xls"'.format(datetime.now())
@@ -387,7 +489,6 @@ def download_excel(request):
             worksheet.write(row_num, col_num, row_list[col_num])
     workbook.save(response)
     return response
-
 
 def download_csv(request):
     response = HttpResponse(content_type='text/csv')

@@ -187,6 +187,22 @@ def get_top_organizers(filtered_transactions):
     ]
     return top
 
+def get_top_organizers_refunds(filtered_transactions):
+    ordered = filtered_transactions.groupby(
+        ['eventholder_user_id', 'email'],
+    ).agg({
+        'refund__gtf_epp__gtf_esf__epp': sum,
+    }).sort_values(
+        by='refund__gtf_epp__gtf_esf__epp',
+        ascending=True,
+    ).round(2).reset_index()
+    top = ordered.head(10).copy()
+    top.loc[len(top), ['email', 'refund__gtf_epp__gtf_esf__epp']] = [
+        'Others',
+        ordered[10:].refund__gtf_epp__gtf_esf__epp.sum().round(2),
+    ]
+    return top
+
 
 def get_top_events(filtered_transactions):
     ordered = filtered_transactions.groupby(
