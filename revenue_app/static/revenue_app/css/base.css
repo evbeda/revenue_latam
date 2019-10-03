@@ -176,3 +176,8 @@ footer a {
   text-align: -moz-center;
   max-width: 100%;
 }
+
+/* Summarized Table */
+.summarized-key {
+  min-width: 175px;
+}

@@ -107,7 +107,7 @@ def group_transactions(transactions, by):
     time_groupby = {
         'day': 'D',
         'week': 'W',
-        'semi-month': 'SMS',  # quincena del 1 al 14 y del 15 a fin de mes, consultar con finanzas
+        'semi_month': 'SMS',  # quincena del 1 al 14 y del 15 a fin de mes, consultar con finanzas
         'month': 'M',
         'quarter': 'Q',  # trimestre
         'year': 'Y',
@@ -192,16 +192,16 @@ def get_event_transactions(event_id, **kwargs):
             event_transactions.iloc[0]['eventholder_user_id'],
         )
         details['PaidTix'] = event_total['PaidTix']
-        details['AVG Ticket Value'] = \
-            round(event_total['sale__payment_amount__epp'] / event_total['PaidTix'], 2) if event_total['PaidTix'] > 0 else 0
-        details['AVG PaidTix/Day'] = \
-            round(event_total['PaidTix'] / len(filtered), 2) if len(filtered) > 0 else 0
+        details['AVG Ticket Value'] = round(event_total['sale__payment_amount__epp'] / event_total['PaidTix'], 2) \
+            if event_total['PaidTix'] > 0 else 0
+        details['AVG PaidTix/Day'] = round(event_total['PaidTix'] / len(filtered), 2) \
+            if len(filtered) > 0 else 0
     sales_refunds = {
         'Total Sales Detail': {
-            k:v for k,v in event_total.items() if 'sale' in k
+            k: v for k, v in event_total.items() if 'sale' in k
         },
         'Total Refunds Detail': {
-            k:v for k,v in event_total.items() if 'refund' in k
+            k: v for k, v in event_total.items() if 'refund' in k
         },
     }
     return filtered, details, sales_refunds
@@ -218,17 +218,17 @@ def get_organizer_transactions(eventholder_user_id, **kwargs):
             'Organizer Name': organizer_sales.iloc[0]['organizer_name'] if len(organizer_sales) > 0 else '',
             'Email': organizer_transactions.iloc[0]['email'],
             'PaidTix': event_total['PaidTix'],
-            'AVG Ticket Value': \
-            round(event_total['sale__payment_amount__epp'] / event_total['PaidTix'], 2) if event_total['PaidTix'] > 0 else 0,
-            'AVG PaidTix/Day': \
-            round(event_total['PaidTix'] / len(group_transactions(filtered, 'day')), 2) if len(group_transactions(filtered, 'day')) > 0 else 0,
+            'AVG Ticket Value': round(event_total['sale__payment_amount__epp'] / event_total['PaidTix'], 2)
+            if event_total['PaidTix'] > 0 else 0,
+            'AVG PaidTix/Day':  round(event_total['PaidTix'] / len(group_transactions(filtered, 'day')), 2)
+            if len(group_transactions(filtered, 'day')) > 0 else 0,
         }
     sales_refunds = {
         'Total Sales Detail': {
-            k:v for k,v in event_total.items() if 'sale' in k
+            k: v for k, v in event_total.items() if 'sale' in k
         },
         'Total Refunds Detail': {
-            k:v for k,v in event_total.items() if 'refund' in k
+            k: v for k, v in event_total.items() if 'refund' in k
         },
     }
     return filtered, details, sales_refunds
@@ -236,14 +236,16 @@ def get_organizer_transactions(eventholder_user_id, **kwargs):
 
 def get_top_organizers(filtered_transactions):
     ordered = filtered_transactions.groupby(
-        ['eventholder_user_id', 'email', 'eb_perc_take_rate'],
+        ['eventholder_user_id', 'email'],
     ).agg({
+        'sale__payment_amount__epp': sum,
         'sale__gtf_esf__epp': sum,
         'gtv': sum,
     }).sort_values(
         by='sale__gtf_esf__epp',
         ascending=False,
     ).round(2).reset_index()
+    ordered = calc_perc_take_rate(ordered)
     top = ordered.head(10).copy()
     top.loc[len(top), ['email', 'sale__gtf_esf__epp', 'gtv']] = [
         'Others',
@@ -251,6 +253,7 @@ def get_top_organizers(filtered_transactions):
         ordered[10:].gtv.sum().round(2),
     ]
     return top
+
 
 def get_top_organizers_refunds(filtered_transactions):
     ordered = filtered_transactions.groupby(
