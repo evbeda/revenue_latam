@@ -195,9 +195,11 @@ class OrganizerTransactionsPdf(View):
         context['sales_refunds'] = sales_refunds
         context['transactions'] = transactions[ORGANIZER_COLUMNS]
         return context
+class OrganizerTransactionsPdf(OrganizerTransactions):
 
     def get(self, request, *args, **kwargs):
-        pdf = render_to_pdf('revenue_app/organizer_transactions_pdf.html', self.get_context_data())
+        context = super().get_context_data(**kwargs)
+        pdf = render_to_pdf('revenue_app/organizer_transactions_pdf.html', context)
         return HttpResponse(pdf, content_type='application/pdf')
 
 
@@ -211,17 +213,11 @@ class TopOrganizersLatam(TemplateView):
         context['top_brl'] = get_top_organizers(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_COLUMNS]
         return context
 
-class TopOrganizersLatamPdf(View):
-
-    def get_context_data(self, **kwargs):
-        context = {}
-        trx = transactions(**(self.request.GET.dict()))
-        context['top_ars'] = get_top_organizers(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_COLUMNS]
-        context['top_brl'] = get_top_organizers(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_COLUMNS]
-        return context
+class TopOrganizersLatamPdf(TopOrganizersLatam):
 
     def get(self, request, *args, **kwargs):
-        pdf = render_to_pdf('revenue_app/top_organizers_pdf.html', self.get_context_data())
+        context = super().get_context_data(**kwargs)
+        pdf = render_to_pdf('revenue_app/top_organizers_pdf.html', context)
         return HttpResponse(pdf, content_type='application/pdf')
 
 
@@ -235,17 +231,11 @@ class TopOrganizersRefundsLatam(TemplateView):
         context['top_brl'] = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
         return context
 
-class TopOrganizersRefundsLatamPdf(View):
-
-    def get_context_data(self, **kwargs):
-        context = {}
-        trx = transactions(**(self.request.GET.dict()))
-        context['top_ars'] = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
-        context['top_brl'] = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
-        return context
+class TopOrganizersRefundsLatamPdf(TopOrganizersRefundsLatam):
 
     def get(self, request, *args, **kwargs):
-        pdf = render_to_pdf('revenue_app/top_organizers_refunds_pdf.html', self.get_context_data())
+        context = super().get_context_data(**kwargs)
+        pdf = render_to_pdf('revenue_app/top_organizers_refunds_pdf.html', context)
         return HttpResponse(pdf, content_type='application/pdf')
 
 class TransactionsEvent(TemplateView):
@@ -262,22 +252,11 @@ class TransactionsEvent(TemplateView):
         context['transactions'] = transactions[EVENT_COLUMNS]
         return context
 
-class TransactionsEventPdf(View):
-
-    def get_context_data(self, **kwargs):
-        context = {}
-        context['event_id'] = self.kwargs['event_id']
-        transactions, details, sales_refunds = get_event_transactions(
-            self.kwargs['event_id'],
-            **self.request.GET.dict(),
-        )
-        context['details'] = details
-        context['sales_refunds'] = sales_refunds
-        context['transactions'] = transactions[EVENT_COLUMNS]
-        return context
+class TransactionsEventPdf(TransactionsEvent):
 
     def get(self, request, *args, **kwargs):
-        pdf = render_to_pdf('revenue_app/event_pdf.html', self.get_context_data())
+        context = super().get_context_data(**kwargs)
+        pdf = render_to_pdf('revenue_app/event_pdf.html', context)
         return HttpResponse(pdf, content_type='application/pdf')
 
 
@@ -291,17 +270,11 @@ class TopEventsLatam(TemplateView):
         context['top_event_brl'] = get_top_events(trx[trx['currency'] == 'BRL'])[:10][TOP_EVENTS_COLUMNS]
         return context
 
-class TopEventsLatamPdf(View):
-
-    def get_context_data(self, **kwargs):
-        context = {}
-        trx = transactions(**(self.request.GET.dict()))
-        context['top_event_ars'] = get_top_events(trx[trx['currency'] == 'ARS'])[:10][TOP_EVENTS_COLUMNS]
-        context['top_event_brl'] = get_top_events(trx[trx['currency'] == 'BRL'])[:10][TOP_EVENTS_COLUMNS]
-        return context
+class TopEventsLatamPdf(TopEventsLatam):
 
     def get(self, request, *args, **kwargs):
-        pdf = render_to_pdf('revenue_app/top_events_pdf.html', self.get_context_data())
+        context = super().get_context_data(**kwargs)
+        pdf = render_to_pdf('revenue_app/top_events_pdf.html', context)
         return HttpResponse(pdf, content_type='application/pdf')
 
 
