@@ -1,30 +1,25 @@
 
 {% extends 'revenue_app/base.html' %}
 {% load static %}
-
-{% block head %}
-  <link rel="stylesheet" href="{% static 'revenue_app/css/dashboard.css' %}">
-{% endblock head %}
+{% load humanize %}
 
 {% block content %}
 <h1>Dashboard</h1>
 <br>
-<div class="container mt-4">
-  <div class="row">
-    {% for currency, data in summarized_data.items %}
-    <div class="col-6">
-      <h4>{{currency}}</h4>
-      <table class="table table-striped mt-4">
-        {% for key, value in data.items %}
-          <tr>
-            <td><b>{{key}}</b></td>
-            <td class="text-right">{{value}}</td>
-          </tr>
-        {% endfor %}
-      </table>
-    </div>
-    {% endfor %}
+<div class="row m-0">
+  {% for currency, data in summarized_data.items %}
+  <div class="col-xl-6">
+    <h4>{{currency}}</h4>
+    <table class="table table-striped mt-4">
+      {% for key, value in data.items %}
+        <tr>
+          <td><b>{{key}}</b></td>
+          <td class="text-right text-monospace">{{value|floatformat:2|intcomma}}</td>
+        </tr>
+      {% endfor %}
+    </table>
   </div>
+  {% endfor %}
 </div>
 <br>
 <div class="row m-3">
