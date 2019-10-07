@@ -771,6 +771,71 @@ class ViewsTest(TestCase):
         self.assertIn('.xls', response['Content-Disposition'])
         self.assertEqual(response.status_code, 200)
 
+    def test_top_organizers_json_data(self):
+        URL = reverse('json_top_organizers')
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.client.get(URL)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            str(response._headers['content-type']),
+            "('Content-Type', 'application/json')",
+        )
+
+    def test_dashboard_summary(self):
+        URL = reverse('json_dashboard_summary')
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.client.get(URL)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            str(response._headers['content-type']),
+            "('Content-Type', 'application/json')",
+        )
+
+    def test_top_events_json_data(self):
+        URL = reverse('json_top_events')
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.client.get(URL)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            str(response._headers['content-type']),
+            "('Content-Type', 'application/json')",
+        )
+
+    def test_top_organizers_refunds_json_data(self):
+        URL = reverse('json_top_organizers_refunds')
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.client.get(URL)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            str(response._headers['content-type']),
+            "('Content-Type', 'application/json')",
+        )
+
+    def test_top_organizers_json_data(self):
+        URL = reverse('json_top_organizers')
+        with patch('pandas.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            response = self.client.get(URL)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            str(response._headers['content-type']),
+            "('Content-Type', 'application/json')",
+        )
+
 
 class TemplateTagsTest(TestCase):
     def render_template(self, string, context=None):
