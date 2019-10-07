@@ -38,6 +38,15 @@ body {
 }
 
 /* Content */
+
+h1 {
+  color: #D1410C;
+}
+
+h2, h3, h4, h5, h6 {
+  color: #1E0A3C;
+}
+
 #content {
   display: flex;
   flex-direction: column;
@@ -47,15 +56,25 @@ body {
 
 .wrapper {
   flex: 1;
-  padding: 3rem;
+  padding: 1rem 3rem;
   transition: all 0.4s;
+}
+
+.transactions-table {
+  overflow-x: scroll;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.transactions-table table tr td {
+  white-space: nowrap;
 }
 
 /* Sidebar */
 #sidebar-wrapper {
   min-width: 220px;
   transition: all 0.4s;
-  overflow: hidden;
+  overflow-y: scroll;
   flex: 1;
 }
 

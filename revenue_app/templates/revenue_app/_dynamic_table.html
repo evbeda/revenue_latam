@@ -1,54 +1,59 @@
 {% load date_filters %}
-
-<table class="table table-hover table-sm">
-    <thead>
-        <tr>
-            {% for header in transactions.columns %}
-                <th scope="col">{{ header }}</th>
-            {% endfor %}
-        </tr>
-    </thead>
-    <tbody>
-        {% for index, transaction in transactions.iterrows %}
-        <tr>
-            {% for key, value in transaction.items %}
-                {% if key == 'transaction_created_date' %}
-                    {% if request.GET.groupby == 'week' %}
-                        <td><a href="{% url 'organizers-transactions' %}?start_date={{value|week_start|date:'Y-m-d'}}&end_date={{value|date:'Y-m-d'}}">
-                            from {{value|week_start|date}}<br/>to {{value|date}}
-                        </a></td>
-                    {% elif request.GET.groupby == 'semi_month' %}
-                        <td><a href="{% url 'organizers-transactions' %}?start_date={{value|date:'Y-m-d'}}&end_date={{value|semimonth_end|date:'Y-m-d'}}">
-                            from {{value|date}}<br/>to {{value|semimonth_end|date}}
-                        </a></td>
-                    {% elif request.GET.groupby == 'month' %}
-                        <td><a href="{% url 'organizers-transactions' %}?start_date={{value|date:'Y-m'}}-01&end_date={{value|date:'Y-m-d'}}">
-                            {{value|date:'F, Y'}}
-                        </a></td>
-                    {% elif request.GET.groupby == 'quarter' %}
-                        <td><a href="{% url 'organizers-transactions' %}?start_date={{value|quarter_start|date:'Y-m-d'}}&end_date={{value|date:'Y-m-d'}}">
-                            Q{{value|quarter}}
-                        </a></td>
-                    {% elif request.GET.groupby == 'year' %}
-                        <td><a href="{% url 'organizers-transactions' %}?start_date={{value.year}}-01-01&end_date={{value|date:'Y-m-d'}}">
-                            {{value.year}}
-                        </a></td>
+{% load number_filters %}
+{% load humanize %}
+<div class="container-fluid transactions-table">
+    <table class="table table-hover table-sm table-bordered">
+        <thead>
+            <tr class="text-center">
+                {% for header in transactions.columns %}
+                    <th scope="col">{{ header }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for index, transaction in transactions.iterrows %}
+            <tr>
+                {% for key, value in transaction.items %}
+                    {% if key == 'transaction_created_date' %}
+                        {% if request.GET.groupby == 'week' %}
+                            <td><a href="{% url 'organizers-transactions' %}?start_date={{value|week_start|date:'Y-m-d'}}&end_date={{value|date:'Y-m-d'}}">
+                                from {{value|week_start|date}}<br/>to {{value|date}}
+                            </a></td>
+                        {% elif request.GET.groupby == 'semi_month' %}
+                            <td><a href="{% url 'organizers-transactions' %}?start_date={{value|date:'Y-m-d'}}&end_date={{value|semimonth_end|date:'Y-m-d'}}">
+                                from {{value|date}}<br/>to {{value|semimonth_end|date}}
+                            </a></td>
+                        {% elif request.GET.groupby == 'month' %}
+                            <td><a href="{% url 'organizers-transactions' %}?start_date={{value|date:'Y-m'}}-01&end_date={{value|date:'Y-m-d'}}">
+                                {{value|date:'F, Y'}}
+                            </a></td>
+                        {% elif request.GET.groupby == 'quarter' %}
+                            <td><a href="{% url 'organizers-transactions' %}?start_date={{value|quarter_start|date:'Y-m-d'}}&end_date={{value|date:'Y-m-d'}}">
+                                Q{{value|quarter}}
+                            </a></td>
+                        {% elif request.GET.groupby == 'year' %}
+                            <td><a href="{% url 'organizers-transactions' %}?start_date={{value.year}}-01-01&end_date={{value|date:'Y-m-d'}}">
+                                {{value.year}}
+                            </a></td>
+                        {% else %}
+                            <td><a href="{% url 'organizers-transactions' %}?start_date={{value|date:'Y-m-d'}}&end_date={{value|date:'Y-m-d'}}">
+                                {{value|date}}
+                            </a></td>
+                        {% endif %}
+                    {% elif key in 'eventholder_user_id,email' %}
+                        <td><a href="{% url 'organizer-transactions' eventholder_user_id=transaction.eventholder_user_id %}">{{value}}</a></td>
+                    {% elif key in 'event_id,event_title' %}
+                        <td><a href="{% url 'event-details' event_id=transaction.event_id %}">{{value}}</a></td>
+                    {% elif key == 'eb_perc_take_rate'  %}
+                        <td class="text-right text-monospace">{{value|floatformat:2}}%</td>
+                    {% elif value|is_numeric %}
+                        <td class="text-right text-monospace">{{value|floatformat:2|intcomma}}</td>
                     {% else %}
-                        <td><a href="{% url 'organizers-transactions' %}?start_date={{value|date:'Y-m-d'}}&end_date={{value|date:'Y-m-d'}}">
-                            {{value|date}}
-                        </a></td>
+                        <td>{{value}}</td>
                     {% endif %}
-                {% elif key in 'eventholder_user_id,email' %}
-                    <td><a href="{% url 'organizer-transactions' eventholder_user_id=transaction.eventholder_user_id %}">{{value}}</a></td>
-                {% elif key in 'event_id,event_title' %}
-                    <td><a href="{% url 'event-details' event_id=transaction.event_id %}">{{value}}</a></td>
-                {% elif key == 'eb_perc_take_rate'  %}
-                    <td>{{value}}%</td>
-                {% else %}
-                    <td>{{value}}</td>
-                {% endif %}
+                {% endfor %}
+            </tr>
             {% endfor %}
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+        </tbody>
+    </table>
+</div>

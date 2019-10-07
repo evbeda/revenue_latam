@@ -3,21 +3,22 @@
 {% load string_filters %}
 
 {% block content %}
-<h1>
-    <span>Transactions grouped by {{request.GET.groupby|title}}</span>
-    <a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
-    <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-        <a class="dropdown-item" href="{% url 'download-csv' csv_name='transactions_grouped_by_'|add:request.GET.groupby %}"><i class="fas fa-file-csv"></i> CSV</a>
-        <a class="dropdown-item" href="{% url 'download-excel' xls_name='transactions_grouped_by_'|add:request.GET.groupby %}"><i class="fas fa-file-excel"></i> Excel</a>
-    </div>
-</h1>
-    
-{% if request.GET.start_date %}
-    <h5>from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
-{% endif %}
-<div class="row">
+<div class="row m-0">
     <div class="col-12">
-        {% include 'revenue_app/_dynamic_table.html' %}        
+        <div class="dropdown show">
+            <h1>
+                <span>Transactions grouped by {{request.GET.groupby|title}}</span>
+                <a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                    <a class="dropdown-item" href="{% url 'download-csv' csv_name='transactions_grouped_by_'|add:request.GET.groupby %}"><i class="fas fa-file-csv"></i> CSV</a>
+                    <a class="dropdown-item" href="{% url 'download-excel' xls_name='transactions_grouped_by_'|add:request.GET.groupby %}"><i class="fas fa-file-excel"></i> Excel</a>
+                </div>
+            </h1>
+        </div>
+        {% if request.GET.start_date %}
+            <h5>from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
+        {% endif %}
     </div>
 </div>
+{% include 'revenue_app/_dynamic_table.html' %}        
 {% endblock content %}

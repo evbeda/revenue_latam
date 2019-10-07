@@ -941,3 +941,21 @@ class TemplateTagsTest(TestCase):
             context
         )
         self.assertEqual(rendered, expected)
+
+    @parameterized.expand([
+        ({'value': '2'}, 'Not number type.'),
+        ({'value': 2}, 'Is number type.'),
+        ({'value': 2.5}, 'Is number type.'),
+        ({'value': '2.5'}, 'Not number type.'),
+    ])
+    def test_numeric(self, context, expected):
+        rendered = self.render_template(
+            '{% load number_filters %}'
+            '{% if value|is_numeric %}'
+            'Is number type.'
+            '{% else %}'
+            'Not number type.'
+            '{% endif %}',
+            context
+        )
+        self.assertEqual(rendered, expected)

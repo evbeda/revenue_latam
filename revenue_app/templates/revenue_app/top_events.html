@@ -2,50 +2,50 @@
 {% load static %}
 
 {% block content %}
-	<div class="dropdown show">
-	    <h1 class="text-center">
-		<span>Top 10 Argentina Events</span>
-		<a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
-		<div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-		  <a class="dropdown-item" href="{% url 'download-top-events-pdf'%}" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
-		</div>
-	    </h1>
+<div class="row m-0">
+  <div class="col-12">
+    <div class="dropdown show">
+      <h1 class="text-center">
+        <span>Top 10 Argentina Events</span>
+        <a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+          <a class="dropdown-item" href="{% url 'download-top-events-pdf'%}" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+        </div>
+      </h1>
     </div>
-{% if request.GET.start_date %}
-	<h5 class="text-center">from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
-{% endif %}
-<br>
-<div class="row">
-    <div class="col-12">
-        {% include 'revenue_app/_dynamic_table.html' with transactions=top_event_ars %}
-    </div>
+    {% if request.GET.start_date %}
+    <h5 class="text-center">from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
+    {% endif %}
+  </div>
 </div>
+<br>
+{% include 'revenue_app/_dynamic_table.html' with transactions=top_event_ars %}
 <div class="row">
-    <div class="col"></div>
-	<div class="col-7 chart-container">
-		<canvas id="chart_arg"></canvas>
-	</div>
-    <div class="col"></div>
+  <div class="col"></div>
+  <div class="col-7 chart-container">
+    <canvas id="chart_arg"></canvas>
+  </div>
+  <div class="col"></div>
 </div>
 <br>
 <hr class="mb-4 mt-4">
 <br>
-<h1 class="text-center">Top 10 Brazil Events</h1>
-{% if request.GET.start_date %}
-	<h5 class="text-center">from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
-{% endif %}
-<br>
-<div class="row">
-    <div class="col-12">
-        {% include 'revenue_app/_dynamic_table.html' with transactions=top_event_brl %}
-    </div>
+<div class="row m-0">
+  <div class="col-12">
+    <h1 class="text-center">Top 10 Brazil Events</h1>
+    {% if request.GET.start_date %}
+    <h5 class="text-center">from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
+    {% endif %}
+  </div>
 </div>
+<br>
+{% include 'revenue_app/_dynamic_table.html' with transactions=top_event_brl %}
 <div class="row">
-    <div class="col"></div>
-	<div class="col-lg-7 chart-container">
-		<canvas id="chart_brl"></canvas>
-	</div>
-    <div class="col"></div>
+  <div class="col"></div>
+  <div class="col-lg-7 chart-container">
+    <canvas id="chart_brl"></canvas>
+  </div>
+  <div class="col"></div>
 </div>
 {% endblock content %}
 
