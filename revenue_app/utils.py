@@ -34,6 +34,16 @@ def get_transactions():
     return transactions
 
 
+def get_corrections():
+    corrections = pd.read_csv('datasets/corrections.csv').replace(np.nan, '', regex=True)
+    corrections['transaction_created_date'] = pd.to_datetime(
+        corrections['transaction_created_date'],
+    )
+    corrections['eventholder_user_id'] = corrections['eventholder_user_id'].apply(str)
+    corrections['event_id'] = corrections['event_id'].apply(str)
+    return corrections
+
+
 def get_organizer_sales():
     organizer_sales = pd.read_csv('datasets/organizer_sales.csv').replace(np.nan, '', regex=True)
     if 'organizer_email' in organizer_sales.columns:
@@ -44,7 +54,23 @@ def get_organizer_sales():
             organizer_sales['transaction_created_date'],
         )
     organizer_sales['event_id'] = organizer_sales['event_id'].apply(str)
+    organizer_sales = organizer_sales[organizer_sales['PaidTix']!=0]
     return organizer_sales
+
+
+def merge_corrections(transactions, corrections):
+    trx_total = pd.concat([transactions, corrections])
+    trx_total = trx_total.groupby([
+        'transaction_created_date',
+        'eventholder_user_id',
+        'email',
+        'event_id',
+        'currency',
+        'payment_processor',
+        'is_refund',
+        'is_sale',
+    ]).sum().reset_index()
+    return trx_total
 
 
 def filter_transactions(transactions=None, **kwargs):
@@ -80,7 +106,6 @@ def filter_transactions(transactions=None, **kwargs):
 def merge_transactions(transactions, organizer_sales):
     merged = transactions.merge(
         organizer_sales[[
-            'transaction_created_date',
             'email',
             'event_id',
             'event_title',
@@ -88,19 +113,32 @@ def merge_transactions(transactions, organizer_sales):
             'sales_vertical',
             'vertical',
             'sub_vertical',
+        ]].drop_duplicates(),
+        on=['email', 'event_id'],
+        how='left',
+    )
+    sales = merged[merged['is_sale']==1]
+    refunds = merged[merged['is_refund']==1]
+    refunds['PaidTix'] = 0
+    merged_sales = sales.merge(
+        organizer_sales[[
+            'transaction_created_date',
+            'email',
+            'event_id',
             'PaidTix',
         ]].drop_duplicates(),
         on=['transaction_created_date', 'email', 'event_id'],
         how='left',
     )
-    merged.PaidTix.replace(np.nan, 0, regex=True, inplace=True)
-    merged['PaidTix'] = merged['PaidTix'].astype(int)
-    merged.replace(np.nan, 'n/a', regex=True, inplace=True)
-    merged.sort_values(
+    merged_sales.PaidTix.replace(np.nan, 0, regex=True, inplace=True)
+    merged_sales['PaidTix'] = merged_sales['PaidTix'].astype(int)
+    merged_sales.replace(np.nan, 'n/a', regex=True, inplace=True)
+    merged_sales.sort_values(
         by=['transaction_created_date', 'eventholder_user_id', 'event_id'],
         inplace=True,
     )
-    return merged
+    merged_final = pd.concat([merged_sales, refunds])
+    return merged_final.drop(columns=['is_sale', 'is_refund'])
 
 
 def group_transactions(transactions, by):
@@ -138,23 +176,18 @@ def group_transactions(transactions, by):
 def calc_perc_take_rate(transactions):
     transactions['eb_perc_take_rate'] = (
         transactions['sale__gtf_esf__epp'] / transactions['sale__payment_amount__epp'] * 100
-    ).round(2).apply(str)
+    ).round(2)
     transactions.eb_perc_take_rate.replace(np.nan, 0.00, regex=True, inplace=True)
-    return transactions
-
-
-def calc_gtv(transactions):
-    transactions['gtv'] = transactions['sale__gtf_esf__epp'] + transactions['sale__ap_organizer__gts__epp']
-    transactions.gtv.replace(np.nan, 0.00, regex=True, inplace=True)
     return transactions
 
 
 def transactions(**kwargs):
     transactions = get_transactions()
+    corrections = get_corrections()
+    trx_total = merge_corrections(transactions, corrections)
     organizers_sales = get_organizer_sales()
-    merged = merge_transactions(transactions, organizers_sales)
+    merged = merge_transactions(trx_total, organizers_sales)
     merged = calc_perc_take_rate(merged)
-    merged = calc_gtv(merged)
     filtered = filter_transactions(merged, **kwargs)
     if kwargs.get('groupby'):
         filtered = group_transactions(filtered, kwargs.get('groupby'))
@@ -240,17 +273,16 @@ def get_top_organizers(filtered_transactions):
     ).agg({
         'sale__payment_amount__epp': sum,
         'sale__gtf_esf__epp': sum,
-        'gtv': sum,
     }).sort_values(
         by='sale__gtf_esf__epp',
         ascending=False,
     ).round(2).reset_index()
     ordered = calc_perc_take_rate(ordered)
     top = ordered.head(10).copy()
-    top.loc[len(top), ['email', 'sale__gtf_esf__epp', 'gtv']] = [
+    top.loc[len(top), ['email', 'sale__gtf_esf__epp', 'sale__payment_amount__epp']] = [
         'Others',
         ordered[10:].sale__gtf_esf__epp.sum().round(2),
-        ordered[10:].gtv.sum().round(2),
+        ordered[10:].sale__payment_amount__epp.sum().round(2),
     ]
     return top
 
@@ -274,20 +306,21 @@ def get_top_organizers_refunds(filtered_transactions):
 
 def get_top_events(filtered_transactions):
     ordered = filtered_transactions.groupby(
-        ['event_id', 'event_title', 'eventholder_user_id', 'email', 'eb_perc_take_rate'],
+        ['event_id', 'event_title', 'eventholder_user_id', 'email'],
     ).agg({
         'sale__gtf_esf__epp': sum,
-        'gtv': sum,
+        'sale__payment_amount__epp': sum,
+        'eb_perc_take_rate': 'mean',
     }).sort_values(
         by='sale__gtf_esf__epp',
         ascending=False,
     ).round(2).reset_index()
     top = ordered.head(10).copy()
-    top.loc[len(top), ['event_title', 'event_id', 'sale__gtf_esf__epp', 'gtv']] = [
+    top.loc[len(top), ['event_title', 'event_id', 'sale__gtf_esf__epp', 'sale__payment_amount__epp']] = [
         'Others',
         'Others',
         ordered[10:].sale__gtf_esf__epp.sum().round(2),
-        ordered[10:].gtv.sum().round(2),
+        ordered[10:].sale__payment_amount__epp.sum().round(2),
     ]
     return top
 
@@ -307,8 +340,8 @@ def get_summarized_data():
             'Total Events': filtered.event_id.nunique(),
             'Total PaidTix': filtered.PaidTix.sum(),
             'Total GTF': round(filtered.sale__gtf_esf__epp.sum(), 2),
-            'Total GTV': round(filtered.gtv.sum(), 2),
+            'Total GTV': round(filtered.sale__payment_amount__epp.sum(), 2),
             'ATV': round(filtered.sale__ap_organizer__gts__epp.sum() / filtered.PaidTix.sum(), 2),
-            'Avg EB Perc Take Rate': round(filtered.eb_perc_take_rate.apply(float).mean(), 2),
+            'Avg EB Perc Take Rate': round(filtered.sale__gtf_esf__epp.sum() / filtered.sale__payment_amount__epp.sum() * 100, 2),
         }
     return summarized_data

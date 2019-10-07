@@ -35,7 +35,6 @@ FULL_COLUMNS = [
     'event_id',
     'event_title',
     'eb_perc_take_rate',
-    'gtv',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
     'sale__eb_tax__epp',
@@ -62,7 +61,6 @@ TRANSACTIONS_COLUMNS = [
     'event_id',
     'event_title',
     'eb_perc_take_rate',
-    'gtv',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
     'sale__eb_tax__epp',
@@ -87,7 +85,6 @@ ORGANIZER_COLUMNS = [
     'vertical',
     'sub_vertical',
     'eb_perc_take_rate',
-    'gtv',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
     'sale__eb_tax__epp',
@@ -111,7 +108,6 @@ EVENT_COLUMNS = [
     'vertical',
     'sub_vertical',
     'eb_perc_take_rate',
-    'gtv',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
     'sale__eb_tax__epp',
@@ -129,7 +125,6 @@ TOP_ORGANIZERS_COLUMNS = [
     'email',
     'eb_perc_take_rate',
     'sale__gtf_esf__epp',
-    'gtv',
 ]
 
 TOP_ORGANIZERS_REFUNDS_COLUMNS = [
@@ -146,7 +141,6 @@ TOP_EVENTS_COLUMNS = [
     'event_title',
     'eb_perc_take_rate',
     'sale__gtf_esf__epp',
-    'gtv',
 ]
 
 
