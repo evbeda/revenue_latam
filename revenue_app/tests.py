@@ -15,10 +15,10 @@ from pandas.core.frame import DataFrame
 from parameterized import parameterized
 
 from revenue_app.utils import (
-    calc_gtv,
     calc_perc_take_rate,
     event_details,
     filter_transactions,
+    get_corrections,
     get_event_transactions,
     get_organizer_sales,
     get_organizer_transactions,
@@ -28,6 +28,7 @@ from revenue_app.utils import (
     get_top_organizers_refunds,
     get_transactions,
     group_transactions,
+    merge_corrections,
     merge_transactions,
     random_color,
     summarize_dataframe,
@@ -46,6 +47,7 @@ from revenue_app.views import (
 )
 
 TRANSACTIONS_EXAMPLE_PATH = 'revenue_app/tests/transactions_example.csv'
+CORRECTIONS_EXAMPLE_PATH = 'revenue_app/tests/corrections_example.csv'
 ORGANIZER_SALES_EXAMPLE_PATH = 'revenue_app/tests/organizer_sales_example.csv'
 
 BASE_ORGANIZER_SALES_COLUMNS = [
@@ -69,9 +71,9 @@ BASE_TRANSACTION_COLUMNS = [
     'email',
     'payment_processor',
     'currency',
-    # Vertical (not found yet)
-    # Subvertical (not found yet)
     'event_id',
+    'is_refund',
+    'is_sale',
     'sale__payment_amount__epp',
     'sale__gtf_esf__epp',
     'sale__eb_tax__epp',
@@ -118,6 +120,11 @@ class UtilsTestCase(TestCase):
             return get_transactions()
 
     @property
+    def corrections(self):
+        with patch('revenue_app.utils.pd.read_csv', return_value=read_csv(CORRECTIONS_EXAMPLE_PATH)):
+            return get_corrections()
+
+    @property
     def organizer_sales(self):
         with patch('revenue_app.utils.pd.read_csv', return_value=read_csv(ORGANIZER_SALES_EXAMPLE_PATH)):
             return get_organizer_sales()
@@ -132,6 +139,16 @@ class UtilsTestCase(TestCase):
         self.assertNotIn('sale__eb_tax__epp__1', transactions.columns.tolist())
         self.assertEqual(len(transactions), 27)
 
+    def test_get_corrections(self):
+        corrections = self.corrections
+        self.assertIsInstance(corrections, DataFrame)
+        self.assertListEqual(
+            sorted(corrections.columns.tolist()),
+            sorted(BASE_TRANSACTION_COLUMNS),
+        )
+        self.assertNotIn('sale__eb_tax__epp__1', corrections.columns.tolist())
+        self.assertEqual(len(corrections), 12)
+
     def test_get_organizer_sales(self):
         organizer_sales = self.organizer_sales
         self.assertIsInstance(organizer_sales, DataFrame)
@@ -142,8 +159,18 @@ class UtilsTestCase(TestCase):
         self.assertNotIn('organizer_email', organizer_sales.columns.tolist())
         self.assertEqual(len(organizer_sales), 27)
 
+    def test_merge_corrections(self):
+        trx_total = merge_corrections(self.transactions, self.corrections)
+        self.assertIsInstance(trx_total, DataFrame)
+        self.assertListEqual(
+            sorted(trx_total.columns),
+            sorted(BASE_TRANSACTION_COLUMNS),
+        )
+        self.assertEqual(len(trx_total), 27)
+
     def test_merge_transactions(self):
-        merged_transactions = merge_transactions(self.transactions, self.organizer_sales)
+        trx_total = merge_corrections(self.transactions, self.corrections)
+        merged_transactions = merge_transactions(trx_total, self.organizer_sales)
         self.assertIsInstance(merged_transactions, DataFrame)
         self.assertListEqual(
             sorted(merged_transactions.columns),
@@ -227,6 +254,7 @@ class UtilsTestCase(TestCase):
     def test_transactions(self, kwargs, expected_length):
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             organizer_transactions = transactions(**kwargs)
@@ -243,6 +271,7 @@ class UtilsTestCase(TestCase):
     def test_get_event_transactions(self, event_id, transactions_qty, tickets_qty):
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -261,6 +290,7 @@ class UtilsTestCase(TestCase):
     def test_get_organizer_transactions(self, eventholder_user_id, transactions_qty, tickets_qty):
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -272,6 +302,7 @@ class UtilsTestCase(TestCase):
     def test_get_top_ten_organizers(self):
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             trx = transactions()
@@ -285,6 +316,7 @@ class UtilsTestCase(TestCase):
     def test_get_top_ten_organizers_refunds(self):
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             trx = transactions()
@@ -301,13 +333,6 @@ class UtilsTestCase(TestCase):
         result = calc_perc_take_rate(transactions)
         self.assertEqual(len(initial_columns) + 1, len(result.columns))
         self.assertIn('eb_perc_take_rate', result.columns)
-
-    def test_calc_gtv(self):
-        transactions = self.transactions
-        initial_columns = transactions.columns
-        result = calc_gtv(transactions)
-        self.assertEqual(len(initial_columns) + 1, len(result.columns))
-        self.assertIn('gtv', result.columns)
 
     @parameterized.expand([
         ({}, 27),
@@ -336,6 +361,7 @@ class UtilsTestCase(TestCase):
     def test_get_top_ten_events(self):
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             trx = transactions()
@@ -360,11 +386,11 @@ class UtilsTestCase(TestCase):
     @parameterized.expand([
         ('497321858', {
             'PaidTix': 17500,
-            'sale__payment_amount__epp': 4555.3,
-            'sale__eb_tax__epp': 61.7,
-            'sale__ap_organizer__gts__epp': 4200.0,
+            'sale__payment_amount__epp': 2733.18,
+            'sale__eb_tax__epp': 37.02,
+            'sale__ap_organizer__gts__epp': 2520.0,
             'sale__ap_organizer__royalty__epp': 0,
-            'sale__gtf_esf__epp': 293.6,
+            'sale__gtf_esf__epp': 176.16,
             'refund__payment_amount__epp': 0,
             'refund__gtf_epp__gtf_esf__epp': 0,
             'refund__ap_organizer__gts__epp': 0,
@@ -373,11 +399,11 @@ class UtilsTestCase(TestCase):
         }),
         ('696421958', {
             'PaidTix': 20412,
-            'sale__payment_amount__epp': 6270.0,
+            'sale__payment_amount__epp': 5225.0,
             'sale__eb_tax__epp': 0,
-            'sale__ap_organizer__gts__epp': 5831.7,
+            'sale__ap_organizer__gts__epp': 4859.75,
             'sale__ap_organizer__royalty__epp': 0,
-            'sale__gtf_esf__epp': 438.3,
+            'sale__gtf_esf__epp': 365.25,
             'refund__payment_amount__epp': 0,
             'refund__gtf_epp__gtf_esf__epp': 0,
             'refund__ap_organizer__gts__epp': 0,
@@ -399,11 +425,11 @@ class UtilsTestCase(TestCase):
         }),
         ('506285738', {
             'PaidTix': 195,
-            'sale__payment_amount__epp': 18150.0,
+            'sale__payment_amount__epp': 10890.0,
             'sale__eb_tax__epp': 0,
-            'sale__ap_organizer__gts__epp': 16698.0,
+            'sale__ap_organizer__gts__epp': 10018.8,
             'sale__ap_organizer__royalty__epp': 0,
-            'sale__gtf_esf__epp': 1452.0,
+            'sale__gtf_esf__epp': 871.2,
             'refund__payment_amount__epp': 0,
             'refund__gtf_epp__gtf_esf__epp': 0,
             'refund__ap_organizer__gts__epp': 0,
@@ -414,6 +440,7 @@ class UtilsTestCase(TestCase):
     def test_summarize_dataframe(self, eventholder_user_id, expected_total):
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             organizer = transactions(eventholder_user_id=eventholder_user_id)
@@ -468,21 +495,22 @@ class UtilsTestCase(TestCase):
         ('ARS', 'Total Organizers', 2),
         ('ARS', 'Total Events', 2),
         ('ARS', 'Total PaidTix', 20867),
-        ('ARS', 'Total GTF', 2201.87),
-        ('ARS', 'Total GTV', 33701.87),
-        ('ARS', 'ATV', 1.51),
+        ('ARS', 'Total GTF', 1811.82),
+        ('ARS', 'Total GTV', 28112.28),
+        ('ARS', 'ATV', 1.24),
         ('ARS', 'Avg EB Perc Take Rate', 6.44),
         ('BRL', 'Total Organizers', 3),
         ('BRL', 'Total Events', 3),
         ('BRL', 'Total PaidTix', 29607),
-        ('BRL', 'Total GTF', 1998.3),
-        ('BRL', 'Total GTV', 25608.0),
-        ('BRL', 'ATV', 0.8),
-        ('BRL', 'Avg EB Perc Take Rate', 7.89),
+        ('BRL', 'Total GTF', 1344.45),
+        ('BRL', 'Total GTV', 17303),
+        ('BRL', 'ATV', 0.54),
+        ('BRL', 'Avg EB Perc Take Rate', 7.77),
     ])
     def test_get_summarized_data(self, country, data, expected):
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -514,6 +542,7 @@ class ViewsTest(TestCase):
         ]
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -534,6 +563,7 @@ class ViewsTest(TestCase):
         URL = reverse('organizers-transactions')
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL, kwargs)
@@ -551,6 +581,7 @@ class ViewsTest(TestCase):
         URL = reverse('organizer-transactions', kwargs={'eventholder_user_id': eventholder_user_id})
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -563,6 +594,7 @@ class ViewsTest(TestCase):
         URL = reverse('top-organizers')
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL)
@@ -575,6 +607,7 @@ class ViewsTest(TestCase):
         URL = reverse('top-organizers-refunds')
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL)
@@ -587,6 +620,7 @@ class ViewsTest(TestCase):
         URL = reverse('top-events')
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL)
@@ -606,6 +640,7 @@ class ViewsTest(TestCase):
         URL = reverse('event-details', kwargs={'event_id': event_id})
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -619,6 +654,7 @@ class ViewsTest(TestCase):
         URL = reverse('transactions-grouped')
         with patch('revenue_app.utils.pd.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL, kwargs)
@@ -630,6 +666,7 @@ class ViewsTest(TestCase):
         URL = reverse('download-organizer-pdf', kwargs={'eventholder_user_id': 497321858})
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -640,6 +677,7 @@ class ViewsTest(TestCase):
         URL = reverse('download-event-pdf', kwargs={'event_id': 66220941})
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
@@ -650,6 +688,7 @@ class ViewsTest(TestCase):
         URL = reverse('download-top-organizers-pdf')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL)
@@ -659,6 +698,7 @@ class ViewsTest(TestCase):
         URL = reverse('download-top-events-pdf')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL)
@@ -668,6 +708,7 @@ class ViewsTest(TestCase):
         URL = reverse('download-organizer-refunds-pdf')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL)
@@ -678,6 +719,7 @@ class ViewsTest(TestCase):
             reverse('organizers-transactions'),
             (
                 read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(CORRECTIONS_EXAMPLE_PATH),
                 read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             ),
             'transactions'
@@ -686,6 +728,7 @@ class ViewsTest(TestCase):
             reverse('organizer-transactions', kwargs={'eventholder_user_id': 497321858}),
             (
                 read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(CORRECTIONS_EXAMPLE_PATH),
                 read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
                 read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             ),
@@ -695,6 +738,7 @@ class ViewsTest(TestCase):
             reverse('transactions-grouped') + '?groupby=week',
             (
                 read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(CORRECTIONS_EXAMPLE_PATH),
                 read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             ),
             'transactions_grouped_by_week'
@@ -703,6 +747,7 @@ class ViewsTest(TestCase):
             reverse('event-details', kwargs={'event_id': 98415193}),
             (
                 read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(CORRECTIONS_EXAMPLE_PATH),
                 read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
                 read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             ),
@@ -727,6 +772,7 @@ class ViewsTest(TestCase):
             reverse('organizers-transactions'),
             (
                 read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(CORRECTIONS_EXAMPLE_PATH),
                 read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             ),
             'transactions'
@@ -735,6 +781,7 @@ class ViewsTest(TestCase):
             reverse('organizer-transactions', kwargs={'eventholder_user_id': 497321858}),
             (
                 read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(CORRECTIONS_EXAMPLE_PATH),
                 read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
                 read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             ),
@@ -744,6 +791,7 @@ class ViewsTest(TestCase):
             reverse('transactions-grouped') + '?groupby=week',
             (
                 read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(CORRECTIONS_EXAMPLE_PATH),
                 read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             ),
             'transactions_grouped_by_week'
@@ -752,6 +800,7 @@ class ViewsTest(TestCase):
             reverse('event-details', kwargs={'event_id': 98415193}),
             (
                 read_csv(TRANSACTIONS_EXAMPLE_PATH),
+                read_csv(CORRECTIONS_EXAMPLE_PATH),
                 read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
                 read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
             ),
@@ -771,23 +820,11 @@ class ViewsTest(TestCase):
         self.assertIn('.xls', response['Content-Disposition'])
         self.assertEqual(response.status_code, 200)
 
-    def test_top_organizers_json_data(self):
-        URL = reverse('json_top_organizers')
-        with patch('pandas.read_csv', side_effect=(
-            read_csv(TRANSACTIONS_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-        )):
-            response = self.client.get(URL)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            str(response._headers['content-type']),
-            "('Content-Type', 'application/json')",
-        )
-
     def test_dashboard_summary(self):
         URL = reverse('json_dashboard_summary')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL)
@@ -801,6 +838,7 @@ class ViewsTest(TestCase):
         URL = reverse('json_top_events')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL)
@@ -814,6 +852,7 @@ class ViewsTest(TestCase):
         URL = reverse('json_top_organizers_refunds')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL)
@@ -827,6 +866,7 @@ class ViewsTest(TestCase):
         URL = reverse('json_top_organizers')
         with patch('pandas.read_csv', side_effect=(
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             response = self.client.get(URL)
