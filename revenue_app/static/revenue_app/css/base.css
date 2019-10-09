@@ -196,6 +196,10 @@ footer a {
   max-width: 100%;
 }
 
+.chart-container-pp {
+  min-width: 370px;
+}
+
 /* Summarized Table */
 .summarized-key {
   min-width: 175px;
