@@ -345,3 +345,18 @@ def get_summarized_data():
             'Avg EB Perc Take Rate': round(filtered.sale__gtf_esf__epp.sum() / filtered.sale__payment_amount__epp.sum() * 100, 2),
         }
     return summarized_data
+
+
+def payment_processor_summary(transactions):
+    transactions.payment_processor.replace('', 'n/a', regex=True, inplace=True)
+    pp_gtv = transactions.groupby(['payment_processor']).agg({'sale__payment_amount__epp': sum}).reset_index().round(2)
+    pp_gtv = pp_gtv[pp_gtv['sale__payment_amount__epp'] != 0]
+    pp_gtf = transactions.groupby(['payment_processor']).agg({'sale__gtf_esf__epp': sum}).reset_index().round(2)
+    pp_gtf = pp_gtf[pp_gtf['sale__gtf_esf__epp'] != 0]
+    return pp_gtv, pp_gtf
+
+
+def sales_flag_summary(transactions):
+    sf_organizer = transactions.groupby(['eventholder_user_id', 'sales_flag']).sum().reset_index().sales_flag.value_counts()
+    sf_gtf = transactions.groupby(['sales_flag']).agg({'sale__gtf_esf__epp': sum}).reset_index().round(2)
+    return sf_organizer, sf_gtf

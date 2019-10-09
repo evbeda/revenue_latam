@@ -17,7 +17,9 @@ from revenue_app.utils import (
     get_top_events,
     get_top_organizers,
     get_top_organizers_refunds,
+    payment_processor_summary,
     random_color,
+    sales_flag_summary,
     transactions,
 )
 
@@ -346,31 +348,64 @@ def top_events_json_data(request):
 
 def dashboard_summary(request):
     trx = transactions()
-    colors_pp = [random_color() for _ in range(4)]
-    colors_sf = [random_color() for _ in range(3)]
-    colors_c = [random_color() for _ in range(2)]
-    trx.payment_processor.replace('', 'n/a', regex=True, inplace=True)
-    payment_processor = trx.payment_processor.value_counts()
-    sales_flag = trx.sales_flag.value_counts()
-    currency = trx.currency.value_counts()
+    ars = trx[trx['currency'] == 'ARS']
+    brl = trx[trx['currency'] == 'BRL']
+    ars_pp_gtv, ars_pp_gtf = payment_processor_summary(ars)
+    brl_pp_gtv, brl_pp_gtf = payment_processor_summary(brl)
+    ars_sf_org, ars_sf_gtf = sales_flag_summary(ars)
+    brl_sf_org, brl_sf_gtf = sales_flag_summary(brl)
+    colors_pp_gtv = [random_color() for _ in range(4)]
+    colors_pp_gtf = [random_color() for _ in range(4)]
+    colors_sf_org = [random_color() for _ in range(4)]
+    colors_sf_gtf = [random_color() for _ in range(4)]
     res = json.dumps({
-        'payment_processor': {
-            'labels': payment_processor.index.to_list(),
-            'data': payment_processor.values.tolist(),
-            'backgroundColor': colors_pp,
-            'borderColor': [color.replace('0.2', '1') for color in colors_pp],
+        'ars_pp_gtv': {
+            'labels': ars_pp_gtv.payment_processor.tolist(),
+            'data': ars_pp_gtv.sale__payment_amount__epp.tolist(),
+            'backgroundColor': colors_pp_gtv,
+            'borderColor': [color.replace('0.2', '1') for color in colors_pp_gtv],
         },
-        'sales_flag': {
-            'labels': sales_flag.index.to_list(),
-            'data': sales_flag.values.tolist(),
-            'backgroundColor': colors_sf,
-            'borderColor': [color.replace('0.2', '1') for color in colors_sf],
+        'ars_pp_gtf': {
+            'labels': ars_pp_gtf.payment_processor.to_list(),
+            'data': ars_pp_gtf.sale__gtf_esf__epp.tolist(),
+            'backgroundColor': colors_pp_gtf,
+            'borderColor': [color.replace('0.2', '1') for color in colors_pp_gtf],
         },
-        'currency': {
-            'labels': currency.index.tolist(),
-            'data': currency.values.tolist(),
-            'backgroundColor': colors_c,
-            'borderColor': [color.replace('0.2', '1') for color in colors_c],
+        'brl_pp_gtv': {
+            'labels': brl_pp_gtv.payment_processor.tolist(),
+            'data': brl_pp_gtv.sale__payment_amount__epp.tolist(),
+            'backgroundColor': colors_pp_gtv,
+            'borderColor': [color.replace('0.2', '1') for color in colors_pp_gtv],
+        },
+        'brl_pp_gtf': {
+            'labels': brl_pp_gtf.payment_processor.to_list(),
+            'data': brl_pp_gtf.sale__gtf_esf__epp.tolist(),
+            'backgroundColor': colors_pp_gtf,
+            'borderColor': [color.replace('0.2', '1') for color in colors_pp_gtf],
+        },
+        'ars_sf_org': {
+            'labels': ars_sf_org.index.to_list(),
+            'data': ars_sf_org.values.tolist(),
+            'backgroundColor': colors_sf_org,
+            'borderColor': [color.replace('0.2', '1') for color in colors_sf_org],
+        },
+        'ars_sf_gtf': {
+            'labels': ars_sf_gtf.sales_flag.to_list(),
+            'data': ars_sf_gtf.sale__gtf_esf__epp.tolist(),
+            'backgroundColor': colors_sf_gtf,
+            'borderColor': [color.replace('0.2', '1') for color in colors_sf_gtf],
+        },
+        'brl_sf_org': {
+            'labels': brl_sf_org.index.to_list(),
+            'data': brl_sf_org.values.tolist(),
+            'backgroundColor': colors_sf_org,
+            'borderColor': [color.replace('0.2', '1') for color in colors_sf_org],
+        },
+        'brl_sf_gtf': {
+            'labels': brl_sf_gtf.sales_flag.to_list(),
+            'data': brl_sf_gtf.sale__gtf_esf__epp.tolist(),
+            'backgroundColor': colors_sf_gtf,
+            'borderColor': [color.replace('0.2', '1') for color in colors_sf_gtf],
         },
     })
     return HttpResponse(res, content_type="application/json")

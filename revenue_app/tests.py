@@ -11,7 +11,7 @@ from django.urls import reverse
 from unittest.mock import patch
 
 from pandas import read_csv
-from pandas.core.frame import DataFrame
+from pandas.core.frame import DataFrame, Series
 from parameterized import parameterized
 
 from revenue_app.utils import (
@@ -30,7 +30,9 @@ from revenue_app.utils import (
     group_transactions,
     merge_corrections,
     merge_transactions,
+    payment_processor_summary,
     random_color,
+    sales_flag_summary,
     summarize_dataframe,
     transactions,
 )
@@ -512,10 +514,51 @@ class UtilsTestCase(TestCase):
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(CORRECTIONS_EXAMPLE_PATH),
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
         )):
             summarized_data = get_summarized_data()
         self.assertEqual(summarized_data[country][data], expected)
+
+    @parameterized.expand([
+        ('ARS', 'ADYEN', 28112.28, 1811.82),
+        ('BRL', 'MERCADO_PAGO', 5225, 365.25),
+        ('BRL', 'ADYEN', 1188, 108),
+        ('BRL', 'PAYPAL', 10890, 871.2),
+    ])
+    def test_payment_processor_summary(self, currency, payment_processor, gtv, gtf):
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            trx = transactions()
+        filtered = (trx[trx['currency'] == currency])
+        pp_gtv, pp_gtf = payment_processor_summary(filtered)
+        self.assertIsInstance(pp_gtv, DataFrame)
+        self.assertIsInstance(pp_gtf, DataFrame)
+        self.assertIn(payment_processor, pp_gtv.payment_processor.to_list())
+        self.assertIn(gtv, pp_gtv.sale__payment_amount__epp.tolist())
+        self.assertIn(gtf, pp_gtf.sale__gtf_esf__epp.tolist())
+
+    @parameterized.expand([
+        ('ARS', 'sales', 2, 1811.82),
+        ('BRL', 'SSO', 2, 108),
+        ('BRL', 'sales', 1, 1236.45),
+    ])
+    def test_sales_flag_summary(self, currency, sales_flag, org_qty, gtf):
+        with patch('revenue_app.utils.pd.read_csv', side_effect=(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+        )):
+            trx = transactions()
+        filtered = (trx[trx['currency'] == currency])
+        sf_org, sf_gtf = sales_flag_summary(filtered)
+        self.assertIsInstance(sf_org, Series)
+        self.assertIsInstance(sf_gtf, DataFrame)
+        self.assertIn(sales_flag, sf_org.index.to_list())
+        self.assertIn(sales_flag, sf_gtf.sales_flag.to_list())
+        self.assertIn(org_qty, sf_org.values.tolist())
+        self.assertIn(gtf, sf_gtf.sale__gtf_esf__epp.tolist())
 
 
 class ViewsTest(TestCase):
