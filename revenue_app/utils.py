@@ -45,6 +45,7 @@ def clean_transactions(transactions):
     )
     transactions['eventholder_user_id'] = transactions['eventholder_user_id'].apply(str)
     transactions['event_id'] = transactions['event_id'].apply(str)
+    transactions[MONEY_COLUMNS] = transactions[MONEY_COLUMNS].astype(float)
     return transactions
 
 
