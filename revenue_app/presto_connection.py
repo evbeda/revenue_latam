@@ -17,8 +17,8 @@ class PrestoError(Exception):
             message = error_message.split("(1, '")[1].split("')))")[0].strip()
             message += '.<br>Update your certificate '
             message += '(<a href="https://docs.evbhome.com/intro/self_signed_certs.html">link</a>).'
-        elif 'Invalid credentials' in error_message:
-            # Raised when wrong okta username/password
+        elif ('Invalid credentials' in error_message) or ('Malformed decoded credentials' in error_message):
+            # Raised when wrong or empty okta username/password
             message = error_message.split('<pre>')[1].split('</pre>')[0].strip()
             message += '.<br>Check your okta username and password.'
         else:
