@@ -106,6 +106,9 @@ venv.bak/
 # vscode
 .vscode
 
+# PyCharm
+.idea/
+
 # run with env vars
 run.sh
 
