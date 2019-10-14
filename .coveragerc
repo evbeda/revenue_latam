@@ -1,7 +1,6 @@
 [run]
 source =
     revenue_app
-    login_app
     revenue_latam
 
 omit =

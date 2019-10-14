@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = get_env_variable('SECRET_KEY')
 
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.herokuapp.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -38,8 +38,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'revenue_app',
-    'login_app',
-    'social_django',
     'bootstrap4',
     'chartjs',
 ]
@@ -52,30 +50,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 ROOT_URLCONF = 'revenue_latam.urls'
-
-AUTHENTICATION_BACKENDS = (
-    'social_core.backends.eventbrite.EventbriteOAuth2',
-    'django.contrib.auth.backends.ModelBackend',
-)
-
-SOCIAL_AUTH_EVENTBRITE_WHITELISTED_DOMAINS = ['eventbrite.com']
-SOCIAL_AUTH_PIPELINE = (
-        'social_core.pipeline.social_auth.social_details',
-        'social_core.pipeline.social_auth.social_uid',
-        'settings.pipeline.auth_allowed',
-        'social_core.pipeline.social_auth.social_user',
-        'social_core.pipeline.user.get_username',
-        'social_core.pipeline.user.create_user',
-        'social_core.pipeline.social_auth.associate_user',
-        'social_core.pipeline.social_auth.load_extra_data',
-        'social_core.pipeline.user.user_details'
-)
 
 
 TEMPLATES = [
@@ -139,11 +118,3 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'revenue_app/static')
-
-LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = 'login'
-SOCIAL_AUTH_LOGIN_ERROR_URL = '/accounts/login/error'
-EVENTBRITE_SOCIAL_AUTH_RAISE_EXCEPTIONS = True
-SOCIAL_AUTH_RAISE_EXCEPTIONS = True
-RAISE_EXCEPTIONS = True
