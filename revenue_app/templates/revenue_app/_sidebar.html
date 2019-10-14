@@ -39,11 +39,6 @@
                 <input type="hidden" name="groupby" value="{{request.GET.groupby}}">
                 <input type="date" class="form-control" name="start_date" value={{request.GET.start_date}}>
                 <input type="date" class="form-control" name="end_date" value={{request.GET.end_date}}>
-                <select id="currency-select" class="form-control" name="currency" placeholder="Currency">
-                    <option value="" disabled selected>Currency</option>
-                    <option value="ARS">ARS</option>
-                    <option value="BRL">BRL</option>
-                </select>
                 {% csrf_token %}
                 <button type="submit" class="mt-1 btn btn-evb-orange btn-sm">Apply</button>
             </form>
