@@ -21,6 +21,7 @@ from revenue_app.presto_connection import read_sql
 from revenue_app.utils import (
     calc_perc_take_rate,
     clean_corrections,
+    clean_organizer_refunds,
     clean_organizer_sales,
     clean_transactions,
     event_details,
@@ -56,6 +57,7 @@ from revenue_app.views import (
 TRANSACTIONS_EXAMPLE_PATH = 'revenue_app/tests/transactions_example.csv'
 CORRECTIONS_EXAMPLE_PATH = 'revenue_app/tests/corrections_example.csv'
 ORGANIZER_SALES_EXAMPLE_PATH = 'revenue_app/tests/organizer_sales_example.csv'
+ORGANIZER_REFUNDS_EXAMPLE_PATH = 'revenue_app/tests/organizer_refunds_example.csv'
 TRANSACTIONS_SQL_EXAMPLE_PATH = 'revenue_app/tests/transactions_example.sql'
 
 BASE_ORGANIZER_SALES_COLUMNS = [
@@ -68,6 +70,15 @@ BASE_ORGANIZER_SALES_COLUMNS = [
     'sales_vertical',
     'vertical',
     'sub_vertical',
+    'GTSntv',
+    'GTFntv',
+    'PaidTix',
+]
+
+BASE_ORGANIZER_REFUNDS_COLUMNS = [
+    'transaction_created_date',
+    'email',
+    'event_id',
     'GTSntv',
     'GTFntv',
     'PaidTix',
@@ -134,6 +145,10 @@ class UtilsTestCase(TestCase):
     def organizer_sales(self):
         return clean_organizer_sales(read_csv(ORGANIZER_SALES_EXAMPLE_PATH))
 
+    @property
+    def organizer_refunds(self):
+        return clean_organizer_refunds(read_csv(ORGANIZER_REFUNDS_EXAMPLE_PATH))
+
     def test_clean_transactions(self):
         transactions = self.transactions
         self.assertIsInstance(transactions, DataFrame)
@@ -164,6 +179,16 @@ class UtilsTestCase(TestCase):
         self.assertNotIn('organizer_email', organizer_sales.columns.tolist())
         self.assertEqual(len(organizer_sales), 27)
 
+    def test_clean_organizer_refunds(self):
+        organizer_refunds = self.organizer_refunds
+        self.assertIsInstance(organizer_refunds, DataFrame)
+        self.assertListEqual(
+            sorted(organizer_refunds.columns.tolist()),
+            sorted(BASE_ORGANIZER_REFUNDS_COLUMNS),
+        )
+        self.assertNotIn('organizer_email', organizer_refunds.columns.tolist())
+        self.assertEqual(len(organizer_refunds), 5)
+
     def test_merge_corrections(self):
         trx_total = merge_corrections(self.transactions, self.corrections)
         self.assertIsInstance(trx_total, DataFrame)
@@ -175,7 +200,7 @@ class UtilsTestCase(TestCase):
 
     def test_merge_transactions(self):
         trx_total = merge_corrections(self.transactions, self.corrections)
-        merged_transactions = merge_transactions(trx_total, self.organizer_sales)
+        merged_transactions = merge_transactions(trx_total, self.organizer_sales, self.organizer_refunds)
         self.assertIsInstance(merged_transactions, DataFrame)
         self.assertListEqual(
             sorted(merged_transactions.columns),
@@ -202,7 +227,7 @@ class UtilsTestCase(TestCase):
         ('currency', 2),
     ])
     def test_group_transactions(self, by, expected_length):
-        grouped = group_transactions(merge_transactions(self.transactions, self.organizer_sales), by)
+        grouped = group_transactions(merge_transactions(self.transactions, self.organizer_sales, self.organizer_refunds), by)
         self.assertEqual(len(grouped), expected_length)
 
     @parameterized.expand([
@@ -261,23 +286,25 @@ class UtilsTestCase(TestCase):
             self.transactions,
             self.corrections,
             self.organizer_sales,
+            self.organizer_refunds,
             **kwargs,
         )
         self.assertIsInstance(organizer_transactions, DataFrame)
         self.assertEqual(len(organizer_transactions), expected_length)
 
     @parameterized.expand([
-        ('66220941', 5, 17500),
-        ('98415193', 6, 20412),
-        ('17471621', 4, 9000),
-        ('35210860', 5, 195),
-        ('88128252', 7, 3367),
+        ('66220941', 5, 10500),
+        ('98415193', 6, 13608),
+        ('17471621', 4, 4500),
+        ('35210860', 5, 117),
+        ('88128252', 7, 2405),
     ])
     def test_get_event_transactions(self, event_id, transactions_qty, tickets_qty):
         transactions, details, sales_refunds = get_event_transactions(
             self.transactions,
             self.corrections,
             self.organizer_sales,
+            self.organizer_refunds,
             event_id,
         )
         self.assertIsInstance(transactions, DataFrame)
@@ -285,17 +312,18 @@ class UtilsTestCase(TestCase):
         self.assertEqual(details['PaidTix'], tickets_qty)
 
     @parameterized.expand([
-        ('497321858', 5, 17500),
-        ('696421958', 6, 20412),
-        ('434444537', 4, 9000),
-        ('506285738', 5, 195),
-        ('634364434', 7, 3367),
+        ('497321858', 5, 10500),
+        ('696421958', 6, 13608),
+        ('434444537', 4, 4500),
+        ('506285738', 5, 117),
+        ('634364434', 7, 2405),
     ])
     def test_get_organizer_transactions(self, eventholder_user_id, transactions_qty, tickets_qty):
         transactions, details, sales_refunds = get_organizer_transactions(
             self.transactions,
             self.corrections,
             self.organizer_sales,
+            self.organizer_refunds,
             eventholder_user_id,
         )
         self.assertIsInstance(transactions, DataFrame)
@@ -307,6 +335,7 @@ class UtilsTestCase(TestCase):
             self.transactions,
             self.corrections,
             self.organizer_sales,
+            self.organizer_refunds,
         )
         top_ars = get_top_organizers(trx[trx['currency'] == 'ARS'])
         top_brl = get_top_organizers(trx[trx['currency'] == 'BRL'])
@@ -320,6 +349,7 @@ class UtilsTestCase(TestCase):
             self.transactions,
             self.corrections,
             self.organizer_sales,
+            self.organizer_refunds,
         )
         top_ars = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])
         top_brl = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])
@@ -333,6 +363,7 @@ class UtilsTestCase(TestCase):
             self.transactions,
             self.corrections,
             self.organizer_sales,
+            self.organizer_refunds,
         )
         top_ars = get_top_events(trx[trx['currency'] == 'ARS'])
         top_brl = get_top_events(trx[trx['currency'] == 'BRL'])
@@ -384,54 +415,54 @@ class UtilsTestCase(TestCase):
 
     @parameterized.expand([
         ('497321858', {
-            'PaidTix': 17500,
-            'sale__payment_amount__epp': 2733.18,
-            'sale__eb_tax__epp': 37.02,
-            'sale__ap_organizer__gts__epp': 2520.0,
+            'PaidTix': 10500,
+            'sale__payment_amount__epp': 1822.12,
+            'sale__eb_tax__epp': 24.68,
+            'sale__ap_organizer__gts__epp': 1680.0,
             'sale__ap_organizer__royalty__epp': 0,
-            'sale__gtf_esf__epp': 176.16,
-            'refund__payment_amount__epp': 0,
-            'refund__gtf_epp__gtf_esf__epp': 0,
-            'refund__ap_organizer__gts__epp': 0,
-            'refund__eb_tax__epp': 0,
+            'sale__gtf_esf__epp': 117.44,
+            'refund__payment_amount__epp': -911.06,
+            'refund__gtf_epp__gtf_esf__epp': -58.72,
+            'refund__ap_organizer__gts__epp': -840.0,
+            'refund__eb_tax__epp': -12.34,
             'refund__ap_organizer__royalty__epp': 0,
         }),
         ('696421958', {
-            'PaidTix': 20412,
-            'sale__payment_amount__epp': 5225.0,
+            'PaidTix': 13608,
+            'sale__payment_amount__epp': 4180.0,
             'sale__eb_tax__epp': 0,
-            'sale__ap_organizer__gts__epp': 4859.75,
+            'sale__ap_organizer__gts__epp': 3887.8,
             'sale__ap_organizer__royalty__epp': 0,
-            'sale__gtf_esf__epp': 365.25,
-            'refund__payment_amount__epp': 0,
-            'refund__gtf_epp__gtf_esf__epp': 0,
-            'refund__ap_organizer__gts__epp': 0,
+            'sale__gtf_esf__epp': 292.2,
+            'refund__payment_amount__epp': -1045.0,
+            'refund__gtf_epp__gtf_esf__epp': -73.05,
+            'refund__ap_organizer__gts__epp': -971.95,
             'refund__eb_tax__epp': 0,
             'refund__ap_organizer__royalty__epp': 0,
         }),
         ('434444537', {
-            'PaidTix': 9000,
-            'sale__payment_amount__epp': 1188.0,
+            'PaidTix': 4500,
+            'sale__payment_amount__epp': 891.0,
             'sale__eb_tax__epp': 0,
-            'sale__ap_organizer__gts__epp': 1080.0,
+            'sale__ap_organizer__gts__epp': 810.0,
             'sale__ap_organizer__royalty__epp': 0,
-            'sale__gtf_esf__epp': 108.0,
-            'refund__payment_amount__epp': 0,
-            'refund__gtf_epp__gtf_esf__epp': 0,
-            'refund__ap_organizer__gts__epp': 0,
+            'sale__gtf_esf__epp': 81.0,
+            'refund__payment_amount__epp': -297.0,
+            'refund__gtf_epp__gtf_esf__epp': -27.0,
+            'refund__ap_organizer__gts__epp': -270.0,
             'refund__eb_tax__epp': 0,
             'refund__ap_organizer__royalty__epp': 0,
         }),
         ('506285738', {
-            'PaidTix': 195,
-            'sale__payment_amount__epp': 10890.0,
+            'PaidTix': 117,
+            'sale__payment_amount__epp': 7260.0,
             'sale__eb_tax__epp': 0,
-            'sale__ap_organizer__gts__epp': 10018.8,
+            'sale__ap_organizer__gts__epp': 6679.2,
             'sale__ap_organizer__royalty__epp': 0,
-            'sale__gtf_esf__epp': 871.2,
-            'refund__payment_amount__epp': 0,
-            'refund__gtf_epp__gtf_esf__epp': 0,
-            'refund__ap_organizer__gts__epp': 0,
+            'sale__gtf_esf__epp': 580.8,
+            'refund__payment_amount__epp': -3630.0,
+            'refund__gtf_epp__gtf_esf__epp': -290.4,
+            'refund__ap_organizer__gts__epp': -3339.6,
             'refund__eb_tax__epp': 0,
             'refund__ap_organizer__royalty__epp': 0,
         }),
@@ -441,6 +472,7 @@ class UtilsTestCase(TestCase):
             self.transactions,
             self.corrections,
             self.organizer_sales,
+            self.organizer_refunds,
             eventholder_user_id=eventholder_user_id,
         )
         total_organizer = summarize_dataframe(organizer)
@@ -490,38 +522,40 @@ class UtilsTestCase(TestCase):
     @parameterized.expand([
         ('ARS', 'Total Organizers', 2),
         ('ARS', 'Total Events', 2),
-        ('ARS', 'Total PaidTix', 20867),
-        ('ARS', 'Total GTF', 1811.82),
-        ('ARS', 'Total GTV', 28112.28),
-        ('ARS', 'ATV', 1.24),
+        ('ARS', 'Total PaidTix', 12905),
+        ('ARS', 'Total GTF', 1480.49),
+        ('ARS', 'Total GTV', 22971.37),
+        ('ARS', 'ATV', 1.64),
         ('ARS', 'Avg EB Perc Take Rate', 6.44),
         ('BRL', 'Total Organizers', 3),
         ('BRL', 'Total Events', 3),
-        ('BRL', 'Total PaidTix', 29607),
-        ('BRL', 'Total GTF', 1344.45),
-        ('BRL', 'Total GTV', 17303),
-        ('BRL', 'ATV', 0.54),
-        ('BRL', 'Avg EB Perc Take Rate', 7.77),
+        ('BRL', 'Total PaidTix', 18225),
+        ('BRL', 'Total GTF', 954.0),
+        ('BRL', 'Total GTV', 12331.0),
+        ('BRL', 'ATV', 0.62),
+        ('BRL', 'Avg EB Perc Take Rate', 7.74),
     ])
     def test_get_summarized_data(self, country, data, expected):
         summarized_data = get_summarized_data(
             self.transactions,
             self.corrections,
             self.organizer_sales,
+            self.organizer_refunds,
         )
         self.assertEqual(summarized_data[country][data], expected)
 
     @parameterized.expand([
-        ('ARS', 'ADYEN', 28112.28, 1811.82),
-        ('BRL', 'MERCADO_PAGO', 5225, 365.25),
-        ('BRL', 'ADYEN', 1188, 108),
-        ('BRL', 'PAYPAL', 10890, 871.2),
+        ('ARS', 'ADYEN', 22971.37, 1480.49),
+        ('BRL', 'MERCADO_PAGO', 4180, 292.2),
+        ('BRL', 'ADYEN', 891, 81),
+        ('BRL', 'PAYPAL', 7260, 580.8),
     ])
     def test_payment_processor_summary(self, currency, payment_processor, gtv, gtf):
         trx = manage_transactions(
             self.transactions,
             self.corrections,
             self.organizer_sales,
+            self.organizer_refunds,
         )
         filtered = (trx[trx['currency'] == currency])
         pp_gtv, pp_gtf = payment_processor_summary(filtered)
@@ -532,15 +566,16 @@ class UtilsTestCase(TestCase):
         self.assertIn(gtf, pp_gtf.sale__gtf_esf__epp.tolist())
 
     @parameterized.expand([
-        ('ARS', 'sales', 2, 1811.82),
-        ('BRL', 'SSO', 2, 108),
-        ('BRL', 'sales', 1, 1236.45),
+        ('ARS', 'sales', 2, 1480.49),
+        ('BRL', 'sales', 2, 81),
+        ('BRL', 'SSO', 1, 873),
     ])
     def test_sales_flag_summary(self, currency, sales_flag, org_qty, gtf):
         trx = manage_transactions(
             self.transactions,
             self.corrections,
             self.organizer_sales,
+            self.organizer_refunds,
         )
         filtered = (trx[trx['currency'] == currency])
         sf_org, sf_gtf = sales_flag_summary(filtered)
@@ -561,6 +596,7 @@ class ViewsTest(TestCase):
         session['transactions'] = read_csv(TRANSACTIONS_EXAMPLE_PATH)
         session['corrections'] = read_csv(CORRECTIONS_EXAMPLE_PATH)
         session['organizer_sales'] = read_csv(ORGANIZER_SALES_EXAMPLE_PATH)
+        session['organizer_refunds'] = read_csv(ORGANIZER_REFUNDS_EXAMPLE_PATH)
         session.save()
 
     def test_dashboard_view_returns_200(self):
@@ -891,15 +927,17 @@ class ViewsTest(TestCase):
         URL = reverse('make-query')
         with patch('revenue_app.views.make_query', side_effect=(
             read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(ORGANIZER_REFUNDS_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(CORRECTIONS_EXAMPLE_PATH),
         )):
             response = self.client.get(URL, kwargs)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], MakeQuery.template_name)
-        for query_name in ['organizer_sales', 'transactions', 'corrections']:
+        for query_name in ['organizer_sales', 'organizer_refunds', 'transactions', 'corrections']:
             self.assertContains(response, f'{query_name} ran successfully')
         assert_frame_equal(self.client.session['organizer_sales'], read_csv(ORGANIZER_SALES_EXAMPLE_PATH))
+        assert_frame_equal(self.client.session['organizer_refunds'], read_csv(ORGANIZER_REFUNDS_EXAMPLE_PATH))
         assert_frame_equal(self.client.session['transactions'], read_csv(TRANSACTIONS_EXAMPLE_PATH))
         assert_frame_equal(self.client.session['corrections'], read_csv(CORRECTIONS_EXAMPLE_PATH))
 

@@ -74,6 +74,20 @@ def clean_organizer_sales(organizer_sales):
     organizer_sales = organizer_sales[organizer_sales['PaidTix'] != 0]
     return organizer_sales
 
+def clean_organizer_refunds(organizer_refunds):
+    organizer_refunds = organizer_refunds.replace(np.nan, '', regex=True)
+    if 'organizer_email' in organizer_refunds.columns:
+        organizer_refunds.rename(columns={'organizer_email': 'email'}, inplace=True)
+    if 'trx_date' in organizer_refunds.columns:
+        organizer_refunds.rename(columns={'trx_date': 'transaction_created_date'}, inplace=True)
+    organizer_refunds['transaction_created_date'] = pd.to_datetime(
+        organizer_refunds['transaction_created_date'],
+    )
+    organizer_refunds['event_id'] = organizer_refunds['event_id'].apply(str)
+    organizer_refunds[['GTSntv', 'GTFntv']] = organizer_refunds[['GTSntv', 'GTFntv']].astype(float)
+    organizer_refunds = organizer_refunds[organizer_refunds['PaidTix'] != 0]
+    return organizer_refunds
+
 
 def merge_corrections(transactions, corrections):
     trx_total = pd.concat([transactions, corrections])
@@ -118,7 +132,7 @@ def filter_transactions(transactions, **kwargs):
     return transactions[reduce(np.logical_and, conditions)]
 
 
-def merge_transactions(transactions, organizer_sales):
+def merge_transactions(transactions, organizer_sales, organizer_refunds):
     merged = transactions.merge(
         organizer_sales[[
             'email',
@@ -134,7 +148,6 @@ def merge_transactions(transactions, organizer_sales):
     )
     sales = merged[merged['is_sale'] == 1]
     refunds = merged[merged['is_refund'] == 1]
-    refunds['PaidTix'] = 0
     merged_sales = sales.merge(
         organizer_sales[[
             'transaction_created_date',
@@ -145,14 +158,24 @@ def merge_transactions(transactions, organizer_sales):
         on=['transaction_created_date', 'email', 'event_id'],
         how='left',
     )
-    merged_sales.PaidTix.replace(np.nan, 0, regex=True, inplace=True)
-    merged_sales['PaidTix'] = merged_sales['PaidTix'].astype(int)
-    merged_sales.replace(np.nan, 'n/a', regex=True, inplace=True)
-    merged_sales.sort_values(
+    merged_refunds = refunds.merge(
+        organizer_refunds[[
+            'transaction_created_date',
+            'email',
+            'event_id',
+            'PaidTix',
+        ]].drop_duplicates(),
+        on=['transaction_created_date', 'email', 'event_id'],
+        how='left',
+    )
+    merged_final = pd.concat([merged_sales, merged_refunds])
+    merged_final.sort_values(
         by=['transaction_created_date', 'eventholder_user_id', 'event_id'],
         inplace=True,
     )
-    merged_final = pd.concat([merged_sales, refunds])
+    merged_final.PaidTix.replace(np.nan, 0, regex=True, inplace=True)
+    merged_final['PaidTix'] = merged_final['PaidTix'].astype(int)
+    merged_final.replace(np.nan, 'n/a', regex=True, inplace=True)
     return merged_final.drop(columns=['is_sale', 'is_refund'])
 
 
@@ -196,12 +219,13 @@ def calc_perc_take_rate(transactions):
     return transactions
 
 
-def manage_transactions(transactions, corrections, organizer_sales, **kwargs):
+def manage_transactions(transactions, corrections, organizer_sales, organizer_refunds, **kwargs):
     transactions = clean_transactions(transactions)
     corrections = clean_corrections(corrections)
     trx_total = merge_corrections(transactions, corrections)
     organizers_sales = clean_organizer_sales(organizer_sales)
-    merged = merge_transactions(trx_total, organizers_sales)
+    organizers_refunds = clean_organizer_refunds(organizer_refunds)
+    merged = merge_transactions(trx_total, organizers_sales, organizers_refunds)
     merged = calc_perc_take_rate(merged)
     filtered = filter_transactions(merged, **kwargs)
     if kwargs.get('groupby'):
@@ -230,8 +254,8 @@ def summarize_dataframe(dataframe):
     }
 
 
-def get_event_transactions(transactions, corrections, organizer_sales, event_id, **kwargs):
-    event_transactions = manage_transactions(transactions, corrections, organizer_sales, event_id=event_id)
+def get_event_transactions(transactions, corrections, organizer_sales, organizer_refunds, event_id, **kwargs):
+    event_transactions = manage_transactions(transactions, corrections, organizer_sales, organizer_refunds, event_id=event_id)
     filtered = filter_transactions(event_transactions, **kwargs)
     event_total = summarize_dataframe(filtered)
     if len(event_transactions) > 0:
@@ -256,11 +280,12 @@ def get_event_transactions(transactions, corrections, organizer_sales, event_id,
     return filtered, details, sales_refunds
 
 
-def get_organizer_transactions(transactions, corrections, organizer_sales, eventholder_user_id, **kwargs):
+def get_organizer_transactions(transactions, corrections, organizer_sales, organizer_refunds, eventholder_user_id, **kwargs):
     organizer_transactions = manage_transactions(
         transactions,
         corrections,
         organizer_sales,
+        organizer_refunds,
         eventholder_user_id=eventholder_user_id,
     )
     filtered = filter_transactions(organizer_transactions, **kwargs)
@@ -350,8 +375,8 @@ def random_color():
     return f"rgba({randint(0, 255)}, {randint(0, 255)}, {randint(0, 255)}, 0.2)"
 
 
-def get_summarized_data(transactions, corrections, organizer_sales):
-    trx = manage_transactions(transactions, corrections, organizer_sales)
+def get_summarized_data(transactions, corrections, organizer_sales, organizer_refunds):
+    trx = manage_transactions(transactions, corrections, organizer_sales, organizer_refunds)
     currencies = ['ARS', 'BRL']
     summarized_data = {}
     for currency in currencies:
