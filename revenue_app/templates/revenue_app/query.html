@@ -30,7 +30,7 @@
   </div>
 </div>
 
-<form form method="GET" action="{% url 'make-query' %}">
+<form id="query-form" method="GET" action="{% url 'make-query' %}">
   <div class="row">
     <div class="col-12">
       <div class="form-group">
@@ -44,7 +44,7 @@
       <div class="form-group">
         <label for="okta_username">Okta Password:</label>
         <input type="password" name="okta_password" class="form-control">
-      </div>    
+      </div>
     </div>
   </div>
   <div class="row">
@@ -64,9 +64,25 @@
   {% csrf_token %}
   <div class="row mt-3">
     <div class="col-12">
-      <button type="submit" class="btn btn-block btn-evb-orange">Make Query</button>
+      <button id="submit-btn" type="submit" class="btn btn-block btn-evb-orange">Make Query</button>
     </div>
   </div>
 </form>
+<div class="text-center">
+    <h6 id="gif" class="hidden">
+        <img src="{% static 'busy.gif' %}" height="42" width="42" >
+        Running queries...
+    </h6>
+</div>
 <br>
 {% endblock content %}
+{% block scripts %}
+<script type="text/javascript">
+	$(document).ready(function () {
+		$("#query-form").submit(function () {
+			$("#submit-btn").attr("disabled", true);
+			$('#gif').show();
+		});
+	});
+</script>
+{% endblock scripts %}
