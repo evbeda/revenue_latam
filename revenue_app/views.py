@@ -158,7 +158,7 @@ class QueriesRequiredMixin():
     def dispatch(self, request, *args, **kwargs):
         if any([
             request.session.get(dataframe) is None
-            for dataframe in ['transactions', 'corrections', 'organizer_sales']
+            for dataframe in ['transactions', 'corrections', 'organizer_sales', 'organizer_refunds']
         ]):
             return HttpResponseRedirect(resolve_url('make-query'))
         return super().dispatch(request, *args, **kwargs)
@@ -173,6 +173,7 @@ class Dashboard(QueriesRequiredMixin, TemplateView):
             self.request.session.get('transactions').copy(),
             self.request.session.get('corrections').copy(),
             self.request.session.get('organizer_sales').copy(),
+            self.request.session.get('organizer_refunds').copy(),
         )
         return context
 
@@ -193,6 +194,7 @@ class MakeQuery(TemplateView):
             context['queries_status'] = []
             for query_name in [
                 'organizer_sales',
+                'organizer_refunds',
                 'transactions',
                 'corrections',
             ]:
@@ -223,6 +225,7 @@ class OrganizersTransactions(QueriesRequiredMixin, TemplateView):
             self.request.session.get('transactions').copy(),
             self.request.session.get('corrections').copy(),
             self.request.session.get('organizer_sales').copy(),
+            self.request.session.get('organizer_refunds').copy(),
             **self.request.GET.dict(),
         )[TRANSACTIONS_COLUMNS]
         context['transactions'] = trx.head(5000)
@@ -239,6 +242,7 @@ class OrganizerTransactions(QueriesRequiredMixin, TemplateView):
             self.request.session.get('transactions').copy(),
             self.request.session.get('corrections').copy(),
             self.request.session.get('organizer_sales').copy(),
+            self.request.session.get('organizer_refunds').copy(),
             self.kwargs['eventholder_user_id'],
             **self.request.GET.dict(),
         )
@@ -266,6 +270,7 @@ class TopOrganizersLatam(QueriesRequiredMixin, TemplateView):
             self.request.session.get('transactions').copy(),
             self.request.session.get('corrections').copy(),
             self.request.session.get('organizer_sales').copy(),
+            self.request.session.get('organizer_refunds').copy(),
             **(self.request.GET.dict()),
         )
         context['top_ars'] = get_top_organizers(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_COLUMNS]
@@ -289,6 +294,7 @@ class TopOrganizersRefundsLatam(QueriesRequiredMixin, TemplateView):
             self.request.session.get('transactions').copy(),
             self.request.session.get('corrections').copy(),
             self.request.session.get('organizer_sales').copy(),
+            self.request.session.get('organizer_refunds').copy(),
             **(self.request.GET.dict()),
         )
         context['top_ars'] = \
@@ -314,6 +320,7 @@ class TransactionsEvent(QueriesRequiredMixin, TemplateView):
             self.request.session.get('transactions').copy(),
             self.request.session.get('corrections').copy(),
             self.request.session.get('organizer_sales').copy(),
+            self.request.session.get('organizer_refunds').copy(),
             self.kwargs['event_id'],
             **(self.request.GET.dict()),
         )
@@ -340,6 +347,7 @@ class TopEventsLatam(QueriesRequiredMixin, TemplateView):
             self.request.session.get('transactions').copy(),
             self.request.session.get('corrections').copy(),
             self.request.session.get('organizer_sales').copy(),
+            self.request.session.get('organizer_refunds').copy(),
             **(self.request.GET.dict()),
         )
         context['top_event_ars'] = get_top_events(trx[trx['currency'] == 'ARS'])[:10][TOP_EVENTS_COLUMNS]
@@ -363,6 +371,7 @@ class TransactionsGrouped(QueriesRequiredMixin, TemplateView):
             self.request.session.get('transactions').copy(),
             self.request.session.get('corrections').copy(),
             self.request.session.get('organizer_sales').copy(),
+            self.request.session.get('organizer_refunds').copy(),
             **(self.request.GET.dict()),
         )
         context['transactions'] = trx
@@ -375,6 +384,7 @@ def top_organizers_json_data(request):
         request.session.get('transactions'),
         request.session.get('corrections'),
         request.session.get('organizer_sales'),
+        request.session.get('organizer_refunds'),
     )
     colors = [random_color() for _ in range(11)]
     top_organizers_ars = get_top_organizers(trx[trx['currency'] == 'ARS'])
@@ -401,6 +411,7 @@ def top_organizers_refunds_json_data(request):
         request.session.get('transactions'),
         request.session.get('corrections'),
         request.session.get('organizer_sales'),
+        request.session.get('organizer_refunds'),
     )
     colors = [random_color() for _ in range(11)]
     top_organizers_ars = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])
@@ -427,6 +438,7 @@ def top_events_json_data(request):
         request.session.get('transactions'),
         request.session.get('corrections'),
         request.session.get('organizer_sales'),
+        request.session.get('organizer_refunds'),
     )
     colors = [random_color() for _ in range(11)]
     top_events_ars = get_top_events(trx[trx['currency'] == 'ARS'])
@@ -453,6 +465,7 @@ def dashboard_summary(request):
         request.session.get('transactions'),
         request.session.get('corrections'),
         request.session.get('organizer_sales'),
+        request.session.get('organizer_refunds'),
     )
     ars = trx[trx['currency'] == 'ARS']
     brl = trx[trx['currency'] == 'BRL']
