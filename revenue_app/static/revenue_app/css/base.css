@@ -204,3 +204,11 @@ footer a {
 .summarized-key {
   min-width: 175px;
 }
+
+.hidden {
+  display: none;
+}
+
+#gif {
+  color: #D1410C;
+}
