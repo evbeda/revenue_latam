@@ -41,7 +41,7 @@ Activate virtual environment and install project dependencies:
 
 Export the necessary environment variables
 
-Excecute the project with:
+Execute the project with:
 
     $ python manage.py runserver
 
