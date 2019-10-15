@@ -30,36 +30,25 @@
   </div>
 </div>
 
-<form id="query-form" method="GET" action="{% url 'make-query' %}">
+<form id="query-form" method="POST" action="{% url 'make-query' %}">
   <div class="row">
+  {% for field in form.visible_fields %}
+    {% if field.field.widget.input_type in 'text,password' %}
     <div class="col-12">
       <div class="form-group">
-        <label for="okta_username">Okta Username:</label>
-        <input type="text" name="okta_username" class="form-control">
+        {{ field.label_tag }}
+        {{ field }}
       </div>
     </div>
-  </div>
-  <div class="row">
-    <div class="col-12">
-      <div class="form-group">
-        <label for="okta_username">Okta Password:</label>
-        <input type="password" name="okta_password" class="form-control">
-      </div>
-    </div>
-  </div>
-  <div class="row">
+    {% elif field.field.widget.input_type == 'date' %}
     <div class="col-6">
       <div class="form-group">
-        <label for="start_date">Start date:</label>
-        <input type="date" name="start_date" class="form-control" value="{% previous_month_start %}">
+        {{ field.label_tag }}
+        {{ field }}
       </div>
     </div>
-    <div class="col-6">
-      <div class="form-group">
-        <label for="end_date">End date:</label>
-        <input type="date" name="end_date" class="form-control" value="{% previous_month_end %}">
-      </div>
-    </div>
+    {% endif %}
+  {% endfor %}
   </div>
   {% csrf_token %}
   <div class="row mt-3">

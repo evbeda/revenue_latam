@@ -2,7 +2,11 @@ from io import BytesIO
 
 from xhtml2pdf import pisa
 import csv
-from datetime import datetime
+from datetime import (
+    date,
+    datetime,
+)
+from dateutil.relativedelta import relativedelta
 import json
 import xlwt
 
@@ -11,9 +15,13 @@ from django.http import (
     HttpResponseRedirect,
 )
 from django.template.loader import get_template
-from django.views.generic import TemplateView
+from django.views.generic import (
+    FormView,
+    TemplateView,
+)
 from django.shortcuts import resolve_url
 
+from revenue_app.forms import QueryForm
 from revenue_app.presto_connection import (
     make_query,
     PrestoError,
@@ -178,42 +186,58 @@ class Dashboard(QueriesRequiredMixin, TemplateView):
         return context
 
 
-class MakeQuery(TemplateView):
+class MakeQuery(FormView):
     template_name = 'revenue_app/query.html'
+    form_class = QueryForm
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if (
-            self.request.GET.get('start_date') and
-            self.request.GET.get('end_date')
-        ):
-            start_date = self.request.GET.get('start_date')
-            end_date = self.request.GET.get('end_date')
-            okta_username = self.request.GET.get('okta_username')
-            okta_password = self.request.GET.get('okta_password')
-            context['queries_status'] = []
-            for query_name in [
-                'organizer_sales',
-                'organizer_refunds',
-                'transactions',
-                'corrections',
-            ]:
-                try:
-                    dataframe = make_query(
-                        start_date=start_date,
-                        end_date=end_date,
-                        okta_username=okta_username,
-                        okta_password=okta_password,
-                        query_name=query_name,
-                    )
-                    self.request.session[query_name] = dataframe
-                    context['queries_status'].append(
-                        f'{query_name} ran successfully.'
-                    )
-                except PrestoError as exception:
-                    context['error'] = exception.args[0]
-                    break
-        return context
+    def get_initial(self):
+        initial = super().get_initial()
+        today = date.today()
+        previous_month_end = date(today.year, today.month, 1) - relativedelta(days=1)
+        previous_month_start = date(previous_month_end.year, previous_month_end.month, 1)
+        initial['start_date'] = previous_month_start
+        initial['end_date'] = previous_month_end
+        return initial
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        start_date = form.data.get('start_date')
+        end_date = form.data.get('end_date')
+        okta_username = form.data.get('okta_username')
+        okta_password = form.data.get('okta_password')
+
+        queries_status = []
+        error = ""
+
+        for query_name in [
+            'organizer_sales',
+            'organizer_refunds',
+            'transactions',
+            'corrections',
+        ]:
+            try:
+                dataframe = make_query(
+                    start_date=start_date,
+                    end_date=end_date,
+                    okta_username=okta_username,
+                    okta_password=okta_password,
+                    query_name=query_name,
+                )
+                request.session[query_name] = dataframe
+                queries_status.append(
+                    f'{query_name} ran successfully.'
+                )
+            except PrestoError as exception:
+                error = exception.args[0]
+                break
+
+        return self.render_to_response(
+            self.get_context_data(
+                queries_status=queries_status,
+                error=error,
+                form=form,
+            )
+        )
 
 
 class OrganizersTransactions(QueriesRequiredMixin, TemplateView):
