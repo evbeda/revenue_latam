@@ -903,17 +903,36 @@ class ViewsTest(TestCase):
             "('Content-Type', 'application/json')",
         )
 
-    @parameterized.expand([
-        ({},),
-        ({'start_date': '2018-08-02'},),
-        ({'end_date': '2018-08-05'},),
-    ])
-    def test_make_query_view_returns_200_but_does_not_make_query(self, kwargs):
+    def test_make_query_view_returns_200_but_does_not_make_query(self):
         URL = reverse('make-query')
-        response = self.client.get(URL, kwargs)
+        response = self.client.get(URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], MakeQuery.template_name)
         self.assertNotContains(response, 'ran successfully.')
+
+    @parameterized.expand([
+        ("2019-01-30", '2018-12-01'),
+        ("2019-02-14", '2019-01-01'),
+        ("2019-03-31", '2019-02-01'),
+    ])
+    def test_make_query_view_initial_has_previous_month_start(self, time, expected):
+        with freeze_time(time):
+            URL = reverse('make-query')
+            response = self.client.get(URL)
+        self.assertEqual(str(response.context['form'].initial['start_date']), expected)
+
+    @parameterized.expand([
+        ("2019-01-30", '2018-12-31'),
+        ("2019-02-14", '2019-01-31'),
+        ("2019-03-31", '2019-02-28'),
+        ("2020-03-05", '2020-02-29'),
+        ("2019-05-10", '2019-04-30'),
+    ])
+    def test_make_query_view_initial_has_previous_month_end(self, time, expected):
+        with freeze_time(time):
+            URL = reverse('make-query')
+            response = self.client.get(URL)
+        self.assertEqual(str(response.context['form'].initial['end_date']), expected)
 
     def test_make_query_view_returns_200_and_makes_queries(self):
         for query_name in ['organizer_sales', 'transactions', 'corrections']:
@@ -931,7 +950,7 @@ class ViewsTest(TestCase):
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(CORRECTIONS_EXAMPLE_PATH),
         )):
-            response = self.client.get(URL, kwargs)
+            response = self.client.post(URL, kwargs)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], MakeQuery.template_name)
         for query_name in ['organizer_sales', 'organizer_refunds', 'transactions', 'corrections']:
@@ -1020,34 +1039,6 @@ class TemplateTagsTest(TestCase):
             '{{value|quarter_start}}',
             context
         )
-        self.assertEqual(rendered, expected)
-
-    @parameterized.expand([
-        ("2019-01-30", '2018-12-01'),
-        ("2019-02-14", '2019-01-01'),
-        ("2019-03-31", '2019-02-01'),
-    ])
-    def test_previous_month_start(self, time, expected):
-        with freeze_time(time):
-            rendered = self.render_template(
-                '{% load date_filters %}'
-                '{% previous_month_start %}'
-            )
-        self.assertEqual(rendered, expected)
-
-    @parameterized.expand([
-        ("2019-01-30", '2018-12-31'),
-        ("2019-02-14", '2019-01-31'),
-        ("2019-03-31", '2019-02-28'),
-        ("2020-03-05", '2020-02-29'),
-        ("2019-05-10", '2019-04-30'),
-    ])
-    def test_previous_month_end(self, time, expected):
-        with freeze_time(time):
-            rendered = self.render_template(
-                '{% load date_filters %}'
-                '{% previous_month_end %}'
-            )
         self.assertEqual(rendered, expected)
 
     @parameterized.expand([
