@@ -227,7 +227,10 @@ class UtilsTestCase(TestCase):
         ('currency', 2),
     ])
     def test_group_transactions(self, by, expected_length):
-        grouped = group_transactions(merge_transactions(self.transactions, self.organizer_sales, self.organizer_refunds), by)
+        grouped = group_transactions(
+            merge_transactions(self.transactions, self.organizer_sales, self.organizer_refunds),
+            by,
+        )
         self.assertEqual(len(grouped), expected_length)
 
     @parameterized.expand([
@@ -525,7 +528,7 @@ class UtilsTestCase(TestCase):
         ('ARS', 'Total PaidTix', 12905),
         ('ARS', 'Total GTF', 1480.49),
         ('ARS', 'Total GTV', 22971.37),
-        ('ARS', 'ATV', 1.64),
+        ('ARS', 'ATV', 1.67),
         ('ARS', 'Avg EB Perc Take Rate', 6.44),
         ('BRL', 'Total Organizers', 3),
         ('BRL', 'Total Events', 3),
