@@ -262,7 +262,7 @@ class OrganizerTransactions(QueriesRequiredMixin, TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        transactions, details, sales_refunds = get_organizer_transactions(
+        transactions, details, sales_refunds, net_sales_refunds = get_organizer_transactions(
             self.request.session.get('transactions').copy(),
             self.request.session.get('corrections').copy(),
             self.request.session.get('organizer_sales').copy(),
@@ -272,6 +272,7 @@ class OrganizerTransactions(QueriesRequiredMixin, TemplateView):
         )
         context['details'] = details
         context['sales_refunds'] = sales_refunds
+        context['net_sales_refunds'] = net_sales_refunds
         context['transactions'] = transactions[ORGANIZER_COLUMNS]
         self.request.session['export_transactions'] = transactions
         return context
@@ -340,7 +341,7 @@ class TransactionsEvent(QueriesRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        transactions, details, sales_refunds = get_event_transactions(
+        transactions, details, sales_refunds, net_sales_refunds = get_event_transactions(
             self.request.session.get('transactions').copy(),
             self.request.session.get('corrections').copy(),
             self.request.session.get('organizer_sales').copy(),
@@ -350,6 +351,7 @@ class TransactionsEvent(QueriesRequiredMixin, TemplateView):
         )
         context['details'] = details
         context['sales_refunds'] = sales_refunds
+        context['net_sales_refunds'] = net_sales_refunds
         context['transactions'] = transactions[EVENT_COLUMNS]
         self.request.session['export_transactions'] = transactions
         return context

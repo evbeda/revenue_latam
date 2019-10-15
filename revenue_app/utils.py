@@ -18,6 +18,14 @@ MONEY_COLUMNS = [
     # 'eb_perc_take_rate',
 ]
 
+NET_COLUMNS = [
+    'net__payment_amount__epp',
+    'net__gtf_esf__epp',
+    'net__eb_tax__epp',
+    'net__ap_organizer__gts__epp',
+    'net__ap_organizer__royalty__epp',
+]
+
 NUMBER_COLUMNS = [
     'PaidTix',
     'sale__payment_amount__epp',
@@ -32,6 +40,7 @@ NUMBER_COLUMNS = [
     'refund__ap_organizer__royalty__epp',
     # 'eb_perc_take_rate',
 ]
+
 
 
 def get_rollups():
@@ -284,7 +293,13 @@ def get_event_transactions(transactions, corrections, organizer_sales, organizer
             k: v for k, v in event_total.items() if 'refund' in k
         },
     }
-    return filtered, details, sales_refunds
+    net_sales_refunds = {
+        'Total Net Detail': {
+            net : sale + refund
+            for net, sale, refund in zip(NET_COLUMNS, sales_refunds['Total Sales Detail'].values(), sales_refunds['Total Refunds Detail'].values())
+        }
+    }
+    return filtered, details, sales_refunds, net_sales_refunds
 
 
 def get_organizer_transactions(
@@ -324,7 +339,13 @@ def get_organizer_transactions(
             k: v for k, v in event_total.items() if 'refund' in k
         },
     }
-    return filtered, details, sales_refunds
+    net_sales_refunds = {
+        'Total Net Detail': {
+            net : sale + refund
+            for net, sale, refund in zip(NET_COLUMNS, sales_refunds['Total Sales Detail'].values(), sales_refunds['Total Refunds Detail'].values())
+        }
+    }
+    return filtered, details, sales_refunds, net_sales_refunds
 
 
 def get_top_organizers(filtered_transactions):
