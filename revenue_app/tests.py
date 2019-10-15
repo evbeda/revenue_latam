@@ -303,7 +303,7 @@ class UtilsTestCase(TestCase):
         ('88128252', 7, 2405),
     ])
     def test_get_event_transactions(self, event_id, transactions_qty, tickets_qty):
-        transactions, details, sales_refunds = get_event_transactions(
+        transactions, details, sales_refunds, net_sales_refunds  = get_event_transactions(
             self.transactions,
             self.corrections,
             self.organizer_sales,
@@ -322,7 +322,7 @@ class UtilsTestCase(TestCase):
         ('634364434', 7, 2405),
     ])
     def test_get_organizer_transactions(self, eventholder_user_id, transactions_qty, tickets_qty):
-        transactions, details, sales_refunds = get_organizer_transactions(
+        transactions, details, sales_refunds, net_sales_refunds = get_organizer_transactions(
             self.transactions,
             self.corrections,
             self.organizer_sales,
