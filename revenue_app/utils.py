@@ -74,6 +74,7 @@ def clean_organizer_sales(organizer_sales):
     organizer_sales = organizer_sales[organizer_sales['PaidTix'] != 0]
     return organizer_sales
 
+
 def clean_organizer_refunds(organizer_refunds):
     organizer_refunds = organizer_refunds.replace(np.nan, '', regex=True)
     if 'organizer_email' in organizer_refunds.columns:
@@ -255,7 +256,13 @@ def summarize_dataframe(dataframe):
 
 
 def get_event_transactions(transactions, corrections, organizer_sales, organizer_refunds, event_id, **kwargs):
-    event_transactions = manage_transactions(transactions, corrections, organizer_sales, organizer_refunds, event_id=event_id)
+    event_transactions = manage_transactions(
+        transactions,
+        corrections,
+        organizer_sales,
+        organizer_refunds,
+        event_id=event_id
+    )
     filtered = filter_transactions(event_transactions, **kwargs)
     event_total = summarize_dataframe(filtered)
     if len(event_transactions) > 0:
@@ -280,7 +287,14 @@ def get_event_transactions(transactions, corrections, organizer_sales, organizer
     return filtered, details, sales_refunds
 
 
-def get_organizer_transactions(transactions, corrections, organizer_sales, organizer_refunds, eventholder_user_id, **kwargs):
+def get_organizer_transactions(
+    transactions,
+    corrections,
+    organizer_sales,
+    organizer_refunds,
+    eventholder_user_id,
+    **kwargs
+):
     organizer_transactions = manage_transactions(
         transactions,
         corrections,
@@ -387,7 +401,10 @@ def get_summarized_data(transactions, corrections, organizer_sales, organizer_re
             'Total PaidTix': filtered.PaidTix.sum(),
             'Total GTF': round(filtered.sale__gtf_esf__epp.sum(), 2),
             'Total GTV': round(filtered.sale__payment_amount__epp.sum(), 2),
-            'ATV': round(filtered.sale__ap_organizer__gts__epp.sum() / filtered.PaidTix.sum(), 2),
+            'ATV': round(
+                (filtered.sale__payment_amount__epp.sum() - filtered.sale__gtf_esf__epp.sum()) / filtered.PaidTix.sum(),
+                2,
+            ),
             'Avg EB Perc Take Rate': round(
                 filtered.sale__gtf_esf__epp.sum() / filtered.sale__payment_amount__epp.sum() * 100,
                 2,
