@@ -302,7 +302,7 @@ class UtilsTestCase(TestCase):
         ('88128252', 7, 2405),
     ])
     def test_get_event_transactions(self, event_id, transactions_qty, tickets_qty):
-        transactions, details, sales_refunds, net_sales_refunds  = get_event_transactions(
+        transactions, details, sales_refunds, net_sales_refunds = get_event_transactions(
             self.transactions,
             self.corrections,
             self.organizer_sales,
@@ -1071,6 +1071,20 @@ class TemplateTagsTest(TestCase):
             '{% else %}'
             'Not number type.'
             '{% endif %}',
+            context
+        )
+        self.assertEqual(rendered, expected)
+
+    @parameterized.expand([
+        ({'key': 'invalid key'}, 'None'),
+        ({'key': 'eventholder_user_id'}, 'from transactions query'),
+        ({'key': 'eb_perc_take_rate'}, 'sale__gtf_esf__epp / sale__payment_amount__epp * 100'),
+        ({'key': 'net__ap_organizer__gts__epp'}, 'sale__ap_organizer__gts__epp + refund__ap_organizer__gts__epp'),
+    ])
+    def test_glossary(self, context, expected):
+        rendered = self.render_template(
+            '{% load glossary_filters %}'
+            '{% glossary key %}',
             context
         )
         self.assertEqual(rendered, expected)
