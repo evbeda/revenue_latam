@@ -24,29 +24,41 @@
     <h4>{{currency}} Payment Processor</h4>
     <h6>Referred to GTV</h6>
     <div class="row">
-      <div class="chart-container chart-container-pp mt-3">
-        <canvas id="{{currency|lower}}_pp_gtv"></canvas>
+      <div class="dashboard-chart-container">
+        <div class="card--chart">
+          <div class="js-donut-chart-container-{{currency|lower}}_pp_gtv donut-chart-container"></div>
+          <div class="js-legend-chart-container-{{currency|lower}}_pp_gtv legend-chart-container"></div>
+        </div>
       </div>
     </div>
     <h4>{{currency}} Payment Processor</h4>
     <h6>Referred to GTF</h6>
     <div class="row">
-      <div class="chart-container chart-container-pp mt-3">
-        <canvas id="{{currency|lower}}_pp_gtf"></canvas>
+      <div class="dashboard-chart-container">
+        <div class="card--chart">
+          <div class="js-donut-chart-container-{{currency|lower}}_pp_gtf donut-chart-container"></div>
+          <div class="js-legend-chart-container-{{currency|lower}}_pp_gtf legend-chart-container"></div>
+        </div>
       </div>
     </div>
     <h4>{{currency}} Sales Flag</h4>
     <h6>Referred to organizers quantity</h6>
     <div class="row">
-      <div class="chart-container mt-3">
-        <canvas id="{{currency|lower}}_sf_org"></canvas>
+      <div class="dashboard-chart-container">
+        <div class="card--chart">
+          <div class="js-donut-chart-container-{{currency|lower}}_sf_org donut-chart-container"></div>
+          <div class="js-legend-chart-container-{{currency|lower}}_sf_org legend-chart-container"></div>
+        </div>
       </div>
     </div>
     <h4>{{currency}} Sales Flag</h4>
     <h6>Referred to GTF</h6>
     <div class="row">
-      <div class="chart-container mt-3">
-        <canvas id="{{currency|lower}}_sf_gtf"></canvas>
+      <div class="dashboard-chart-container">
+        <div class="card--chart">
+          <div class="js-donut-chart-container-{{currency|lower}}_sf_gtf donut-chart-container"></div>
+          <div class="js-legend-chart-container-{{currency|lower}}_sf_gtf legend-chart-container"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -55,275 +67,30 @@
 {% endblock content %}
 {% block scripts %}
   {{ block.super }}
-  <script type="text/javascript" src="{% static 'js/Chart.min.js' %}"></script>
-  <script type="text/javascript" src="{% static 'js/chartjs-plugin-datalabels.min.js' %}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.7.4/d3.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/britecharts@2/dist/bundled/britecharts.min.js"></script>
+  <script type="text/javascript" src="{% static 'revenue_app/js/donut_chart.js' %}"></script>
   <script type="text/javascript">
-    Chart.plugins.unregister(ChartDataLabels);
-
-    $.get('{% url "json_dashboard_summary" %}', function(data) {
-      var ctx_ars_pp_gtv = $("#ars_pp_gtv").get(0).getContext("2d");
-      new Chart(ctx_ars_pp_gtv, {
-        type: 'doughnut',
-        data: {
-          labels: data.ars_pp_gtv.labels,
-          datasets: [{
-            label: "Payment Processor",
-            data: data.ars_pp_gtv.data,
-            fill: false,
-            backgroundColor: data.ars_pp_gtv.backgroundColor,
-            borderColor: data.ars_pp_gtv.borderColor,
-            borderWidth: 1,
-          }]
-        },
-        plugins: [ChartDataLabels],
-        options: {
-          legend: { position: 'right', align: 'center' },
-          plugins: {
-            datalabels: {
-              formatter: (value, ctx) => {
-                let sum = 0;
-                let dataArr = ctx.chart.data.datasets[0].data;
-                dataArr.map(data => { sum += data; });
-                let percentage = (value*100/sum).toFixed(2) + "%";
-                return percentage;
-              }
-            }
-          },
-          responsive: true,
-          maintainAspectRatio: false,
-        },
+    fetch('{% url "json_dashboard_summary" %}')
+      .then(res => res.json())
+      .then(json => {
+        let arsPPGtv = json['ars_pp_gtv'];
+        let arsPPGtf = json['ars_pp_gtv'];
+        let brlPPGtv = json['brl_pp_gtv'];
+        let brlPPGtf = json['brl_pp_gtf'];
+        let arsSFOrg = json['ars_sf_org'];
+        let arsSFGtf = json['ars_sf_gtf'];
+        let brlSFOrg = json['brl_sf_org'];
+        let brlSFGtf = json['brl_sf_gtf'];
+        let legendHeight = 150;
+        createDonutChart(arsPPGtv, 'ars_pp_gtv', legendHeight);
+        createDonutChart(arsPPGtf, 'ars_pp_gtf', legendHeight);
+        createDonutChart(brlPPGtv, 'brl_pp_gtv', legendHeight);
+        createDonutChart(brlPPGtf, 'brl_pp_gtf', legendHeight);
+        createDonutChart(arsSFOrg, 'ars_sf_org', legendHeight);
+        createDonutChart(arsSFGtf, 'ars_sf_gtf', legendHeight);
+        createDonutChart(brlSFOrg, 'brl_sf_org', legendHeight);
+        createDonutChart(brlSFGtf, 'brl_sf_gtf', legendHeight);
       });
-
-      var ctx_ars_pp_gtf = $("#ars_pp_gtf").get(0).getContext("2d");
-      new Chart(ctx_ars_pp_gtf, {
-        type: 'doughnut',
-        data: {
-          labels: data.ars_pp_gtf.labels,
-          datasets: [{
-            label: "Payment Processor",
-            data: data.ars_pp_gtf.data,
-            fill: false,
-            backgroundColor: data.ars_pp_gtf.backgroundColor,
-            borderColor: data.ars_pp_gtf.borderColor,
-            borderWidth: 1,
-          }]
-        },
-        plugins: [ChartDataLabels],
-        options: {
-          legend: { position: 'right', align: 'center' },
-          plugins: {
-            datalabels: {
-              formatter: (value, ctx) => {
-                let sum = 0;
-                let dataArr = ctx.chart.data.datasets[0].data;
-                dataArr.map(data => { sum += data; });
-                let percentage = (value*100/sum).toFixed(2) + "%";
-                return percentage;
-              }
-            }
-          },
-          responsive: true,
-          maintainAspectRatio: false,
-        },
-      });
-
-      var ctx_brl_pp_gtv = $("#brl_pp_gtv").get(0).getContext("2d");
-      new Chart(ctx_brl_pp_gtv, {
-        type: 'doughnut',
-        data: {
-          labels: data.brl_pp_gtv.labels,
-          datasets: [{
-            label: "Payment Processor",
-            data: data.brl_pp_gtv.data,
-            fill: false,
-            backgroundColor: data.brl_pp_gtv.backgroundColor,
-            borderColor: data.brl_pp_gtv.borderColor,
-            borderWidth: 1,
-          }]
-        },
-        plugins: [ChartDataLabels],
-        options: {
-          legend: { position: 'right', align: 'center' },
-          plugins: {
-            datalabels: {
-              formatter: (value, ctx) => {
-                let sum = 0;
-                let dataArr = ctx.chart.data.datasets[0].data;
-                dataArr.map(data => { sum += data; });
-                let percentage = (value*100/sum).toFixed(2) + "%";
-                return percentage;
-              }
-            }
-          },
-          responsive: true,
-          maintainAspectRatio: false,
-        },
-      });
-
-      var ctx_brl_pp_gtf = $("#brl_pp_gtf").get(0).getContext("2d");
-      new Chart(ctx_brl_pp_gtf, {
-        type: 'doughnut',
-        data: {
-          labels: data.brl_pp_gtf.labels,
-          datasets: [{
-            label: "Payment Processor",
-            data: data.brl_pp_gtf.data,
-            fill: false,
-            backgroundColor: data.brl_pp_gtf.backgroundColor,
-            borderColor: data.brl_pp_gtf.borderColor,
-            borderWidth: 1,
-          }]
-        },
-        plugins: [ChartDataLabels],
-        options: {
-          legend: { position: 'right', align: 'center' },
-          plugins: {
-            datalabels: {
-              formatter: (value, ctx) => {
-                let sum = 0;
-                let dataArr = ctx.chart.data.datasets[0].data;
-                dataArr.map(data => { sum += data; });
-                let percentage = (value*100/sum).toFixed(2) + "%";
-                return percentage;
-              }
-            }
-          },
-          responsive: true,
-          maintainAspectRatio: false,
-        },
-      });
-
-      var ctx_ars_sf_org = $("#ars_sf_org").get(0).getContext("2d");
-      new Chart(ctx_ars_sf_org, {
-        type: 'doughnut',
-        data: {
-          labels: data.ars_sf_org.labels,
-          datasets: [{
-            label: "Sales Flag",
-            data: data.ars_sf_org.data,
-            fill: false,
-            backgroundColor: data.ars_sf_org.backgroundColor,
-            borderColor: data.ars_sf_org.borderColor,
-            borderWidth: 1,
-          }]
-        },
-        plugins: [ChartDataLabels],
-        options: {
-          legend: { position: 'right', align: 'center' },
-          plugins: {
-            datalabels: {
-              formatter: (value, ctx) => {
-                let sum = 0;
-                let dataArr = ctx.chart.data.datasets[0].data;
-                dataArr.map(data => { sum += data; });
-                let percentage = (value*100/sum).toFixed(2) + "%";
-                return percentage;
-              }
-            }
-          },
-          responsive: true,
-          maintainAspectRatio: false,
-        },
-      });
-
-      var ctx_ars_sf_gtf = $("#ars_sf_gtf").get(0).getContext("2d");
-      new Chart(ctx_ars_sf_gtf, {
-        type: 'doughnut',
-        data: {
-          labels: data.ars_sf_gtf.labels,
-          datasets: [{
-            label: "Sales Flag",
-            data: data.ars_sf_gtf.data,
-            fill: false,
-            backgroundColor: data.ars_sf_gtf.backgroundColor,
-            borderColor: data.ars_sf_gtf.borderColor,
-            borderWidth: 1,
-          }]
-        },
-        plugins: [ChartDataLabels],
-        options: {
-          legend: { position: 'right', align: 'center' },
-          plugins: {
-            datalabels: {
-              formatter: (value, ctx) => {
-                let sum = 0;
-                let dataArr = ctx.chart.data.datasets[0].data;
-                dataArr.map(data => { sum += data; });
-                let percentage = (value*100/sum).toFixed(2) + "%";
-                return percentage;
-              }
-            }
-          },
-          responsive: true,
-          maintainAspectRatio: false,
-        },
-      });
-
-      var ctx_brl_sf_org = $("#brl_sf_org").get(0).getContext("2d");
-      new Chart(ctx_brl_sf_org, {
-        type: 'doughnut',
-        data: {
-          labels: data.brl_sf_org.labels,
-          datasets: [{
-            label: "Sales Flag",
-            data: data.brl_sf_org.data,
-            fill: false,
-            backgroundColor: data.brl_sf_org.backgroundColor,
-            borderColor: data.brl_sf_org.borderColor,
-            borderWidth: 1,
-          }]
-        },
-        plugins: [ChartDataLabels],
-        options: {
-          legend: { position: 'right', align: 'center' },
-          plugins: {
-            datalabels: {
-              formatter: (value, ctx) => {
-                let sum = 0;
-                let dataArr = ctx.chart.data.datasets[0].data;
-                dataArr.map(data => { sum += data; });
-                let percentage = (value*100/sum).toFixed(2) + "%";
-                return percentage;
-              }
-            }
-          },
-          responsive: true,
-          maintainAspectRatio: false,
-        },
-      });
-
-      var ctx_brl_sf_gtf = $("#brl_sf_gtf").get(0).getContext("2d");
-      new Chart(ctx_brl_sf_gtf, {
-        type: 'doughnut',
-        data: {
-          labels: data.brl_sf_gtf.labels,
-          datasets: [{
-            label: "Sales Flag",
-            data: data.brl_sf_gtf.data,
-            fill: false,
-            backgroundColor: data.brl_sf_gtf.backgroundColor,
-            borderColor: data.brl_sf_gtf.borderColor,
-            borderWidth: 1,
-          }]
-        },
-        plugins: [ChartDataLabels],
-        options: {
-          legend: { position: 'right', align: 'center' },
-          plugins: {
-            datalabels: {
-              formatter: (value, ctx) => {
-                let sum = 0;
-                let dataArr = ctx.chart.data.datasets[0].data;
-                dataArr.map(data => { sum += data; });
-                let percentage = (value*100/sum).toFixed(2) + "%";
-                return percentage;
-              }
-            }
-          },
-          responsive: true,
-          maintainAspectRatio: false,
-        },
-      });
-    });
   </script>
 {% endblock scripts %}

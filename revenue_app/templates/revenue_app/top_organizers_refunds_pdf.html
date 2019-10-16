@@ -1,127 +1,79 @@
-<html>
-    <head>
-	{% load static %}
-	{% block layout_style %}
-	<style type="text/css">
-	@page {
-	    size: A4 landscape;
-	    margin: 1cm;
-	}
-	.page-break{
-	    page-break-after: always;
-	}
-	</style>
-	{% endblock %}
-    </head>
-{% block content %}
-<div class="dropdown show">
-    <h1 class="text-center"> Top 10 Argentina Organizers with most refunds</h1>
-</div>
-<br>
-<div class="row">
-    <div class="col-12">
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    {% load static %}
+    <style type="text/css">
+      @page {
+          size: A4 landscape;
+          margin: 1cm;
+      }
+      .page-break{
+          page-break-after: always;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dropdown show">
+      <h1 class="text-center"> Top 10 Argentina Organizers with most refunds</h1>
+    </div>
+    <br>
+    <div class="row">
+      <div class="col-12">
         {% include 'revenue_app/_dynamic_table_pdf.html' with transactions=top_ars %}
+      </div>
     </div>
-</div>
-<div class="row">
-    <div class="col"></div>
-    <div class="col-7 chart-container">
-        <canvas id="chart_arg"></canvas>
+    <div class="row">
+      <div class="col-6">
+        <div class="card--chart">
+          <div class="js-donut-chart-container-ars donut-chart-container"></div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="card--chart">
+          <div class="js-legend-chart-container-ars legend-chart-container"></div>
+        </div>
+      </div>
     </div>
-    <div class="col"></div>
-</div>
-<br>
-<hr class="mb-4 mt-4">
-<br>
-<h1 class="text-center">Top 10 Brazil Organizers with most refunds</h1>
-<br>
-<div class="row">
-    <div class="col-12">
+    <br>
+    <hr class="mb-4 mt-4">
+    <br>
+    <br>
+    <hr class="mb-4 mt-4">
+    <br>
+    <h1 class="text-center">Top 10 Brazil Organizers with most refunds</h1>
+    <br>
+    <div class="row">
+      <div class="col-12">
         {% include 'revenue_app/_dynamic_table_pdf.html' with transactions=top_brl %}
+      </div>
     </div>
-</div>
-<div class="row">
-    <div class="col"></div>
-    <div class="col-7 chart-container">
-        <canvas id="chart_brl"></canvas>
+    <div class="row">
+      <div class="col-6">
+        <div class="card--chart">
+          <div class="js-donut-chart-container-brl donut-chart-container"></div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="card--chart">
+          <div class="js-legend-chart-container-brl legend-chart-container"></div>
+        </div>
+      </div>
     </div>
-    <div class="col"></div>
-</div>
-{% endblock content %}
-
-{% block scripts %}
-<script type="text/javascript" src="{% static 'js/Chart.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/chartjs-plugin-datalabels.min.js' %}"></script>
-<script type="text/javascript">
-  Chart.plugins.unregister(ChartDataLabels);
-
-  $.get('{% url "json_top_organizers_refunds" %}', function(data) {
-    var ctx_ars = $("#chart_arg").get(0).getContext("2d");
-    new Chart(ctx_ars, {
-      type: 'doughnut',
-      data: {
-        labels: data.arg.labels,
-        datasets: [{
-          label: "Top Argentina Organizers with most refunds",
-          data: data.arg.data,
-          fill: false,
-          backgroundColor: data.arg.backgroundColor,
-          borderColor: data.arg.borderColor,
-          borderWidth: 1,
-        }]
-      },
-      plugins: [ChartDataLabels],
-      options: {
-        legend: { position: 'right', align: 'center' },
-        plugins: {
-          datalabels: {
-            formatter: (value, ctx) => {
-              let sum = 0;
-              let dataArr = ctx.chart.data.datasets[0].data;
-              dataArr.map(data => { sum += data; });
-              let percentage = (value*100/sum).toFixed(2) + "%";
-              return percentage;
-            }
-          }
-        },
-        responsive: true,
-        maintainAspectRatio: false,
-      },
-  });
-
-    var ctx_brl = $("#chart_brl").get(0).getContext("2d");
-    new Chart(ctx_brl, {
-      type: 'doughnut',
-      data: {
-        labels: data.brl.labels,
-        datasets: [{
-          label: "Top Brazil Organizers with most refunds",
-          data: data.brl.data,
-          fill: false,
-          backgroundColor: data.brl.backgroundColor,
-          borderColor: data.brl.borderColor,
-          borderWidth: 1,
-        }]
-      },
-      plugins: [ChartDataLabels],
-      options: {
-        legend: { position: 'right', align: 'center' },
-        plugins: {
-          datalabels: {
-            formatter: (value, ctx) => {
-              let sum = 0;
-              let dataArr = ctx.chart.data.datasets[0].data;
-              dataArr.map(data => { sum += data; });
-              let percentage = (value*100/sum).toFixed(2) + "%";
-              return percentage;
-            }
-          }
-        },
-        responsive: true,
-        maintainAspectRatio: false,
-      },
-    });
-  });
-</script>
-{% endblock scripts %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.7.4/d3.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/britecharts@2/dist/bundled/britecharts.min.js"></script>
+    <script type="text/javascript" src="{% static 'revenue_app/js/donut_chart.js' %}"></script>
+    <script type="text/javascript">
+      fetch('{% url "json_top_organizers_refunds" %}')
+        .then(res => res.json())
+        .then(json => {
+          let arsData = json['ars_data'];
+          let brlData = json['brl_data'];
+          let legendHeight = 400;
+          createDonutChart(arsData, 'ars', legendHeight);
+          createDonutChart(brlData, 'brl', legendHeight);
+        });
+    </script>
+  </body>
 </html>

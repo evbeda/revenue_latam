@@ -37,7 +37,6 @@ from revenue_app.utils import (
     merge_corrections,
     merge_transactions,
     payment_processor_summary,
-    random_color,
     sales_flag_summary,
     summarize_dataframe,
 )
@@ -404,17 +403,6 @@ class UtilsTestCase(TestCase):
     def test_filter_transactions(self, kwargs, expected_length):
         filtered_transactions = filter_transactions(self.transactions, **kwargs)
         self.assertEqual(len(filtered_transactions), expected_length)
-
-    def test_random_color(self):
-        color = random_color()
-        self.assertIsInstance(color, str)
-        self.assertEqual(color[:5], "rgba(")
-        self.assertEqual(color[-1], ")")
-        color_list = color[5:-1].split(", ")
-        self.assertEqual(len(color_list), 4)
-        self.assertEqual(color_list[-1], "0.2")
-        for c in color_list[:-1]:
-            self.assertTrue(0 <= int(c) <= 255)
 
     @parameterized.expand([
         ('497321858', {

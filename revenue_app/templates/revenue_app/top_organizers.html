@@ -21,11 +21,16 @@
 <br>
 {% include 'revenue_app/_dynamic_table.html' with transactions=top_ars %}
 <div class="row">
-  <div class="col"></div>
-  <div class="col-7 chart-container">
-    <canvas id="chart_arg"></canvas>
+  <div class="col-6">
+    <div class="card--chart">
+      <div class="js-donut-chart-container-ars donut-chart-container"></div>
+    </div>
   </div>
-  <div class="col"></div>
+  <div class="col-6">
+    <div class="card--chart">
+      <div class="js-legend-chart-container-ars legend-chart-container"></div>
+    </div>
+  </div>
 </div>
 <br>
 <hr class="mb-4 mt-4">
@@ -41,87 +46,33 @@
 <br>
 {% include 'revenue_app/_dynamic_table.html' with transactions=top_brl %}
 <div class="row">
-  <div class="col"></div>
-  <div class="col-7 chart-container">
-    <canvas id="chart_brl"></canvas>
+  <div class="col-6">
+    <div class="card--chart">
+      <div class="js-donut-chart-container-brl donut-chart-container"></div>
+    </div>
   </div>
-  <div class="col"></div>
+  <div class="col-6">
+    <div class="card--chart">
+      <div class="js-legend-chart-container-brl legend-chart-container"></div>
+    </div>
+  </div>
 </div>
 {% endblock content %}
 
 {% block scripts %}
-{{ block.super }}
-<script type="text/javascript" src="{% static 'js/Chart.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/chartjs-plugin-datalabels.min.js' %}"></script>
-<script type="text/javascript">
-  Chart.plugins.unregister(ChartDataLabels);
-
-  $.get('{% url "json_top_organizers" %}', function(data) {
-    var ctx_ars = $("#chart_arg").get(0).getContext("2d");
-    new Chart(ctx_ars, {
-      type: 'doughnut',
-      data: {
-        labels: data.arg.labels,
-        datasets: [{
-          label: "Top Argentina Organizers",
-          data: data.arg.data,
-          fill: false,
-          backgroundColor: data.arg.backgroundColor,
-          borderColor: data.arg.borderColor,
-          borderWidth: 1,
-        }]
-      },
-      plugins: [ChartDataLabels],
-      options: {
-        legend: { position: 'right', align: 'center' },
-        plugins: {
-          datalabels: {
-            formatter: (value, ctx) => {
-              let sum = 0;
-              let dataArr = ctx.chart.data.datasets[0].data;
-              dataArr.map(data => { sum += data; });
-              let percentage = (value*100/sum).toFixed(2) + "%";
-              return percentage;
-            }
-          }
-        },
-        responsive: true,
-        maintainAspectRatio: false,
-      },
-  });
-
-    var ctx_brl = $("#chart_brl").get(0).getContext("2d");
-    new Chart(ctx_brl, {
-      type: 'doughnut',
-      data: {
-        labels: data.brl.labels,
-        datasets: [{
-          label: "Top Brazil Organizers",
-          data: data.brl.data,
-          fill: false,
-          backgroundColor: data.brl.backgroundColor,
-          borderColor: data.brl.borderColor,
-          borderWidth: 1,
-        }]
-      },
-      plugins: [ChartDataLabels],
-      options: {
-        legend: { position: 'right', align: 'center' },
-        plugins: {
-          datalabels: {
-            formatter: (value, ctx) => {
-              let sum = 0;
-              let dataArr = ctx.chart.data.datasets[0].data;
-              dataArr.map(data => { sum += data; });
-              let percentage = (value*100/sum).toFixed(2) + "%";
-              return percentage;
-            }
-          }
-        },
-        responsive: true,
-        maintainAspectRatio: false,
-      },
-    });
-  });
-</script>
+  {{ block.super }}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.7.4/d3.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/britecharts@2/dist/bundled/britecharts.min.js"></script>
+  <script type="text/javascript" src="{% static 'revenue_app/js/donut_chart.js' %}"></script>
+  <script type="text/javascript">
+    fetch('{% url "json_top_organizers" %}')
+      .then(res => res.json())
+      .then(json => {
+        let arsData = json['ars_data'];
+        let brlData = json['brl_data'];
+        let legendHeight = 400;
+        createDonutChart(arsData, 'ars', legendHeight);
+        createDonutChart(brlData, 'brl', legendHeight);
+      });
+  </script>
 {% endblock scripts %}
