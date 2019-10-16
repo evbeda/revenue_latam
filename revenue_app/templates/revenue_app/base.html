@@ -32,6 +32,12 @@
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <!-- Bootstrap core JavaScript -->
     {% bootstrap_javascript jquery='full' %}
+    <!-- Enable Tooltips -->
+    <script type="text/javascript">
+      $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+      });
+    </script>
     <!-- Sidebar Toggle Script -->
     <script>
       $("#sidebar-toggle").click(function(e) {
@@ -58,14 +64,6 @@
       for (i=0; i<groupby_select.options.length; i++) {
         if (groupby_select.options[i].value == groupby_param) {
           groupby_select.selectedIndex = i;
-        }
-      }
-
-      var currency_select = document.getElementById("currency-select");
-      var currency_param = getURLParam('currency');
-      for (i=0; i<currency_select.options.length; i++) {
-        if (currency_select.options[i].value == currency_param) {
-          currency_select.selectedIndex = i;
         }
       }
     </script>

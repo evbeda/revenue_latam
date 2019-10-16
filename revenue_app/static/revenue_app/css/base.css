@@ -212,3 +212,7 @@ footer a {
 #gif {
   color: #D1410C;
 }
+
+.tooltip-inner {
+  max-width: 300px;
+}

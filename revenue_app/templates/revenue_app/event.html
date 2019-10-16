@@ -1,5 +1,6 @@
 {% extends 'revenue_app/base.html' %}
 {% load static %}
+{% load glossary_filters %}
 {% load number_filters %}
 {% block content %}
 <div class="row m-0">
@@ -25,7 +26,7 @@
         <table class="table table-striped mt-4 table-sm">
         {% for key, value in details.items %}
             <tr>
-                <td class="summarized-key"><b>{{key}}</b></td>
+                <td class="summarized-key"><b data-toggle="tooltip" data-placement="top" title="{% glossary key %}">{{key}}</b></td>
                 {% if value|is_numeric %}
                 <td class="text-right text-monospace">{{value|floatformat:2}}</td>
                 {% else %}
@@ -41,7 +42,7 @@
             <table class="table table-striped table-sm mt-4">
                 {% for key, value in data.items %}
                 <tr>
-                    <td><b>{{key}}</b></td>
+                    <td><b data-toggle="tooltip" data-placement="top" title="{% glossary key %}">{{key}}</b></td>
                     <td class="text-right text-monospace">{{value|floatformat:2}}</td>
                 </tr>
                 {% endfor %}
@@ -56,7 +57,7 @@
         <table class="table table-striped table-sm mt-4">
             {% for key, value in data.items %}
             <tr>
-                <td><b>{{key}}</b></td>
+                <td><b data-toggle="tooltip" data-placement="top" title="{% glossary key %}">{{key}}</b></td>
                 <td class="text-right text-monospace">{{value|floatformat:2}}</td>
             </tr>
             {% endfor %}
