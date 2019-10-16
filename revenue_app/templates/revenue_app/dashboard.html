@@ -1,6 +1,7 @@
 
 {% extends 'revenue_app/base.html' %}
 {% load static %}
+{% load glossary_filters %}
 {% load humanize %}
 
 {% block content %}
@@ -14,7 +15,7 @@
       <table class="table table-striped mt-4">
         {% for key, value in data.items %}
           <tr>
-            <td><b>{{key}}</b></td>
+            <td><b data-toggle="tooltip" data-placement="top" title="{% glossary key %}">{{key}}</b></td>
             <td class="text-right text-monospace">{{value|floatformat:2|intcomma}}</td>
           </tr>
         {% endfor %}

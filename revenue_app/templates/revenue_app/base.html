@@ -33,6 +33,12 @@
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <!-- Bootstrap core JavaScript -->
     {% bootstrap_javascript jquery='full' %}
+    <!-- Enable Tooltips -->
+    <script type="text/javascript">
+      $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+      });
+    </script>
     <!-- Sidebar Toggle Script -->
     <script>
       $("#sidebar-toggle").click(function(e) {
