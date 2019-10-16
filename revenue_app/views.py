@@ -35,7 +35,6 @@ from revenue_app.utils import (
     get_top_organizers_refunds,
     manage_transactions,
     payment_processor_summary,
-    random_color,
     sales_flag_summary,
 )
 
@@ -412,21 +411,25 @@ def top_organizers_json_data(request):
         request.session.get('organizer_sales'),
         request.session.get('organizer_refunds'),
     )
-    colors = [random_color() for _ in range(11)]
+    ids = list(range(0,11))
     top_organizers_ars = get_top_organizers(trx[trx['currency'] == 'ARS'])
+    ars_names = top_organizers_ars['email'].tolist()
+    ars_quantities = top_organizers_ars['sale__gtf_esf__epp'].tolist()
     top_organizers_brl = get_top_organizers(trx[trx['currency'] == 'BRL'])
+    brl_names = top_organizers_brl['email'].tolist()
+    brl_quantities = top_organizers_brl['sale__gtf_esf__epp'].tolist()
     res = json.dumps({
-        'arg': {
-            'labels': top_organizers_ars['email'].tolist(),
-            'data': top_organizers_ars['sale__gtf_esf__epp'].tolist(),
-            'backgroundColor': colors,
-            'borderColor': [color.replace('0.2', '1') for color in colors]
+        'ars_data': {
+            'data': [
+                {'name': name, 'id': id, 'quantity': quantity}
+                for name, id, quantity in zip(ars_names, ids, ars_quantities)
+            ]
         },
-        'brl': {
-            'labels': top_organizers_brl['email'].tolist(),
-            'data': top_organizers_brl['sale__gtf_esf__epp'].tolist(),
-            'backgroundColor': colors,
-            'borderColor': [color.replace('0.2', '1') for color in colors]
+        'brl_data': {
+            'data': [
+                {'name': name, 'id': id, 'quantity': quantity}
+                for name, id, quantity in zip(brl_names, ids, brl_quantities)
+            ]
         },
     })
     return HttpResponse(res, content_type="application/json")
@@ -439,21 +442,25 @@ def top_organizers_refunds_json_data(request):
         request.session.get('organizer_sales'),
         request.session.get('organizer_refunds'),
     )
-    colors = [random_color() for _ in range(11)]
+    ids = list(range(0,11))
     top_organizers_ars = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])
+    ars_names = top_organizers_ars['email'].tolist()
+    ars_quantities = top_organizers_ars['refund__gtf_epp__gtf_esf__epp'].tolist()
     top_organizers_brl = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])
+    brl_names = top_organizers_brl['email'].tolist()
+    brl_quantities = top_organizers_brl['refund__gtf_epp__gtf_esf__epp'].tolist()
     res = json.dumps({
-        'arg': {
-            'labels': top_organizers_ars['email'].tolist(),
-            'data': top_organizers_ars['refund__gtf_epp__gtf_esf__epp'].tolist(),
-            'backgroundColor': colors,
-            'borderColor': [color.replace('0.2', '1') for color in colors]
+        'ars_data': {
+            'data': [
+                {'name': name, 'id': id, 'quantity': abs(quantity)}
+                for name, id, quantity in zip(ars_names, ids, ars_quantities)
+            ]
         },
-        'brl': {
-            'labels': top_organizers_brl['email'].tolist(),
-            'data': top_organizers_brl['refund__gtf_epp__gtf_esf__epp'].tolist(),
-            'backgroundColor': colors,
-            'borderColor': [color.replace('0.2', '1') for color in colors]
+        'brl_data': {
+            'data': [
+                {'name': name, 'id': id, 'quantity': abs(quantity)}
+                for name, id, quantity in zip(brl_names, ids, brl_quantities)
+            ]
         },
     })
     return HttpResponse(res, content_type="application/json")
@@ -466,21 +473,25 @@ def top_events_json_data(request):
         request.session.get('organizer_sales'),
         request.session.get('organizer_refunds'),
     )
-    colors = [random_color() for _ in range(11)]
+    ids = list(range(0,11))
     top_events_ars = get_top_events(trx[trx['currency'] == 'ARS'])
+    ars_names = [f'[{id}] {title[:20]}' for id, title in zip(top_events_ars['event_id'], top_events_ars['event_title'])]
+    ars_quantities = top_events_ars['sale__gtf_esf__epp'].tolist()
     top_events_brl = get_top_events(trx[trx['currency'] == 'BRL'])
+    brl_names = [f'[{id}] {title[:20]}' for id, title in zip(top_events_brl['event_id'], top_events_brl['event_title'])]
+    brl_quantities = top_events_brl['sale__gtf_esf__epp'].tolist()
     res = json.dumps({
-        'arg': {
-            'labels': [event_title[:30] for event_title in top_events_ars['event_title']],
-            'data': top_events_ars['sale__gtf_esf__epp'].tolist(),
-            'backgroundColor': colors,
-            'borderColor': [color.replace('0.2', '1') for color in colors]
+        'ars_data': {
+            'data': [
+                {'name': name, 'id': id, 'quantity': quantity}
+                for name, id, quantity in zip(ars_names, ids, ars_quantities)
+            ]
         },
-        'brl': {
-            'labels': top_events_brl['event_id'].tolist(),
-            'data': top_events_brl['sale__gtf_esf__epp'].tolist(),
-            'backgroundColor': colors,
-            'borderColor': [color.replace('0.2', '1') for color in colors]
+        'brl_data': {
+            'data': [
+                {'name': name, 'id': id, 'quantity': quantity}
+                for name, id, quantity in zip(brl_names, ids, brl_quantities)
+            ]
         },
     })
     return HttpResponse(res, content_type="application/json")
@@ -493,64 +504,82 @@ def dashboard_summary(request):
         request.session.get('organizer_sales'),
         request.session.get('organizer_refunds'),
     )
+    ids = list(range(0,10))
     ars = trx[trx['currency'] == 'ARS']
     brl = trx[trx['currency'] == 'BRL']
+
     ars_pp_gtv, ars_pp_gtf = payment_processor_summary(ars)
+    ars_pp_gtv_names = ars_pp_gtv.payment_processor.tolist()
+    ars_pp_gtv_quantities = ars_pp_gtv.sale__payment_amount__epp.tolist()
+    ars_pp_gtf_names = ars_pp_gtf.payment_processor.to_list()
+    ars_pp_gtf_quantities = ars_pp_gtf.sale__gtf_esf__epp.tolist()
+
     brl_pp_gtv, brl_pp_gtf = payment_processor_summary(brl)
+    brl_pp_gtv_names = brl_pp_gtv.payment_processor.tolist()
+    brl_pp_gtv_quantities = brl_pp_gtv.sale__payment_amount__epp.tolist()
+    brl_pp_gtf_names = brl_pp_gtf.payment_processor.to_list()
+    brl_pp_gtf_quantities = brl_pp_gtf.sale__gtf_esf__epp.tolist()
+
     ars_sf_org, ars_sf_gtf = sales_flag_summary(ars)
+    ars_sf_org_names = ars_sf_org.index.to_list()
+    ars_sf_org_quantities = ars_sf_org.values.tolist()
+    ars_sf_gtf_names = ars_sf_gtf.sales_flag.to_list()
+    ars_sf_gtf_quantities = ars_sf_gtf.sale__gtf_esf__epp.tolist()
+
     brl_sf_org, brl_sf_gtf = sales_flag_summary(brl)
-    colors_pp_gtv = [random_color() for _ in range(4)]
-    colors_pp_gtf = [random_color() for _ in range(4)]
-    colors_sf_org = [random_color() for _ in range(4)]
-    colors_sf_gtf = [random_color() for _ in range(4)]
+    brl_sf_org_names = brl_sf_org.index.to_list()
+    brl_sf_org_quantities = brl_sf_org.values.tolist()
+    brl_sf_gtf_names = brl_sf_gtf.sales_flag.to_list()
+    brl_sf_gtf_quantities = brl_sf_gtf.sale__gtf_esf__epp.tolist()
+
     res = json.dumps({
         'ars_pp_gtv': {
-            'labels': ars_pp_gtv.payment_processor.tolist(),
-            'data': ars_pp_gtv.sale__payment_amount__epp.tolist(),
-            'backgroundColor': colors_pp_gtv,
-            'borderColor': [color.replace('0.2', '1') for color in colors_pp_gtv],
+            'data': [
+                {'name': name, 'id': id, 'quantity': quantity}
+                for name, id, quantity in zip(ars_pp_gtv_names, ids, ars_pp_gtv_quantities)
+            ]
         },
         'ars_pp_gtf': {
-            'labels': ars_pp_gtf.payment_processor.to_list(),
-            'data': ars_pp_gtf.sale__gtf_esf__epp.tolist(),
-            'backgroundColor': colors_pp_gtf,
-            'borderColor': [color.replace('0.2', '1') for color in colors_pp_gtf],
+            'data': [
+                {'name': name, 'id': id, 'quantity': quantity}
+                for name, id, quantity in zip(ars_pp_gtf_names, ids, ars_pp_gtf_quantities)
+            ]
         },
         'brl_pp_gtv': {
-            'labels': brl_pp_gtv.payment_processor.tolist(),
-            'data': brl_pp_gtv.sale__payment_amount__epp.tolist(),
-            'backgroundColor': colors_pp_gtv,
-            'borderColor': [color.replace('0.2', '1') for color in colors_pp_gtv],
+            'data': [
+                {'name': name, 'id': id, 'quantity': quantity}
+                for name, id, quantity in zip(brl_pp_gtv_names, ids, brl_pp_gtv_quantities)
+            ]
         },
         'brl_pp_gtf': {
-            'labels': brl_pp_gtf.payment_processor.to_list(),
-            'data': brl_pp_gtf.sale__gtf_esf__epp.tolist(),
-            'backgroundColor': colors_pp_gtf,
-            'borderColor': [color.replace('0.2', '1') for color in colors_pp_gtf],
+            'data': [
+                {'name': name, 'id': id, 'quantity': quantity}
+                for name, id, quantity in zip(brl_pp_gtf_names, ids, brl_pp_gtf_quantities)
+            ]
         },
         'ars_sf_org': {
-            'labels': ars_sf_org.index.to_list(),
-            'data': ars_sf_org.values.tolist(),
-            'backgroundColor': colors_sf_org,
-            'borderColor': [color.replace('0.2', '1') for color in colors_sf_org],
+            'data': [
+                {'name': name, 'id': id, 'quantity': quantity}
+                for name, id, quantity in zip(ars_sf_org_names, ids, ars_sf_org_quantities)
+            ]
         },
         'ars_sf_gtf': {
-            'labels': ars_sf_gtf.sales_flag.to_list(),
-            'data': ars_sf_gtf.sale__gtf_esf__epp.tolist(),
-            'backgroundColor': colors_sf_gtf,
-            'borderColor': [color.replace('0.2', '1') for color in colors_sf_gtf],
+            'data': [
+                {'name': name, 'id': id, 'quantity': quantity}
+                for name, id, quantity in zip(ars_sf_gtf_names, ids, ars_sf_gtf_quantities)
+            ]
         },
         'brl_sf_org': {
-            'labels': brl_sf_org.index.to_list(),
-            'data': brl_sf_org.values.tolist(),
-            'backgroundColor': colors_sf_org,
-            'borderColor': [color.replace('0.2', '1') for color in colors_sf_org],
+            'data': [
+                {'name': name, 'id': id, 'quantity': quantity}
+                for name, id, quantity in zip(brl_sf_org_names, ids, brl_sf_org_quantities)
+            ]
         },
         'brl_sf_gtf': {
-            'labels': brl_sf_gtf.sales_flag.to_list(),
-            'data': brl_sf_gtf.sale__gtf_esf__epp.tolist(),
-            'backgroundColor': colors_sf_gtf,
-            'borderColor': [color.replace('0.2', '1') for color in colors_sf_gtf],
+            'data': [
+                {'name': name, 'id': id, 'quantity': quantity}
+                for name, id, quantity in zip(brl_sf_gtf_names, ids, brl_sf_gtf_quantities)
+            ]
         },
     })
     return HttpResponse(res, content_type="application/json")

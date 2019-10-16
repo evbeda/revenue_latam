@@ -1,7 +1,6 @@
 from functools import reduce
 import numpy as np
 import pandas as pd
-from random import randint
 
 
 MONEY_COLUMNS = [
@@ -399,15 +398,11 @@ def get_top_events(filtered_transactions):
     top = ordered.head(10).copy()
     top.loc[len(top), ['event_title', 'event_id', 'sale__gtf_esf__epp', 'sale__payment_amount__epp']] = [
         'Others',
-        'Others',
+        '',
         ordered[10:].sale__gtf_esf__epp.sum().round(2),
         ordered[10:].sale__payment_amount__epp.sum().round(2),
     ]
     return top
-
-
-def random_color():
-    return f"rgba({randint(0, 255)}, {randint(0, 255)}, {randint(0, 255)}, 0.2)"
 
 
 def get_summarized_data(transactions, corrections, organizer_sales, organizer_refunds):
