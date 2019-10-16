@@ -189,15 +189,10 @@ footer a {
 }
 
 /* Charts */
-.chart-container {
-  min-height: 300px;
-  text-align: -webkit-center;
-  text-align: -moz-center;
-  max-width: 100%;
-}
-
-.chart-container-pp {
+.dashboard-chart-container {
   min-width: 370px;
+  min-height: 300px;
+  max-width: 100%;
 }
 
 /* Summarized Table */
