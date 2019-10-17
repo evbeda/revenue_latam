@@ -36,13 +36,19 @@ GLOSSARY = {
     'net__ap_organizer__royalty__epp': 'sale__ap_organizer__royalty__epp + refund__ap_organizer__royalty__epp',
     'AVG Ticket Value': 'sale__payment_amount__epp / PaidTix',
     'AVG PaidTix/Day':  'PaidTix / days quantity',
-    'Total Organizers': 'number of unique eventholder_user_id',
-    'Total Events': 'number of unique event_id',
-    'Total PaidTix': 'sum of PaidTix',
-    'Total GTF': 'sum of sale__gtf_esf__epp',
-    'Total GTV': 'sum of sale__payment_amount__epp',
-    'ATV': '(sum of sale__payment_amount__epp - sum of sale__gtf_esf__epp) / sum of PaidTix',
-    'Avg EB Perc Take Rate': 'sum of sale__gtf_esf__epp / sum of sale__payment_amount__epp * 100',
+    'TotalsOrganizers': 'number of unique eventholder_user_id',
+    'TotalsEvents': 'number of unique event_id',
+    'TotalsPaidTix': 'sum of PaidTix',
+    'NetGTF': 'sum of sale__gtf_esf__epp + refund__gtf_epp__gtf_esf__epp',
+    'NetGTV': 'sum of sale__payment_amount__epp + refund__payment_amount__epp',
+    'NetATV': 'sum of (sale__payment_amount__epp - sale__gtf_esf__epp'
+              ' + refund__payment_amount__epp - refund__gtf_epp__gtf_esf__epp) / sum of PaidTix',
+    'NetAvg EB Take Rate': 'sum of (sale__gtf_esf__epp + refund__gtf_epp__gtf_esf__epp) / '
+                           'sum of (sale__payment_amount__epp + refund__payment_amount__epp) * 100',
+    'SalesGTF': 'sum of sale__gtf_esf__epp',
+    'SalesGTV': 'sum of sale__payment_amount__epp',
+    'SalesATV': 'sum of (sale__payment_amount__epp - sale__gtf_esf__epp) / sum of PaidTix',
+    'SalesAvg EB Take Rate': 'sum of sale__gtf_esf__epp / sum of sale__payment_amount__epp * 100',
 }
 
 register = template.Library()
