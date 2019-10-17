@@ -1,3 +1,4 @@
+import json
 from datetime import date
 from django.template import (
     Context,
@@ -12,7 +13,7 @@ from unittest.mock import patch
 
 from freezegun import freeze_time
 from pandas import read_csv
-from pandas.core.frame import DataFrame, Series
+from pandas.core.frame import DataFrame
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
@@ -26,6 +27,7 @@ from revenue_app.utils import (
     clean_transactions,
     event_details,
     filter_transactions,
+    get_charts_data,
     get_event_transactions,
     get_organizer_transactions,
     get_summarized_data,
@@ -575,46 +577,69 @@ class UtilsTestCase(TestCase):
         self.assertEqual(summarized_data[country][group][data], expected)
 
     @parameterized.expand([
-        ('ARS', 'ADYEN', 22971.37, 1480.49),
-        ('BRL', 'MERCADO_PAGO', 4180, 292.2),
-        ('BRL', 'ADYEN', 891, 81),
-        ('BRL', 'PAYPAL', 7260, 580.8),
+        ('payment_processor', 'gtv'),
+        ('payment_processor', 'gtf'),
+        ('sales_flag', 'gtf'),
+        ('sales_flag', 'organizers'),
     ])
-    def test_payment_processor_summary(self, currency, payment_processor, gtv, gtf):
+    def test_get_charts_data_with_valid_params(self, type, filter):
         trx = manage_transactions(
             self.transactions,
             self.corrections,
             self.organizer_sales,
             self.organizer_refunds,
         )
-        filtered = (trx[trx['currency'] == currency])
-        pp_gtv, pp_gtf = payment_processor_summary(filtered)
-        self.assertIsInstance(pp_gtv, DataFrame)
-        self.assertIsInstance(pp_gtf, DataFrame)
-        self.assertIn(payment_processor, pp_gtv.payment_processor.to_list())
-        self.assertIn(gtv, pp_gtv.sale__payment_amount__epp.tolist())
-        self.assertIn(gtf, pp_gtf.sale__gtf_esf__epp.tolist())
+        response = get_charts_data(trx, type, filter)
+        self.assertIn('data', response['ARS'])
+        self.assertIn('data', response['BRL'])
 
     @parameterized.expand([
-        ('ARS', 'sales', 2, 1480.49),
-        ('BRL', 'sales', 2, 81),
-        ('BRL', 'SSO', 1, 873),
+        ('payment_processor', 'organizers'),
+        ('sales_flag', 'gtv'),
     ])
-    def test_sales_flag_summary(self, currency, sales_flag, org_qty, gtf):
+    def test_get_charts_data_with_invalid_params(self, type, filter):
         trx = manage_transactions(
             self.transactions,
             self.corrections,
             self.organizer_sales,
             self.organizer_refunds,
         )
-        filtered = (trx[trx['currency'] == currency])
-        sf_org, sf_gtf = sales_flag_summary(filtered)
-        self.assertIsInstance(sf_org, Series)
-        self.assertIsInstance(sf_gtf, DataFrame)
-        self.assertIn(sales_flag, sf_org.index.to_list())
-        self.assertIn(sales_flag, sf_gtf.sales_flag.to_list())
-        self.assertIn(org_qty, sf_org.values.tolist())
-        self.assertIn(gtf, sf_gtf.sale__gtf_esf__epp.tolist())
+        response = get_charts_data(trx, type, filter)
+        self.assertEqual(response, {})
+
+    @parameterized.expand([
+        ('gtv', ),
+        ('gtf', ),
+    ])
+    def test_payment_processor_summary(self, filter):
+        trx = manage_transactions(
+            self.transactions,
+            self.corrections,
+            self.organizer_sales,
+            self.organizer_refunds,
+        )
+        ars = trx[trx['currency'] == 'ARS']
+        brl = trx[trx['currency'] == 'BRL']
+        response = payment_processor_summary([ars, brl], filter)
+        self.assertIsInstance(response['ARS']['data'], list)
+        self.assertIsInstance(response['BRL']['data'], list)
+
+    @parameterized.expand([
+        ('gtf', ),
+        ('organizers', ),
+    ])
+    def test_sales_flag_summary(self, filter):
+        trx = manage_transactions(
+            self.transactions,
+            self.corrections,
+            self.organizer_sales,
+            self.organizer_refunds,
+        )
+        ars = trx[trx['currency'] == 'ARS']
+        brl = trx[trx['currency'] == 'BRL']
+        response = sales_flag_summary([ars, brl], filter)
+        self.assertIsInstance(response['ARS']['data'], list)
+        self.assertIsInstance(response['BRL']['data'], list)
 
     @parameterized.expand([
         ('ARS', 60, 5, 382.86),
@@ -916,8 +941,23 @@ class ViewsTest(TestCase):
         self.assertIn('.xls', response['Content-Disposition'])
         self.assertEqual(response.status_code, 200)
 
-    def test_dashboard_summary(self):
+    def test_dashboard_summary_with_no_data_returns_400(self):
         URL = reverse('json_dashboard_summary')
+        self.load_dataframes()
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            str(response._headers['content-type']),
+            "('Content-Type', 'application/json')",
+        )
+    @parameterized.expand([
+        ('payment_processor', 'gtv'),
+        ('payment_processor', 'gtf'),
+        ('sales_flag', 'gtf'),
+        ('sales_flag', 'organizers'),
+    ])
+    def test_dashboard_summary_with_valid_data_returns_200(self, type, filter):
+        URL = '{0}?type={1}&filter={2}'.format(reverse('json_dashboard_summary'), type, filter)
         self.load_dataframes()
         response = self.client.get(URL)
         self.assertEqual(response.status_code, 200)
@@ -925,6 +965,24 @@ class ViewsTest(TestCase):
             str(response._headers['content-type']),
             "('Content-Type', 'application/json')",
         )
+        self.assertIn('ARS', json.loads(response.content))
+        self.assertIn('BRL', json.loads(response.content))
+
+    @parameterized.expand([
+        ('payment_processor', 'organizers'),
+        ('sales_flag', 'gtv'),
+    ])
+    def test_dashboard_summary_with_invalid_data_returns_200(self, type, filter):
+        URL = '{0}?type={1}&filter={2}'.format(reverse('json_dashboard_summary'), type, filter)
+        self.load_dataframes()
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            str(response._headers['content-type']),
+            "('Content-Type', 'application/json')",
+        )
+        self.assertEqual(json.loads(response.content), {})
+        self.assertEqual(json.loads(response.content), {})
 
     def test_top_events_json_data(self):
         URL = reverse('json_top_events')

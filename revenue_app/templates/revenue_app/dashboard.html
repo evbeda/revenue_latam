@@ -9,8 +9,7 @@
 <br>
 <div class="row m-0">
   {% for currency, data in summarized_data.items %}
-  <div class="col-xl-6">
-    <div class="row">
+    <div class="col-xl-6">
       <h4>{{currency}}</h4>
       <table class="table table-striped mt-4">
         {% for parent_key, parent_value in data.items %}
@@ -30,49 +29,43 @@
         {% endfor %}
       </table>
     </div>
-    <br>
-    <h4>{{currency}} Payment Processor</h4>
-    <h6>Referred to GTV</h6>
-    <div class="row">
-      <div class="dashboard-chart-container">
-        <div class="card--chart">
-          <div class="js-donut-chart-container-{{currency|lower}}_pp_gtv donut-chart-container"></div>
-          <div class="js-legend-chart-container-{{currency|lower}}_pp_gtv legend-chart-container"></div>
-        </div>
-      </div>
-    </div>
-    <h4>{{currency}} Payment Processor</h4>
-    <h6>Referred to GTF</h6>
-    <div class="row">
-      <div class="dashboard-chart-container">
-        <div class="card--chart">
-          <div class="js-donut-chart-container-{{currency|lower}}_pp_gtf donut-chart-container"></div>
-          <div class="js-legend-chart-container-{{currency|lower}}_pp_gtf legend-chart-container"></div>
-        </div>
-      </div>
-    </div>
-    <h4>{{currency}} Sales Flag</h4>
-    <h6>Referred to organizers quantity</h6>
-    <div class="row">
-      <div class="dashboard-chart-container">
-        <div class="card--chart">
-          <div class="js-donut-chart-container-{{currency|lower}}_sf_org donut-chart-container"></div>
-          <div class="js-legend-chart-container-{{currency|lower}}_sf_org legend-chart-container"></div>
-        </div>
-      </div>
-    </div>
-    <h4>{{currency}} Sales Flag</h4>
-    <h6>Referred to GTF</h6>
-    <div class="row">
-      <div class="dashboard-chart-container">
-        <div class="card--chart">
-          <div class="js-donut-chart-container-{{currency|lower}}_sf_gtf donut-chart-container"></div>
-          <div class="js-legend-chart-container-{{currency|lower}}_sf_gtf legend-chart-container"></div>
-        </div>
-      </div>
-    </div>
-  </div>
   {% endfor %}
+</div>
+<div class="row m-3">
+  <h3>Charts</h3>
+</div>
+<div class="row">
+  <div class="col-xl-6">
+      <form method="get" class="list-group-item list-group-item-action" id="chart-selector">
+        <div class="form-row">
+          <div class="col">
+            <label for="type-selector">Type</label>
+            <select id="type-selector" name="type-selector" class="form-control form-control-sm">
+                <option value="" disabled selected>Choose...</option>
+                <option value="payment_processor">Payment Processor</option>
+                <option value="sales_flag">Sales Flag</option>
+            </select>
+          </div>
+          <div class="col">
+            <label for="filter-selector">Referred to</label>
+            <select id="filter-selector" name="filter-selector" class="form-control form-control-sm">
+                <option value="" disabled selected>Choose...</option>
+                <option value="gtv">GTV</option>
+                <option value="gtf">GTF</option>
+                <option value="organizers">Organizers</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row mt-2">
+          <div class="col">
+            <button type="submit" class="mt-1 btn btn-evb-orange btn-sm float-right">Apply</button>
+          </div>
+        </div>
+      </form>
+  </div>
+</div>
+<br>
+<div class="row mt-4" id="chart-container">
 </div>
 {% endblock content %}
 {% block scripts %}
@@ -81,26 +74,25 @@
   <script src="https://cdn.jsdelivr.net/npm/britecharts@2/dist/bundled/britecharts.min.js"></script>
   <script type="text/javascript" src="{% static 'revenue_app/js/donut_chart.js' %}"></script>
   <script type="text/javascript">
-    fetch('{% url "json_dashboard_summary" %}')
-      .then(res => res.json())
-      .then(json => {
-        let arsPPGtv = json['ars_pp_gtv'];
-        let arsPPGtf = json['ars_pp_gtv'];
-        let brlPPGtv = json['brl_pp_gtv'];
-        let brlPPGtf = json['brl_pp_gtf'];
-        let arsSFOrg = json['ars_sf_org'];
-        let arsSFGtf = json['ars_sf_gtf'];
-        let brlSFOrg = json['brl_sf_org'];
-        let brlSFGtf = json['brl_sf_gtf'];
-        let legendHeight = 150;
-        createDonutChart(arsPPGtv, 'ars_pp_gtv', legendHeight);
-        createDonutChart(arsPPGtf, 'ars_pp_gtf', legendHeight);
-        createDonutChart(brlPPGtv, 'brl_pp_gtv', legendHeight);
-        createDonutChart(brlPPGtf, 'brl_pp_gtf', legendHeight);
-        createDonutChart(arsSFOrg, 'ars_sf_org', legendHeight);
-        createDonutChart(arsSFGtf, 'ars_sf_gtf', legendHeight);
-        createDonutChart(brlSFOrg, 'brl_sf_org', legendHeight);
-        createDonutChart(brlSFGtf, 'brl_sf_gtf', legendHeight);
-      });
+    document.getElementById('chart-selector').addEventListener('submit', e => {
+
+      e.preventDefault();
+      let type = document.getElementById('type-selector').value;
+      let filter = document.getElementById('filter-selector').value;
+      fetch(`{% url "json_dashboard_summary" %}?type=${type}&filter=${filter}`)
+        .then(res => res.json())
+        .then(json => {
+          if (jQuery.isEmptyObject(json)){
+            const container = document.getElementById('chart-container');
+            container.innerHTML = '';
+            let msg = document.createElement('div');
+            msg.classList.add('alert', 'alert-danger', 'col-6');
+            msg.textContent = 'Chart does not exist.';
+            container.appendChild(msg);
+          } else {
+            setChart(json);
+          }
+        })
+    });
   </script>
 {% endblock scripts %}

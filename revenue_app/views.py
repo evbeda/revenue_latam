@@ -13,6 +13,7 @@ import xlwt
 from django.http import (
     HttpResponse,
     HttpResponseRedirect,
+    JsonResponse,
 )
 from django.template.loader import get_template
 from django.views.generic import (
@@ -27,6 +28,8 @@ from revenue_app.presto_connection import (
     PrestoError,
 )
 from revenue_app.utils import (
+    convert_dataframe_to_usd,
+    get_charts_data,
     get_event_transactions,
     get_organizer_transactions,
     get_summarized_data,
@@ -34,9 +37,6 @@ from revenue_app.utils import (
     get_top_organizers,
     get_top_organizers_refunds,
     manage_transactions,
-    payment_processor_summary,
-    sales_flag_summary,
-    convert_dataframe_to_usd,
 )
 
 FULL_COLUMNS = [
@@ -554,91 +554,16 @@ def top_events_json_data(request):
 
 
 def dashboard_summary(request):
-    trx = manage_transactions(
+    transactions = manage_transactions(
         request.session.get('transactions'),
         request.session.get('corrections'),
         request.session.get('organizer_sales'),
         request.session.get('organizer_refunds'),
     )
-    ids = list(range(0, 10))
-    ars = trx[trx['currency'] == 'ARS']
-    brl = trx[trx['currency'] == 'BRL']
-
-    ars_pp_gtv, ars_pp_gtf = payment_processor_summary(ars)
-    ars_pp_gtv_names = ars_pp_gtv.payment_processor.tolist()
-    ars_pp_gtv_quantities = ars_pp_gtv.sale__payment_amount__epp.tolist()
-    ars_pp_gtf_names = ars_pp_gtf.payment_processor.to_list()
-    ars_pp_gtf_quantities = ars_pp_gtf.sale__gtf_esf__epp.tolist()
-
-    brl_pp_gtv, brl_pp_gtf = payment_processor_summary(brl)
-    brl_pp_gtv_names = brl_pp_gtv.payment_processor.tolist()
-    brl_pp_gtv_quantities = brl_pp_gtv.sale__payment_amount__epp.tolist()
-    brl_pp_gtf_names = brl_pp_gtf.payment_processor.to_list()
-    brl_pp_gtf_quantities = brl_pp_gtf.sale__gtf_esf__epp.tolist()
-
-    ars_sf_org, ars_sf_gtf = sales_flag_summary(ars)
-    ars_sf_org_names = ars_sf_org.index.to_list()
-    ars_sf_org_quantities = ars_sf_org.values.tolist()
-    ars_sf_gtf_names = ars_sf_gtf.sales_flag.to_list()
-    ars_sf_gtf_quantities = ars_sf_gtf.sale__gtf_esf__epp.tolist()
-
-    brl_sf_org, brl_sf_gtf = sales_flag_summary(brl)
-    brl_sf_org_names = brl_sf_org.index.to_list()
-    brl_sf_org_quantities = brl_sf_org.values.tolist()
-    brl_sf_gtf_names = brl_sf_gtf.sales_flag.to_list()
-    brl_sf_gtf_quantities = brl_sf_gtf.sale__gtf_esf__epp.tolist()
-
-    res = json.dumps({
-        'ars_pp_gtv': {
-            'data': [
-                {'name': name, 'id': id, 'quantity': quantity}
-                for name, id, quantity in zip(ars_pp_gtv_names, ids, ars_pp_gtv_quantities)
-            ]
-        },
-        'ars_pp_gtf': {
-            'data': [
-                {'name': name, 'id': id, 'quantity': quantity}
-                for name, id, quantity in zip(ars_pp_gtf_names, ids, ars_pp_gtf_quantities)
-            ]
-        },
-        'brl_pp_gtv': {
-            'data': [
-                {'name': name, 'id': id, 'quantity': quantity}
-                for name, id, quantity in zip(brl_pp_gtv_names, ids, brl_pp_gtv_quantities)
-            ]
-        },
-        'brl_pp_gtf': {
-            'data': [
-                {'name': name, 'id': id, 'quantity': quantity}
-                for name, id, quantity in zip(brl_pp_gtf_names, ids, brl_pp_gtf_quantities)
-            ]
-        },
-        'ars_sf_org': {
-            'data': [
-                {'name': name, 'id': id, 'quantity': quantity}
-                for name, id, quantity in zip(ars_sf_org_names, ids, ars_sf_org_quantities)
-            ]
-        },
-        'ars_sf_gtf': {
-            'data': [
-                {'name': name, 'id': id, 'quantity': quantity}
-                for name, id, quantity in zip(ars_sf_gtf_names, ids, ars_sf_gtf_quantities)
-            ]
-        },
-        'brl_sf_org': {
-            'data': [
-                {'name': name, 'id': id, 'quantity': quantity}
-                for name, id, quantity in zip(brl_sf_org_names, ids, brl_sf_org_quantities)
-            ]
-        },
-        'brl_sf_gtf': {
-            'data': [
-                {'name': name, 'id': id, 'quantity': quantity}
-                for name, id, quantity in zip(brl_sf_gtf_names, ids, brl_sf_gtf_quantities)
-            ]
-        },
-    })
-    return HttpResponse(res, content_type="application/json")
+    if request.GET.get('type') and request.GET.get('filter'):
+        res = get_charts_data(transactions, request.GET.get('type'), request.GET.get('filter'))
+        return JsonResponse(res, status=200)
+    return JsonResponse({}, status=400)
 
 
 def download_excel(request, xls_name):
