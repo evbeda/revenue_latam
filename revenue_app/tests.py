@@ -511,29 +511,37 @@ class UtilsTestCase(TestCase):
         self.assertEqual(response, details_organizer)
 
     @parameterized.expand([
-        ('ARS', 'Total Organizers', 2),
-        ('ARS', 'Total Events', 2),
-        ('ARS', 'Total PaidTix', 12905),
-        ('ARS', 'Total GTF', 1480.49),
-        ('ARS', 'Total GTV', 22971.37),
-        ('ARS', 'ATV', 1.67),
-        ('ARS', 'Avg EB Perc Take Rate', 6.44),
-        ('BRL', 'Total Organizers', 3),
-        ('BRL', 'Total Events', 3),
-        ('BRL', 'Total PaidTix', 18225),
-        ('BRL', 'Total GTF', 954.0),
-        ('BRL', 'Total GTV', 12331.0),
-        ('BRL', 'ATV', 0.62),
-        ('BRL', 'Avg EB Perc Take Rate', 7.74),
+        ('ARS', 'Totals', 'Organizers', 2),
+        ('ARS', 'Totals', 'Events', 2),
+        ('ARS', 'Totals', 'PaidTix', 12905),
+        ('ARS', 'Sales', 'GTF', 1480.49),
+        ('ARS', 'Sales', 'GTV', 22971.37),
+        ('ARS', 'Sales', 'ATV', 1.67),
+        ('ARS', 'Sales', 'Avg EB Take Rate', 6.44),
+        ('ARS', 'Net', 'GTF', 1149.16),
+        ('ARS', 'Net', 'GTV', 17830.46),
+        ('ARS', 'Net', 'ATV', 1.29),
+        ('ARS', 'Net', 'Avg EB Take Rate', 6.44),
+        ('BRL', 'Totals', 'Organizers', 3),
+        ('BRL', 'Totals', 'Events', 3),
+        ('BRL', 'Totals', 'PaidTix', 18225),
+        ('BRL', 'Sales', 'GTF', 954.0),
+        ('BRL', 'Sales', 'GTV', 12331.0),
+        ('BRL', 'Sales', 'ATV', 0.62),
+        ('BRL', 'Sales', 'Avg EB Take Rate', 7.74),
+        ('BRL', 'Net', 'GTF', 563.55),
+        ('BRL', 'Net', 'GTV', 7359.0),
+        ('BRL', 'Net', 'ATV', 0.37),
+        ('BRL', 'Net', 'Avg EB Take Rate', 7.66),
     ])
-    def test_get_summarized_data(self, country, data, expected):
+    def test_get_summarized_data(self, country, group, data, expected):
         summarized_data = get_summarized_data(
             self.transactions,
             self.corrections,
             self.organizer_sales,
             self.organizer_refunds,
         )
-        self.assertEqual(summarized_data[country][data], expected)
+        self.assertEqual(summarized_data[country][group][data], expected)
 
     @parameterized.expand([
         ('ARS', 'ADYEN', 22971.37, 1480.49),
@@ -593,27 +601,35 @@ class ViewsTest(TestCase):
     def test_dashboard_view_returns_200(self):
         URL = reverse('dashboard')
         context_dict = [
-            ('ARS', 'Total Organizers'),
-            ('ARS', 'Total Events'),
-            ('ARS', 'Total PaidTix'),
-            ('ARS', 'Total GTF'),
-            ('ARS', 'Total GTV'),
-            ('ARS', 'ATV'),
-            ('ARS', 'Avg EB Perc Take Rate'),
-            ('BRL', 'Total Organizers'),
-            ('BRL', 'Total Events'),
-            ('BRL', 'Total PaidTix'),
-            ('BRL', 'Total GTF'),
-            ('BRL', 'Total GTV'),
-            ('BRL', 'ATV'),
-            ('BRL', 'Avg EB Perc Take Rate'),
+            ('ARS', 'Totals', 'Organizers'),
+            ('ARS', 'Totals', 'Events'),
+            ('ARS', 'Totals', 'PaidTix'),
+            ('ARS', 'Sales', 'GTF'),
+            ('ARS', 'Sales', 'GTV'),
+            ('ARS', 'Sales', 'ATV'),
+            ('ARS', 'Sales', 'Avg EB Take Rate'),
+            ('ARS', 'Net', 'GTF'),
+            ('ARS', 'Net', 'GTV'),
+            ('ARS', 'Net', 'ATV'),
+            ('ARS', 'Net', 'Avg EB Take Rate'),
+            ('BRL', 'Totals', 'Organizers'),
+            ('BRL', 'Totals', 'Events'),
+            ('BRL', 'Totals', 'PaidTix'),
+            ('BRL', 'Sales', 'GTF'),
+            ('BRL', 'Sales', 'GTV'),
+            ('BRL', 'Sales', 'ATV'),
+            ('BRL', 'Sales', 'Avg EB Take Rate'),
+            ('BRL', 'Net', 'GTF'),
+            ('BRL', 'Net', 'GTV'),
+            ('BRL', 'Net', 'ATV'),
+            ('BRL', 'Net', 'Avg EB Take Rate'),
         ]
         self.load_dataframes()
         response = self.client.get(URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], Dashboard.template_name)
         for elem in context_dict:
-            self.assertIn(elem[1], response.context['summarized_data'][elem[0]])
+            self.assertIn(elem[2], response.context['summarized_data'][elem[0]][elem[1]])
 
     def test_dashboard_view_returns_302_if_doesnt_have_queries(self):
         URL = reverse('dashboard')

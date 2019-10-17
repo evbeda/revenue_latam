@@ -419,19 +419,38 @@ def get_summarized_data(transactions, corrections, organizer_sales, organizer_re
     for currency in currencies:
         filtered = trx[trx['currency'] == currency]
         summarized_data[currency] = {
-            'Total Organizers': filtered.eventholder_user_id.nunique(),
-            'Total Events': filtered.event_id.nunique(),
-            'Total PaidTix': filtered.PaidTix.sum(),
-            'Total GTF': round(filtered.sale__gtf_esf__epp.sum(), 2),
-            'Total GTV': round(filtered.sale__payment_amount__epp.sum(), 2),
-            'ATV': round(
-                (filtered.sale__payment_amount__epp.sum() - filtered.sale__gtf_esf__epp.sum()) / filtered.PaidTix.sum(),
-                2,
-            ),
-            'Avg EB Perc Take Rate': round(
-                filtered.sale__gtf_esf__epp.sum() / filtered.sale__payment_amount__epp.sum() * 100,
-                2,
-            ),
+            'Totals': {
+                'Organizers': filtered.eventholder_user_id.nunique(),
+                'Events': filtered.event_id.nunique(),
+                'PaidTix': filtered.PaidTix.sum(),
+            },
+            'Net': {
+                'GTF': round(filtered.sale__gtf_esf__epp.sum() + filtered.refund__gtf_epp__gtf_esf__epp.sum(), 2),
+                'GTV': round(filtered.sale__payment_amount__epp.sum() + filtered.refund__payment_amount__epp.sum(), 2),
+                'ATV': round(
+                    (filtered.sale__payment_amount__epp.sum() - filtered.sale__gtf_esf__epp.sum() +
+                     filtered.refund__payment_amount__epp.sum() - filtered.refund__gtf_epp__gtf_esf__epp.sum()
+                     ) / filtered.PaidTix.sum(),
+                    2,
+                ),
+                'Avg EB Take Rate': round(
+                    (filtered.sale__gtf_esf__epp.sum() + filtered.refund__gtf_epp__gtf_esf__epp.sum()) /
+                    (filtered.sale__payment_amount__epp.sum() + filtered.refund__payment_amount__epp.sum()) * 100,
+                    2,
+                ),
+            },
+            'Sales': {
+                'GTF': round(filtered.sale__gtf_esf__epp.sum(), 2),
+                'GTV': round(filtered.sale__payment_amount__epp.sum(), 2),
+                'ATV': round(
+                    (filtered.sale__payment_amount__epp.sum() - filtered.sale__gtf_esf__epp.sum()) / filtered.PaidTix.sum(),
+                    2,
+                ),
+                'Avg EB Take Rate': round(
+                    filtered.sale__gtf_esf__epp.sum() / filtered.sale__payment_amount__epp.sum() * 100,
+                    2,
+                ),
+            },
         }
     return summarized_data
 

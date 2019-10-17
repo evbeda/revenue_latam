@@ -13,11 +13,20 @@
     <div class="row">
       <h4>{{currency}}</h4>
       <table class="table table-striped mt-4">
-        {% for key, value in data.items %}
-          <tr>
-            <td><b data-toggle="tooltip" data-placement="top" title="{% glossary key %}">{{key}}</b></td>
-            <td class="text-right text-monospace">{{value|floatformat:2|intcomma}}</td>
-          </tr>
+        {% for parent_key, parent_value in data.items %}
+        <tr>
+          <td class="align-middle" rowspan="{{ parent_value|length }}"><b>{{parent_key}}</b></td>
+          {% for child_key, child_value in parent_value.items %}
+            {% if not forloop.first %}
+              <tr>
+            {% endif %}
+            <td><b data-toggle="tooltip" data-placement="top" title="{% glossary parent_key|add:child_key %}">{{child_key}}</b></td>
+            <td class="text-right text-monospace">{{child_value|floatformat:2|intcomma}}</td>
+            {% if not forloop.first %}
+              </tr>
+            {% endif %}
+          {% endfor %}
+        </tr>
         {% endfor %}
       </table>
     </div>
