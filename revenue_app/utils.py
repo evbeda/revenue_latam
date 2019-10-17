@@ -463,22 +463,76 @@ def get_summarized_data(transactions, corrections, organizer_sales, organizer_re
     return summarized_data
 
 
-def payment_processor_summary(transactions):
-    transactions = transactions.copy()
-    transactions.payment_processor.replace('', 'n/a', regex=True, inplace=True)
-    pp_gtv = transactions.groupby(['payment_processor']).agg({'sale__payment_amount__epp': sum}).reset_index().round(2)
-    pp_gtv = pp_gtv[pp_gtv['sale__payment_amount__epp'] != 0]
-    pp_gtf = transactions.groupby(['payment_processor']).agg({'sale__gtf_esf__epp': sum}).reset_index().round(2)
-    pp_gtf = pp_gtf[pp_gtf['sale__gtf_esf__epp'] != 0]
-    return pp_gtv, pp_gtf
+def payment_processor_summary(trx_currencies, filter):
+    ids = list(range(0,10))
+    json = {}
+    filters = {
+        'gtv': 'sale__payment_amount__epp',
+        'gtf': 'sale__gtf_esf__epp',
+    }
+    if filter not in filters:
+        return json
+    column = filters[filter]
+    for trx_currency in trx_currencies:
+        currency = trx_currency.currency.iloc[0]
+        trx_currency.payment_processor.replace('', 'n/a', regex=True, inplace=True)
+        filtered = trx_currency.groupby(['payment_processor']).agg({column: sum}).reset_index().round(2)
+        filtered = filtered[filtered[column] != 0]
+        filtered_names = filtered.payment_processor.tolist()
+        filtered_quantities = filtered[column].tolist()
+        json[currency] = {
+            'data': [
+                {'name': name, 'id': id, 'quantity': quantity}
+                for name, id, quantity in zip(filtered_names, ids, filtered_quantities)
+            ]
+        }
+    return json
 
 
-def sales_flag_summary(transactions):
-    sf_organizer = transactions.groupby(
-        ['eventholder_user_id', 'sales_flag']
-    ).sum().reset_index().sales_flag.value_counts()
-    sf_gtf = transactions.groupby(['sales_flag']).agg({'sale__gtf_esf__epp': sum}).reset_index().round(2)
-    return sf_organizer, sf_gtf
+def sales_flag_summary(trx_currencies, filter):
+    ids = list(range(0,10))
+    json = {}
+    if filter == 'organizers':
+        for trx_currency in trx_currencies:
+            currency = trx_currency.currency.iloc[0]
+            org = trx_currency.groupby(
+                ['eventholder_user_id', 'sales_flag']
+            ).sum().reset_index().sales_flag.value_counts()
+            org_names = org.index.to_list()
+            org_quantities = org.values.tolist()
+            json[currency] = {
+                'data': [
+                    {'name': name, 'id': id, 'quantity': quantity}
+                    for name, id, quantity in zip(org_names, ids, org_quantities)
+                ]
+            }
+    elif filter == 'gtf':
+        for trx_currency in trx_currencies:
+            currency = trx_currency.currency.iloc[0]
+            gtf = trx_currency.groupby(['sales_flag']).agg({'sale__gtf_esf__epp': sum}).reset_index().round(2)
+            gtf_names = gtf.sales_flag.to_list()
+            gtf_quantities = gtf.sale__gtf_esf__epp.tolist()
+            json[currency] = {
+                'data': [
+                    {'name': name, 'id': id, 'quantity': quantity}
+                    for name, id, quantity in zip(gtf_names, ids, gtf_quantities)
+                ]
+            }
+    return json
+
+
+def get_charts_data(transactions, type, filter):
+    trx = transactions.copy()
+    ars = trx[trx['currency'] == 'ARS']
+    brl = trx[trx['currency'] == 'BRL']
+    trx_currencies = [ars, brl]
+    json = {}
+    if type == 'payment_processor':
+        json = payment_processor_summary(trx_currencies, filter)
+    elif type == 'sales_flag':
+        json = sales_flag_summary(trx_currencies, filter)
+    return json
+
 
 def convert_dataframe_to_usd(dataframe, usd_ars, usd_brl):
     if None in [usd_ars, usd_brl]:
