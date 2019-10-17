@@ -19,7 +19,7 @@ from django.views.generic import (
     FormView,
     TemplateView,
 )
-from django.shortcuts import resolve_url
+from django.shortcuts import resolve_url, redirect
 
 from revenue_app.forms import QueryForm
 from revenue_app.presto_connection import (
@@ -36,6 +36,7 @@ from revenue_app.utils import (
     manage_transactions,
     payment_processor_summary,
     sales_flag_summary,
+    convert_dataframe_to_usd,
 )
 
 FULL_COLUMNS = [
@@ -181,6 +182,8 @@ class Dashboard(QueriesRequiredMixin, TemplateView):
             self.request.session.get('corrections').copy(),
             self.request.session.get('organizer_sales').copy(),
             self.request.session.get('organizer_refunds').copy(),
+            self.request.session.get('usd_ars'),
+            self.request.session.get('usd_brl'),
         )
         return context
 
@@ -248,8 +251,12 @@ class OrganizersTransactions(QueriesRequiredMixin, TemplateView):
             self.request.session.get('organizer_refunds').copy(),
             **self.request.GET.dict(),
         )[TRANSACTIONS_COLUMNS]
-        context['transactions'] = trx.head(5000)
         self.request.session['export_transactions'] = trx
+        context['transactions'] = convert_dataframe_to_usd(
+                trx,
+                self.request.session.get('usd_ars'),
+                self.request.session.get('usd_brl'),
+            ).head(5000)
         return context
 
 
@@ -264,6 +271,8 @@ class OrganizerTransactions(QueriesRequiredMixin, TemplateView):
             self.request.session.get('organizer_sales').copy(),
             self.request.session.get('organizer_refunds').copy(),
             self.kwargs['eventholder_user_id'],
+            self.request.session.get('usd_ars'),
+            self.request.session.get('usd_brl'),
             **self.request.GET.dict(),
         )
         context['details'] = details
@@ -294,8 +303,16 @@ class TopOrganizersLatam(QueriesRequiredMixin, TemplateView):
             self.request.session.get('organizer_refunds').copy(),
             **(self.request.GET.dict()),
         )
-        context['top_ars'] = get_top_organizers(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_COLUMNS]
-        context['top_brl'] = get_top_organizers(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_COLUMNS]
+        context['top_ars'] = get_top_organizers(
+                trx[trx['currency'] == 'ARS'],
+                self.request.session.get('usd_ars'),
+                self.request.session.get('usd_brl'),
+            )[:10][TOP_ORGANIZERS_COLUMNS]
+        context['top_brl'] = get_top_organizers(
+                trx[trx['currency'] == 'BRL'],
+                self.request.session.get('usd_ars'),
+                self.request.session.get('usd_brl'),
+            )[:10][TOP_ORGANIZERS_COLUMNS]
         return context
 
 
@@ -319,9 +336,17 @@ class TopOrganizersRefundsLatam(QueriesRequiredMixin, TemplateView):
             **(self.request.GET.dict()),
         )
         context['top_ars'] = \
-            get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
+            get_top_organizers_refunds(
+                    trx[trx['currency'] == 'ARS'],
+                    self.request.session.get('usd_ars'),
+                    self.request.session.get('usd_brl'),
+                )[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
         context['top_brl'] = \
-            get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
+            get_top_organizers_refunds(
+                    trx[trx['currency'] == 'BRL'],
+                    self.request.session.get('usd_ars'),
+                    self.request.session.get('usd_brl'),
+                )[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
         return context
 
 
@@ -342,6 +367,8 @@ class TransactionsEvent(QueriesRequiredMixin, TemplateView):
             self.request.session.get('corrections').copy(),
             self.request.session.get('organizer_sales').copy(),
             self.request.session.get('organizer_refunds').copy(),
+            self.request.session.get('usd_ars'),
+            self.request.session.get('usd_brl'),
             self.kwargs['event_id'],
             **(self.request.GET.dict()),
         )
@@ -372,8 +399,16 @@ class TopEventsLatam(QueriesRequiredMixin, TemplateView):
             self.request.session.get('organizer_refunds').copy(),
             **(self.request.GET.dict()),
         )
-        context['top_event_ars'] = get_top_events(trx[trx['currency'] == 'ARS'])[:10][TOP_EVENTS_COLUMNS]
-        context['top_event_brl'] = get_top_events(trx[trx['currency'] == 'BRL'])[:10][TOP_EVENTS_COLUMNS]
+        context['top_event_ars'] = get_top_events(
+                trx[trx['currency'] == 'ARS'],
+                self.request.session.get('usd_ars'),
+                self.request.session.get('usd_brl'),
+                )[:10][TOP_EVENTS_COLUMNS]
+        context['top_event_brl'] = get_top_events(
+                trx[trx['currency'] == 'BRL'],
+                self.request.session.get('usd_ars'),
+                self.request.session.get('usd_brl'),
+                )[:10][TOP_EVENTS_COLUMNS]
         return context
 
 
@@ -409,10 +444,18 @@ def top_organizers_json_data(request):
         request.session.get('organizer_refunds'),
     )
     ids = list(range(0, 11))
-    top_organizers_ars = get_top_organizers(trx[trx['currency'] == 'ARS'])
+    top_organizers_ars = get_top_organizers(
+            trx[trx['currency'] == 'ARS'],
+            request.session.get('usd_ars'),
+            request.session.get('usd_brl'),
+        )
     ars_names = top_organizers_ars['email'].tolist()
     ars_quantities = top_organizers_ars['sale__gtf_esf__epp'].tolist()
-    top_organizers_brl = get_top_organizers(trx[trx['currency'] == 'BRL'])
+    top_organizers_brl = get_top_organizers(
+            trx[trx['currency'] == 'BRL'],
+            request.session.get('usd_ars'),
+            request.session.get('usd_brl'),
+        )
     brl_names = top_organizers_brl['email'].tolist()
     brl_quantities = top_organizers_brl['sale__gtf_esf__epp'].tolist()
     res = json.dumps({
@@ -440,10 +483,18 @@ def top_organizers_refunds_json_data(request):
         request.session.get('organizer_refunds'),
     )
     ids = list(range(0, 11))
-    top_organizers_ars = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])
+    top_organizers_ars = get_top_organizers_refunds(
+            trx[trx['currency'] == 'ARS'],
+            request.session.get('usd_ars'),
+            request.session.get('usd_brl'),
+        )
     ars_names = top_organizers_ars['email'].tolist()
     ars_quantities = top_organizers_ars['refund__gtf_epp__gtf_esf__epp'].tolist()
-    top_organizers_brl = get_top_organizers_refunds(trx[trx['currency'] == 'BRL'])
+    top_organizers_brl = get_top_organizers_refunds(
+            trx[trx['currency'] == 'BRL'],
+            request.session.get('usd_ars'),
+            request.session.get('usd_brl'),
+        )
     brl_names = top_organizers_brl['email'].tolist()
     brl_quantities = top_organizers_brl['refund__gtf_epp__gtf_esf__epp'].tolist()
     res = json.dumps({
@@ -471,10 +522,18 @@ def top_events_json_data(request):
         request.session.get('organizer_refunds'),
     )
     ids = list(range(0, 11))
-    top_events_ars = get_top_events(trx[trx['currency'] == 'ARS'])
+    top_events_ars = get_top_events(
+            trx[trx['currency'] == 'ARS'],
+            request.session.get('usd_ars'),
+            request.session.get('usd_brl'),
+        )
     ars_names = [f'[{id}] {title[:20]}' for id, title in zip(top_events_ars['event_id'], top_events_ars['event_title'])]
     ars_quantities = top_events_ars['sale__gtf_esf__epp'].tolist()
-    top_events_brl = get_top_events(trx[trx['currency'] == 'BRL'])
+    top_events_brl = get_top_events(
+            trx[trx['currency'] == 'BRL'],
+            request.session.get('usd_ars'),
+            request.session.get('usd_brl'),
+        )
     brl_names = [f'[{id}] {title[:20]}' for id, title in zip(top_events_brl['event_id'], top_events_brl['event_title'])]
     brl_quantities = top_events_brl['sale__gtf_esf__epp'].tolist()
     res = json.dumps({
@@ -624,3 +683,12 @@ def render_to_pdf(template_src, context_dict={}):
     result = BytesIO()
     pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
     return HttpResponse(result.getvalue(), content_type='application/pdf') if not pdf.err else None
+
+def usd(request):
+    if 'Apply' in request.POST['apply']:
+        request.session['usd_ars'] = int(request.POST.getlist('usd_ars')[0])
+        request.session['usd_brl'] = int(request.POST.getlist('usd_brl')[0])
+    else:
+        request.session['usd_ars'] = None
+        request.session['usd_brl'] = None
+    return redirect('dashboard')
