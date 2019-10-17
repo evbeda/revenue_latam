@@ -21,12 +21,14 @@ from revenue_app.views import (
     top_organizers_refunds_json_data,
     TopOrganizersRefundsLatam,
     TopOrganizersRefundsLatamPdf,
+    usd,
 )
 
 
 urlpatterns = [
     url(r'^$', Dashboard.as_view(), name='dashboard'),
     url(r'queries/$', MakeQuery.as_view(), name='make-query'),
+    url(r'usd/$', usd, name='usd'),
     url(r'^transactions/$', OrganizersTransactions.as_view(), name='organizers-transactions'),
     url(
         r'^organizer/(?P<eventholder_user_id>[0-9]+)/$',
