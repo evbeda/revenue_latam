@@ -198,15 +198,13 @@ class MakeQuery(FormView):
         initial['end_date'] = previous_month_end
         return initial
 
-    def post(self, request, *args, **kwargs):
-        form = self.get_form()
+    def form_valid(self, form):
         start_date = form.data.get('start_date')
         end_date = form.data.get('end_date')
         okta_username = form.data.get('okta_username')
         okta_password = form.data.get('okta_password')
 
         queries_status = []
-        error = ""
 
         for query_name in [
             'organizer_sales',
@@ -222,18 +220,17 @@ class MakeQuery(FormView):
                     okta_password=okta_password,
                     query_name=query_name,
                 )
-                request.session[query_name] = dataframe
+                self.request.session[query_name] = dataframe
                 queries_status.append(
                     f'{query_name} ran successfully.'
                 )
             except PrestoError as exception:
-                error = exception.args[0]
+                form.add_error(None, exception.args[0])
                 break
 
         return self.render_to_response(
             self.get_context_data(
                 queries_status=queries_status,
-                error=error,
                 form=form,
             )
         )
@@ -411,7 +408,7 @@ def top_organizers_json_data(request):
         request.session.get('organizer_sales'),
         request.session.get('organizer_refunds'),
     )
-    ids = list(range(0,11))
+    ids = list(range(0, 11))
     top_organizers_ars = get_top_organizers(trx[trx['currency'] == 'ARS'])
     ars_names = top_organizers_ars['email'].tolist()
     ars_quantities = top_organizers_ars['sale__gtf_esf__epp'].tolist()
@@ -442,7 +439,7 @@ def top_organizers_refunds_json_data(request):
         request.session.get('organizer_sales'),
         request.session.get('organizer_refunds'),
     )
-    ids = list(range(0,11))
+    ids = list(range(0, 11))
     top_organizers_ars = get_top_organizers_refunds(trx[trx['currency'] == 'ARS'])
     ars_names = top_organizers_ars['email'].tolist()
     ars_quantities = top_organizers_ars['refund__gtf_epp__gtf_esf__epp'].tolist()
@@ -473,7 +470,7 @@ def top_events_json_data(request):
         request.session.get('organizer_sales'),
         request.session.get('organizer_refunds'),
     )
-    ids = list(range(0,11))
+    ids = list(range(0, 11))
     top_events_ars = get_top_events(trx[trx['currency'] == 'ARS'])
     ars_names = [f'[{id}] {title[:20]}' for id, title in zip(top_events_ars['event_id'], top_events_ars['event_title'])]
     ars_quantities = top_events_ars['sale__gtf_esf__epp'].tolist()
@@ -504,7 +501,7 @@ def dashboard_summary(request):
         request.session.get('organizer_sales'),
         request.session.get('organizer_refunds'),
     )
-    ids = list(range(0,10))
+    ids = list(range(0, 10))
     ars = trx[trx['currency'] == 'ARS']
     brl = trx[trx['currency'] == 'BRL']
 

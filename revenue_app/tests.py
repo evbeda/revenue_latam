@@ -951,6 +951,42 @@ class ViewsTest(TestCase):
         assert_frame_equal(self.client.session['transactions'], read_csv(TRANSACTIONS_EXAMPLE_PATH))
         assert_frame_equal(self.client.session['corrections'], read_csv(CORRECTIONS_EXAMPLE_PATH))
 
+    @parameterized.expand([
+        ({}, 'This field is required.'),
+        (
+            {
+                'okta_username': 'fakename',
+                'okta_password': 'fakepass',
+                'start_date': '2018-08-06',
+                'end_date': '2018-08-05',
+            },
+            'End date must be greater or equal than start date.',
+        ),
+        (
+            {
+                'okta_username': 'fakename',
+                'okta_password': 'fakepass',
+                'start_date': '2018-05-01',
+                'end_date': '2018-08-05',
+            },
+            'Time between End and Start date can&#39;t be over 3 months.',
+        ),
+        (
+            {
+                'okta_username': 'fakename',
+                'okta_password': 'fakepass',
+                'start_date': '2018-09-14',
+                'end_date': '2018-09-15',
+            },
+            "can&#39;t be greater than today.",
+        ),
+    ])
+    def test_make_query_form_validation(self, kwargs, error_message):
+        URL = reverse('make-query')
+        with freeze_time("2018-08-10"):
+            response = self.client.post(URL, kwargs)
+        self.assertContains(response, error_message)
+
 
 class TemplateTagsTest(TestCase):
     def render_template(self, string, context=None):

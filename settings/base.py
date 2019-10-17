@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'revenue_app',
     'bootstrap4',
+    'widget_tweaks',
 ]
 
 MIDDLEWARE = [
