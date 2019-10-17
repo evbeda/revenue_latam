@@ -41,7 +41,6 @@ NUMBER_COLUMNS = [
 ]
 
 
-
 def get_rollups():
     return pd.read_excel('datasets/Revenue Queries.xlsx', sheet_name=0, header=1, usecols=range(0, 53))
 
@@ -294,8 +293,12 @@ def get_event_transactions(transactions, corrections, organizer_sales, organizer
     }
     net_sales_refunds = {
         'Total Net Detail': {
-            net : sale + refund
-            for net, sale, refund in zip(NET_COLUMNS, sales_refunds['Total Sales Detail'].values(), sales_refunds['Total Refunds Detail'].values())
+            net: sale + refund
+            for net, sale, refund in zip(
+                NET_COLUMNS,
+                sales_refunds['Total Sales Detail'].values(),
+                sales_refunds['Total Refunds Detail'].values(),
+            )
         }
     }
     return filtered, details, sales_refunds, net_sales_refunds
@@ -340,8 +343,12 @@ def get_organizer_transactions(
     }
     net_sales_refunds = {
         'Total Net Detail': {
-            net : sale + refund
-            for net, sale, refund in zip(NET_COLUMNS, sales_refunds['Total Sales Detail'].values(), sales_refunds['Total Refunds Detail'].values())
+            net: sale + refund
+            for net, sale, refund in zip(
+                NET_COLUMNS,
+                sales_refunds['Total Sales Detail'].values(),
+                sales_refunds['Total Refunds Detail'].values(),
+            )
         }
     }
     return filtered, details, sales_refunds, net_sales_refunds
