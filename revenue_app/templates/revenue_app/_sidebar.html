@@ -45,6 +45,7 @@
         </a>
         <a href="#" class="list-group-item list-group-item-action flex-column cursor-default">
             <form action="{% url 'usd' %}"  method="POST">
+                <input type="hidden" name="next" value="{{ request.path }}">
                 ARS-USD
                 <input type="number" step="0.01" min="0.01" class="form-control" name="usd_ars">
                 BRL-USD

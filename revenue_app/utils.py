@@ -227,7 +227,7 @@ def calc_perc_take_rate(transactions):
     return transactions
 
 
-def manage_transactions(transactions, corrections, organizer_sales, organizer_refunds, **kwargs):
+def manage_transactions(transactions, corrections, organizer_sales, organizer_refunds, usd=None, **kwargs):
     transactions = clean_transactions(transactions)
     corrections = clean_corrections(corrections)
     trx_total = merge_corrections(transactions, corrections)
@@ -236,6 +236,7 @@ def manage_transactions(transactions, corrections, organizer_sales, organizer_re
     merged = merge_transactions(trx_total, organizers_sales, organizers_refunds)
     merged = calc_perc_take_rate(merged)
     filtered = filter_transactions(merged, **kwargs)
+    filtered = convert_dataframe_to_usd(filtered, usd)
     if kwargs.get('groupby'):
         filtered = group_transactions(filtered, kwargs.get('groupby'))
     return filtered.round(2)
@@ -262,16 +263,16 @@ def summarize_dataframe(dataframe):
     }
 
 
-def get_event_transactions(transactions, corrections, organizer_sales, organizer_refunds, usd_ars, usd_brl, event_id, **kwargs):
+def get_event_transactions(transactions, corrections, organizer_sales, organizer_refunds, usd, event_id, **kwargs):
     event_transactions = manage_transactions(
         transactions,
         corrections,
         organizer_sales,
         organizer_refunds,
-        event_id=event_id
+        usd=usd,
+        event_id=event_id,
     )
     filtered = filter_transactions(event_transactions, **kwargs)
-    filtered = convert_dataframe_to_usd(filtered, usd_ars, usd_brl)
     event_total = summarize_dataframe(filtered)
     if len(event_transactions) > 0:
         details = event_details(
@@ -311,8 +312,7 @@ def get_organizer_transactions(
     organizer_sales,
     organizer_refunds,
     eventholder_user_id,
-    usd_ars,
-    usd_brl,
+    usd,
     **kwargs
 ):
     organizer_transactions = manage_transactions(
@@ -320,10 +320,10 @@ def get_organizer_transactions(
         corrections,
         organizer_sales,
         organizer_refunds,
+        usd=usd,
         eventholder_user_id=eventholder_user_id,
     )
     filtered = filter_transactions(organizer_transactions, **kwargs)
-    filtered = convert_dataframe_to_usd(filtered, usd_ars, usd_brl)
     event_total = summarize_dataframe(filtered)
     organizer_sales = clean_organizer_sales(organizer_sales)
     if len(organizer_transactions) > 0:
@@ -358,8 +358,8 @@ def get_organizer_transactions(
     return filtered, details, sales_refunds, net_sales_refunds
 
 
-def get_top_organizers(filtered_transactions, usd_ars, usd_brl):
-    filtered_transactions = convert_dataframe_to_usd(filtered_transactions, usd_ars, usd_brl)
+def get_top_organizers(filtered_transactions, usd):
+    filtered_transactions = convert_dataframe_to_usd(filtered_transactions, usd)
     ordered = filtered_transactions.groupby(
         ['eventholder_user_id', 'email'],
     ).agg({
@@ -379,8 +379,8 @@ def get_top_organizers(filtered_transactions, usd_ars, usd_brl):
     return top
 
 
-def get_top_organizers_refunds(filtered_transactions, usd_ars, usd_brl):
-    filtered_transactions = convert_dataframe_to_usd(filtered_transactions, usd_ars, usd_brl)
+def get_top_organizers_refunds(filtered_transactions, usd):
+    filtered_transactions = convert_dataframe_to_usd(filtered_transactions, usd)
     ordered = filtered_transactions.groupby(
         ['eventholder_user_id', 'email'],
     ).agg({
@@ -397,8 +397,8 @@ def get_top_organizers_refunds(filtered_transactions, usd_ars, usd_brl):
     return top
 
 
-def get_top_events(filtered_transactions, usd_ars, usd_brl):
-    filtered_transactions = convert_dataframe_to_usd(filtered_transactions, usd_ars, usd_brl)
+def get_top_events(filtered_transactions, usd):
+    filtered_transactions = convert_dataframe_to_usd(filtered_transactions, usd)
     ordered = filtered_transactions.groupby(
         ['event_id', 'event_title', 'eventholder_user_id', 'email'],
     ).agg({
@@ -419,13 +419,12 @@ def get_top_events(filtered_transactions, usd_ars, usd_brl):
     return top
 
 
-def get_summarized_data(transactions, corrections, organizer_sales, organizer_refunds, usd_ars, usd_brl):
-    trx = manage_transactions(transactions, corrections, organizer_sales, organizer_refunds)
+def get_summarized_data(transactions, corrections, organizer_sales, organizer_refunds, usd):
+    trx = manage_transactions(transactions, corrections, organizer_sales, organizer_refunds, usd=usd)
     currencies = ['ARS', 'BRL']
     summarized_data = {}
     for currency in currencies:
         filtered = trx[trx['currency'] == currency]
-        filtered = convert_dataframe_to_usd(filtered, usd_ars, usd_brl)
         summarized_data[currency] = {
             'Totals': {
                 'Organizers': filtered.eventholder_user_id.nunique(),
@@ -464,7 +463,7 @@ def get_summarized_data(transactions, corrections, organizer_sales, organizer_re
 
 
 def payment_processor_summary(trx_currencies, filter):
-    ids = list(range(0,10))
+    ids = list(range(0, 10))
     json = {}
     filters = {
         'gtv': 'sale__payment_amount__epp',
@@ -490,7 +489,7 @@ def payment_processor_summary(trx_currencies, filter):
 
 
 def sales_flag_summary(trx_currencies, filter):
-    ids = list(range(0,10))
+    ids = list(range(0, 10))
     json = {}
     if filter == 'organizers':
         for trx_currency in trx_currencies:
@@ -534,13 +533,10 @@ def get_charts_data(transactions, type, filter):
     return json
 
 
-def convert_dataframe_to_usd(dataframe, usd_ars, usd_brl):
-    if None in [usd_ars, usd_brl]:
+def convert_dataframe_to_usd(dataframe, usd):
+    if (not usd) or (None in usd.values()):
         return dataframe
-    if dataframe['currency'].iloc[0] == 'ARS':
-        usd = usd_ars
-    else:
-        usd = usd_brl
-    for column in MONEY_COLUMNS:
-        dataframe[column] = dataframe[column] / usd
+    for currency in dataframe['currency'].unique():
+        dataframe.loc[dataframe['currency'] == currency, MONEY_COLUMNS] = \
+            dataframe[dataframe['currency'] == currency][MONEY_COLUMNS] / float(usd[currency])
     return dataframe

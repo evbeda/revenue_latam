@@ -2,8 +2,12 @@
 <!--Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark info-color">
   <a href="" class="navbar-brand">Revenue
-   {% if request.session.usd_ars %}
-      in USD (ARS {{request.session.usd_ars}}, BRL {{request.session.usd_brl}})
+   {% if request.session.usd.ARS %}
+      in USD (
+        {% for key, value in request.session.usd.items %}
+        {{ key }} {{value}},
+        {% endfor %}
+      )
     {% endif %}
   </a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
