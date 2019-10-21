@@ -611,8 +611,8 @@ def render_to_pdf(template_src, context_dict={}):
 
 def usd(request):
     if 'Apply' in request.POST['apply']:
-        request.session['usd_ars'] = int(request.POST.getlist('usd_ars')[0])
-        request.session['usd_brl'] = int(request.POST.getlist('usd_brl')[0])
+        request.session['usd_ars'] = float(request.POST.getlist('usd_ars')[0])
+        request.session['usd_brl'] = float(request.POST.getlist('usd_brl')[0])
     else:
         request.session['usd_ars'] = None
         request.session['usd_brl'] = None

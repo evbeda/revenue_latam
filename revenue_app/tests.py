@@ -644,6 +644,8 @@ class UtilsTestCase(TestCase):
     @parameterized.expand([
         ('ARS', 60, 5, 382.86),
         ('BRL', 60, 5, 2466.2),
+        ('ARS', 59.95, 4.92, 383.18),
+        ('BRL', 59.95, 4.92, 2506.30),
     ])
     def test_convert_dataframe_to_usd(self, currency, usd_ars, usd_brl, sale__payment__amount__epp_usd):
         trx = manage_transactions(
@@ -1109,6 +1111,7 @@ class ViewsTest(TestCase):
 
     @parameterized.expand([
         ('Apply', ['60'] , ['5'], 60, 5),
+        ('Apply', ['59.95'] , ['4.92'], 59.95, 4.92),
         ('Cancel', None , None, None, None),
     ])
     def test_usd_view_returns_302(self, action, usd_ars, usd_brl, expected_usd_ars, expected_usd_brl):
