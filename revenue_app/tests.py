@@ -1,5 +1,8 @@
 import json
-from datetime import date
+from datetime import (
+    date,
+    datetime,
+)
 from django.template import (
     Context,
     Template,
@@ -660,6 +663,11 @@ class ViewsTest(TestCase):
         session['corrections'] = read_csv(CORRECTIONS_EXAMPLE_PATH)
         session['organizer_sales'] = read_csv(ORGANIZER_SALES_EXAMPLE_PATH)
         session['organizer_refunds'] = read_csv(ORGANIZER_REFUNDS_EXAMPLE_PATH)
+        session['query_info'] = {
+            'run_time': datetime.now(),
+            'start_date': date(2018, 8, 1),
+            'end_date': date(2018, 8, 30),
+        }
         session.save()
 
     def test_dashboard_view_returns_200(self):

@@ -183,7 +183,7 @@ class QueriesRequiredMixin():
         if any([
             request.session.get(dataframe) is None
             for dataframe in ['transactions', 'corrections', 'organizer_sales', 'organizer_refunds']
-        ]):
+        ]) or not request.session.get('query_info') or None in request.session.get('query_info').values():
             return HttpResponseRedirect(resolve_url('make-query'))
         return super().dispatch(request, *args, **kwargs)
 
@@ -225,13 +225,13 @@ class MakeQuery(FormView):
 
         queries_status = []
 
-        for query_name in [
-            'organizer_sales',
-            'organizer_refunds',
-            'transactions',
-            'corrections',
-        ]:
-            try:
+        try:
+            for query_name in [
+                'organizer_sales',
+                'organizer_refunds',
+                'transactions',
+                'corrections',
+            ]:
                 dataframe = make_query(
                     start_date=start_date,
                     end_date=end_date,
@@ -243,9 +243,14 @@ class MakeQuery(FormView):
                 queries_status.append(
                     f'{query_name} ran successfully.'
                 )
-            except PrestoError as exception:
-                form.add_error(None, exception.args[0])
-                break
+        except PrestoError as exception:
+            form.add_error(None, exception.args[0])
+        else:
+            self.request.session['query_info'] = {
+                'run_time': datetime.now(),
+                'start_date': datetime.strptime(start_date, '%Y-%m-%d').date(),
+                'end_date': datetime.strptime(end_date, '%Y-%m-%d').date(),
+            }
 
         return self.render_to_response(
             self.get_context_data(
@@ -580,14 +585,36 @@ def download_excel(request, xls_name):
     workbook = xlwt.Workbook(encoding='utf-8')
     worksheet = workbook.add_sheet('Transactions')
     organizers_transactions = request.session.get('export_transactions')
+    query_info = request.session.get('query_info')
+    usd_info = request.session.get('usd')
     transactions_list = organizers_transactions.values.tolist()
     columns = organizers_transactions.columns.tolist()
     date_column_idx = columns.index('transaction_created_date')
-    row_num = 0
-    font_style = xlwt.XFStyle()
-    font_style.font.bold = True
+
+    title_style = xlwt.XFStyle()
+    title_style.font.bold = True
+    title_style.font.height = 18 * 20  # you need to multiply by 20 always
+    worksheet.write(0, 0, xls_name.replace('_', ' ').capitalize(), title_style)
+
+    col_header_style = xlwt.XFStyle()
+    col_header_style.font.bold = True
+    worksheet.write(1, 0, "Query ran at:", col_header_style)
+    worksheet.write(1, 1, query_info['run_time'].strftime("%Y-%m-%d, %X"))
+    worksheet.write(1, 2, "Currency:", col_header_style)
+    if not usd_info or None in usd_info.values():
+        usd_msg = "Local currency"
+    else:
+        usd_msg = "USD"
+    worksheet.write(1, 3, usd_msg)
+    worksheet.write(2, 0, "Start date:", col_header_style)
+    worksheet.write(2, 1, query_info['start_date'].strftime("%Y-%m-%d"))
+    worksheet.write(2, 2, "End date:", col_header_style)
+    worksheet.write(2, 3, query_info['end_date'].strftime("%Y-%m-%d"))
+
+    row_num = 4
     for col_num, col_name in enumerate(columns):
-        worksheet.write(row_num, col_num, col_name, font_style)
+        worksheet.write(row_num, col_num, col_name, col_header_style)
+
     for row_list in transactions_list:
         row_list[date_column_idx] = row_list[date_column_idx].strftime("%Y-%m-%d")
         row_num += 1
@@ -598,8 +625,13 @@ def download_excel(request, xls_name):
 
 
 def download_csv(request, csv_name):
+    query_info = request.session.get('query_info')
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="{}_{}.csv"'.format(csv_name, datetime.now())
+    response['Content-Disposition'] = 'attachment; filename="{}_[query_ran_at_{}]_[exported_at_{}].csv"'.format(
+        csv_name,
+        query_info['run_time'],
+        datetime.now(),
+    )
     writer = csv.writer(response)
     organizers_transactions = request.session.get('export_transactions')
     columns = organizers_transactions.columns.tolist()
