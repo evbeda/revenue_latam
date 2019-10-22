@@ -183,6 +183,7 @@ class Dashboard(QueriesRequiredMixin, TemplateView):
             self.request.session.get('organizer_refunds').copy(),
             self.request.session.get('usd'),
         )
+        context['title'] = 'Dashboard'
         return context
 
 
@@ -251,6 +252,7 @@ class OrganizersTransactions(QueriesRequiredMixin, TemplateView):
             **self.request.GET.dict(),
         )[TRANSACTIONS_COLUMNS]
         self.request.session['export_transactions'] = trx
+        context['title'] = 'Transactions'
         context['transactions'] = trx.head(500)
         return context
 
@@ -270,6 +272,7 @@ class OrganizerTransactions(QueriesRequiredMixin, TemplateView):
             **self.request.GET.dict(),
         )
         context['details'] = details
+        context['title'] = 'Organizer ' + details['Email']
         context['sales_refunds'] = sales_refunds
         context['net_sales_refunds'] = net_sales_refunds
         context['transactions'] = transactions[ORGANIZER_COLUMNS]
@@ -297,6 +300,7 @@ class TopOrganizersLatam(QueriesRequiredMixin, TemplateView):
             self.request.session.get('organizer_refunds').copy(),
             **(self.request.GET.dict()),
         )
+        context['title'] = 'Top Organizers'
         context['top_ars'] = get_top_organizers(
             trx[trx['currency'] == 'ARS'],
             self.request.session.get('usd'),
@@ -327,6 +331,7 @@ class TopOrganizersRefundsLatam(QueriesRequiredMixin, TemplateView):
             self.request.session.get('organizer_refunds').copy(),
             **(self.request.GET.dict()),
         )
+        context['title'] = 'Top Organizers Refunds'
         context['top_ars'] = \
             get_top_organizers_refunds(
                 trx[trx['currency'] == 'ARS'],
@@ -362,6 +367,7 @@ class TransactionsEvent(QueriesRequiredMixin, TemplateView):
             **(self.request.GET.dict()),
         )
         context['details'] = details
+        context['title'] = 'Event ' + details['Event Title']
         context['sales_refunds'] = sales_refunds
         context['net_sales_refunds'] = net_sales_refunds
         context['transactions'] = transactions[EVENT_COLUMNS]
@@ -388,6 +394,7 @@ class TopEventsLatam(QueriesRequiredMixin, TemplateView):
             self.request.session.get('organizer_refunds').copy(),
             **(self.request.GET.dict()),
         )
+        context['title'] = 'Top Events'
         context['top_event_ars'] = get_top_events(
             trx[trx['currency'] == 'ARS'],
             self.request.session.get('usd'),
@@ -419,6 +426,7 @@ class TransactionsGrouped(QueriesRequiredMixin, TemplateView):
             usd=self.request.session.get('usd'),
             **(self.request.GET.dict()),
         )
+        context['title'] = 'Transactions Grouped'
         context['transactions'] = trx
         self.request.session['export_transactions'] = trx
         return context
