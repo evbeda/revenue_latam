@@ -37,6 +37,12 @@ body {
   font-size: 1.5rem;
 }
 
+.navbar-text {
+  padding-left: .5rem;
+  padding-right: .5rem;
+  border-left: rgba(255,255,255,.5) 1px solid;
+}
+
 /* Content */
 
 h1 {
