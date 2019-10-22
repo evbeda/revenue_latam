@@ -12,7 +12,13 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/britecharts/dist/css/britecharts.min.css" type="text/css" />
     <link rel="stylesheet" href="{% static 'revenue_app/css/base.css' %}">
     {% block head %} {% endblock head %}
-    <title> Revenue Latam </title>
+    <title>
+      {%if title%}
+        {{ title }}
+      {% else %}
+        Revenue Latam
+      {% endif%}
+    </title>
   </head>
   <body>
     {% include 'revenue_app/_navbar.html' %}

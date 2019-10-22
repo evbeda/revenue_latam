@@ -48,7 +48,11 @@
                     {% elif key == 'eb_perc_take_rate'  %}
                         <td class="text-right text-monospace">{{value|floatformat:2}}%</td>
                     {% elif value|is_numeric %}
+                      {% if int %}
+                        <td class="text-right text-monospace">{{value|floatformat:0|intcomma}}</td>
+                      {% else %}
                         <td class="text-right text-monospace">{{value|floatformat:2|intcomma}}</td>
+                      {% endif %}
                     {% else %}
                         <td>{{value}}</td>
                     {% endif %}

@@ -19,7 +19,7 @@
   </div>
 </div>
 <br>
-{% include 'revenue_app/_dynamic_table.html' with transactions=top_ars %}
+{% include 'revenue_app/_dynamic_table.html' with transactions=top_ars int=True %}
 <div class="row">
   <div class="col-6">
     <div class="card--chart">
@@ -44,7 +44,7 @@
   </div>
 </div>
 <br>
-{% include 'revenue_app/_dynamic_table.html' with transactions=top_brl %}
+{% include 'revenue_app/_dynamic_table.html' with transactions=top_brl int=True %}
 <div class="row">
   <div class="col-6">
     <div class="card--chart">
