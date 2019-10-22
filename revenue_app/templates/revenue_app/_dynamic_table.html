@@ -7,7 +7,7 @@
         <thead>
             <tr class="text-center">
                 {% for header in transactions.columns %}
-                    <th data-toggle="tooltip" data-placement="top" title="{% glossary header %}" scope="col">{{ header }}</th>
+                    <th class="summarized-key" data-toggle="tooltip" data-placement="top" title="{% glossary header %}" scope="col">{{ header }}</th>
                 {% endfor %}
             </tr>
         </thead>
@@ -45,7 +45,7 @@
                         <td><a href="{% url 'organizer-transactions' eventholder_user_id=transaction.eventholder_user_id %}">{{value}}</a></td>
                     {% elif key in 'event_id,event_title' %}
                         <td><a href="{% url 'event-details' event_id=transaction.event_id %}">{{value}}</a></td>
-                    {% elif key == 'eb_perc_take_rate'  %}
+                    {% elif key in 'eb_perc_take_rate, Take Rate'  %}
                         <td class="text-right text-monospace">{{value|floatformat:2}}%</td>
                     {% elif value|is_numeric %}
                       {% if int %}

@@ -137,28 +137,45 @@ EVENT_COLUMNS = [
     'refund__ap_organizer__royalty__epp',
 ]
 
-TOP_ORGANIZERS_COLUMNS = [
-    'eventholder_user_id',
-    'email',
-    'eb_perc_take_rate',
-    'sale__gtf_esf__epp',
-]
+TOP_ORGANIZERS = {
+    'columns' :[
+        'eventholder_user_id',
+        'email',
+        'eb_perc_take_rate',
+        'sale__gtf_esf__epp',
+    ],
+    'labels': {
+        'eb_perc_take_rate': 'Take Rate',
+        'sale__gtf_esf__epp': 'SalesGTF',
+    }
+}
 
-TOP_ORGANIZERS_REFUNDS_COLUMNS = [
-    'eventholder_user_id',
-    'email',
-    'refund__gtf_epp__gtf_esf__epp',
-]
+TOP_ORGANIZERS_REFUNDS = {
+    'columns': [
+        'eventholder_user_id',
+        'email',
+        'refund__gtf_epp__gtf_esf__epp',
+    ],
+    'labels': {
+        'refund__gtf_epp__gtf_esf__epp': 'RefundGTF'
+    }
+}
 
-
-TOP_EVENTS_COLUMNS = [
-    'eventholder_user_id',
-    'email',
-    'event_id',
-    'event_title',
-    'eb_perc_take_rate',
-    'sale__gtf_esf__epp',
-]
+TOP_EVENTS_COLUMNS = {
+    'columns': [
+        'eventholder_user_id',
+        'email',
+        'event_id',
+        'event_title',
+        'eb_perc_take_rate',
+        'sale__gtf_esf__epp',
+    ],
+    'labels': {
+        'event_title': 'Event Title',
+        'eb_perc_take_rate': 'Take Rate',
+        'sale__gtf_esf__epp': 'SalesGTF',
+    }
+}
 
 
 class QueriesRequiredMixin():
@@ -304,11 +321,11 @@ class TopOrganizersLatam(QueriesRequiredMixin, TemplateView):
         context['top_ars'] = get_top_organizers(
             trx[trx['currency'] == 'ARS'],
             self.request.session.get('usd'),
-        )[:10][TOP_ORGANIZERS_COLUMNS]
+        )[:10][TOP_ORGANIZERS['columns']].rename(columns=TOP_ORGANIZERS['labels'])
         context['top_brl'] = get_top_organizers(
             trx[trx['currency'] == 'BRL'],
             self.request.session.get('usd'),
-        )[:10][TOP_ORGANIZERS_COLUMNS]
+        )[:10][TOP_ORGANIZERS['columns']].rename(columns=TOP_ORGANIZERS['labels'])
         return context
 
 
@@ -336,12 +353,12 @@ class TopOrganizersRefundsLatam(QueriesRequiredMixin, TemplateView):
             get_top_organizers_refunds(
                 trx[trx['currency'] == 'ARS'],
                 self.request.session.get('usd'),
-            )[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
+            )[:10][TOP_ORGANIZERS_REFUNDS['columns']].rename(columns=TOP_ORGANIZERS_REFUNDS['labels'])
         context['top_brl'] = \
             get_top_organizers_refunds(
                 trx[trx['currency'] == 'BRL'],
                 self.request.session.get('usd'),
-            )[:10][TOP_ORGANIZERS_REFUNDS_COLUMNS]
+            )[:10][TOP_ORGANIZERS_REFUNDS['columns']].rename(columns=TOP_ORGANIZERS_REFUNDS['labels'])
         return context
 
 
@@ -398,11 +415,11 @@ class TopEventsLatam(QueriesRequiredMixin, TemplateView):
         context['top_event_ars'] = get_top_events(
             trx[trx['currency'] == 'ARS'],
             self.request.session.get('usd'),
-        )[:10][TOP_EVENTS_COLUMNS]
+        )[:10][TOP_EVENTS_COLUMNS['columns']].rename(columns=TOP_EVENTS_COLUMNS['labels'])
         context['top_event_brl'] = get_top_events(
             trx[trx['currency'] == 'BRL'],
             self.request.session.get('usd'),
-        )[:10][TOP_EVENTS_COLUMNS]
+        )[:10][TOP_EVENTS_COLUMNS['columns']].rename(columns=TOP_EVENTS_COLUMNS['labels'])
         return context
 
 
