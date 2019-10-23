@@ -41,6 +41,10 @@ GLOSSARY = {
     'TotalsOrganizers': 'number of unique eventholder_user_id',
     'TotalsEvents': 'number of unique event_id',
     'TotalsPaidTix': 'sum of PaidTix',
+    'GrossGTF': 'sum of sale__gtf_esf__epp',
+    'GrossGTV': 'sum of sale__payment_amount__epp',
+    'GrossATV': 'sum of (sale__payment_amount__epp - sale__gtf_esf__epp) / sum of PaidTix',
+    'GrossAvg EB Take Rate': 'sum of sale__gtf_esf__epp / sum of sale__payment_amount__epp * 100',
     'NetGTF': 'sum of sale__gtf_esf__epp + refund__gtf_epp__gtf_esf__epp',
     'NetGTV': 'sum of sale__payment_amount__epp + refund__payment_amount__epp',
     'NetATV': 'sum of (sale__payment_amount__epp - sale__gtf_esf__epp'

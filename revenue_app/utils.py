@@ -431,6 +431,18 @@ def get_summarized_data(transactions, corrections, organizer_sales, organizer_re
                 'Events': filtered.event_id.nunique(),
                 'PaidTix': filtered.PaidTix.sum(),
             },
+            'Gross': {
+                'GTF': round(filtered.sale__gtf_esf__epp.sum(), 2),
+                'GTV': round(filtered.sale__payment_amount__epp.sum(), 2),
+                'ATV': round(
+                    (filtered.sale__payment_amount__epp.sum() - filtered.sale__gtf_esf__epp.sum()) / filtered.PaidTix.sum(),
+                    2,
+                ),
+                'Avg EB Take Rate': round(
+                    filtered.sale__gtf_esf__epp.sum() / filtered.sale__payment_amount__epp.sum() * 100,
+                    2,
+                ),
+            },
             'Net': {
                 'GTF': round(filtered.sale__gtf_esf__epp.sum() + filtered.refund__gtf_epp__gtf_esf__epp.sum(), 2),
                 'GTV': round(filtered.sale__payment_amount__epp.sum() + filtered.refund__payment_amount__epp.sum(), 2),
@@ -443,18 +455,6 @@ def get_summarized_data(transactions, corrections, organizer_sales, organizer_re
                 'Avg EB Take Rate': round(
                     (filtered.sale__gtf_esf__epp.sum() + filtered.refund__gtf_epp__gtf_esf__epp.sum()) /
                     (filtered.sale__payment_amount__epp.sum() + filtered.refund__payment_amount__epp.sum()) * 100,
-                    2,
-                ),
-            },
-            'Sales': {
-                'GTF': round(filtered.sale__gtf_esf__epp.sum(), 2),
-                'GTV': round(filtered.sale__payment_amount__epp.sum(), 2),
-                'ATV': round(
-                    (filtered.sale__payment_amount__epp.sum() - filtered.sale__gtf_esf__epp.sum()) / filtered.PaidTix.sum(),
-                    2,
-                ),
-                'Avg EB Take Rate': round(
-                    filtered.sale__gtf_esf__epp.sum() / filtered.sale__payment_amount__epp.sum() * 100,
                     2,
                 ),
             },
@@ -515,6 +515,18 @@ def sales_flag_summary(trx_currencies, filter):
                 'data': [
                     {'name': name, 'id': id, 'quantity': quantity}
                     for name, id, quantity in zip(gtf_names, ids, gtf_quantities)
+                ]
+            }
+    elif filter == 'gtv':
+        for trx_currency in trx_currencies:
+            currency = trx_currency.currency.iloc[0]
+            gtv = trx_currency.groupby(['sales_flag']).agg({'sale__payment_amount__epp': sum}).reset_index().round(2)
+            gtv_names = gtv.sales_flag.to_list()
+            gtv_quantities = gtv.sale__payment_amount__epp.tolist()
+            json[currency] = {
+                'data': [
+                    {'name': name, 'id': id, 'quantity': quantity}
+                    for name, id, quantity in zip(gtv_names, ids, gtv_quantities)
                 ]
             }
     return json
