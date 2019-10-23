@@ -138,7 +138,7 @@ EVENT_COLUMNS = [
 ]
 
 TOP_ORGANIZERS = {
-    'columns' :[
+    'columns': [
         'eventholder_user_id',
         'email',
         'eb_perc_take_rate',
