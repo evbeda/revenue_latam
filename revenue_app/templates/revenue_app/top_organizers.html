@@ -6,10 +6,10 @@
   <div class="col-12">
     <div class="dropdown show">
       <h1 class="text-center">
-        <span>Top 10 Argentina Organizers</span>
+        <span id="title-ars" >Top 10 Argentina Organizers</span>
         <a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-          <a class="dropdown-item" href="{% url 'download-top-organizers-pdf'%}" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+          <a id="getPdf" href="" class="dropdown-item"><i class="fas fa-file-pdf"></i>PDF</a>
         </div>
       </h1>
     </div>
@@ -19,16 +19,18 @@
   </div>
 </div>
 <br>
-{% include 'revenue_app/_dynamic_table.html' with transactions=top_ars int=True %}
+<div id="dynamic-table-ars" class="row">
+  {% include 'revenue_app/_dynamic_table.html' with transactions=top_ars %}
+</div>
 <div class="row">
   <div class="col-6">
     <div class="card--chart">
-      <div class="js-donut-chart-container-ars donut-chart-container"></div>
+      <div id="chart-top-ars" class="js-donut-chart-container-ars donut-chart-container"></div>
     </div>
   </div>
   <div class="col-6">
     <div class="card--chart">
-      <div class="js-legend-chart-container-ars legend-chart-container"></div>
+      <div id="legend-top-ars" class="js-legend-chart-container-ars legend-chart-container"></div>
     </div>
   </div>
 </div>
@@ -37,23 +39,27 @@
 <br>
 <div class="row m-0">
   <div class="col-12">
-    <h1 class="text-center">Top 10 Brazil Organizers</h1>
+    <h1 class="text-center">
+      <span id="title-brl">Top 10 Brazil Organizers</span>
+    </h1>
     {% if request.GET.start_date %}
       <h5 class="text-center">from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
     {% endif %}
   </div>
 </div>
 <br>
-{% include 'revenue_app/_dynamic_table.html' with transactions=top_brl int=True %}
+<div id="dynamic-table-brl" class="row">
+  {% include 'revenue_app/_dynamic_table.html' with transactions=top_brl %}
+</div>
 <div class="row">
   <div class="col-6">
     <div class="card--chart">
-      <div class="js-donut-chart-container-brl donut-chart-container"></div>
+      <div id="chart-top-brl" class="js-donut-chart-container-brl donut-chart-container"></div>
     </div>
   </div>
   <div class="col-6">
     <div class="card--chart">
-      <div class="js-legend-chart-container-brl legend-chart-container"></div>
+      <div id="legend-top-brl" class="js-legend-chart-container-brl legend-chart-container"></div>
     </div>
   </div>
 </div>
@@ -64,6 +70,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.7.4/d3.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/britecharts@2/dist/bundled/britecharts.min.js"></script>
   <script type="text/javascript" src="{% static 'revenue_app/js/donut_chart.js' %}"></script>
+  <script type="text/javascript" src="{% static 'revenue_app/js/generate_pdf.js' %}"></script>
   <script type="text/javascript">
     fetch('{% url "json_top_organizers" %}')
       .then(res => res.json())
@@ -74,5 +81,10 @@
         createDonutChart(arsData, 'ars', legendHeight);
         createDonutChart(brlData, 'brl', legendHeight);
       });
+
+    document.getElementById("getPdf").addEventListener("click", e => {
+      e.preventDefault();
+      generatePDF();
+    });
   </script>
 {% endblock scripts %}
