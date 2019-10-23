@@ -251,6 +251,8 @@ def event_details(event_id, eventholder_user_id, organizer_sales):
         'Organizer ID': eventholder_user_id,
         'Organizer Name': organizer_sales.iloc[0]['organizer_name'] if len(organizer_sales) > 0 else '',
         'Email': organizer_sales.iloc[0]['email'] if len(organizer_sales) > 0 else '',
+        'Sales Flag': organizer_sales.iloc[0]['sales_flag'] if len(organizer_sales) > 0 else '',
+        'Sales Vertical': organizer_sales.iloc[0]['sales_vertical'] if len(organizer_sales) > 0 else '',
     }
     return details
 
@@ -331,6 +333,8 @@ def get_organizer_transactions(
             'Organizer ID': eventholder_user_id,
             'Organizer Name': organizer_sales.iloc[0]['organizer_name'] if len(organizer_sales) > 0 else '',
             'Email': organizer_transactions.iloc[0]['email'],
+            'Sales Flag': organizer_transactions.iloc[0]['sales_flag'],
+            'Sales Vertical': organizer_transactions.iloc[0]['sales_vertical'],
             'PaidTix': event_total['PaidTix'],
             'AVG Ticket Value': round(event_total['sale__payment_amount__epp'] / event_total['PaidTix'], 2)
             if event_total['PaidTix'] > 0 else 0,
@@ -420,11 +424,12 @@ def get_top_events(filtered_transactions, usd):
 
 
 def get_summarized_data(transactions, corrections, organizer_sales, organizer_refunds, usd):
-    trx = manage_transactions(transactions, corrections, organizer_sales, organizer_refunds, usd=usd)
+    trx = manage_transactions(transactions, corrections, organizer_sales, organizer_refunds)
     currencies = ['ARS', 'BRL']
     summarized_data = {}
     for currency in currencies:
         filtered = trx[trx['currency'] == currency]
+        filtered = convert_dataframe_to_usd(filtered, usd)
         summarized_data[currency] = {
             'Totals': {
                 'Organizers': filtered.eventholder_user_id.nunique(),
@@ -551,4 +556,5 @@ def convert_dataframe_to_usd(dataframe, usd):
     for currency in dataframe['currency'].unique():
         dataframe.loc[dataframe['currency'] == currency, MONEY_COLUMNS] = \
             dataframe[dataframe['currency'] == currency][MONEY_COLUMNS] / float(usd[currency])
+    dataframe['currency'] = 'USD'
     return dataframe

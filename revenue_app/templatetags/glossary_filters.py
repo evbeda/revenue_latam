@@ -5,6 +5,8 @@ GLOSSARY = {
     'eventholder_user_id': 'from transactions query',
     'Organizer ID': 'from transactions query',
     'Organizer Name': 'from organizer sales/refunds queries',
+    'Sales Flag': 'from organizer sales/refunds queries',
+    'Sales Vertical': 'from organizer sales/refunds queries',
     'email': 'from all queries',
     'Email': 'from all queries',
     'sales_flag': 'from organizer sales/refunds queries',
