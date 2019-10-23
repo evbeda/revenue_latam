@@ -14,7 +14,7 @@
       <table class="table table-striped mt-4">
         {% for parent_key, parent_value in data.items %}
         <tr>
-          <td class="align-middle" rowspan="{{ parent_value|length }}"><b>{{parent_key}}</b></td>
+          <td class="dashboard-grouper-td" rowspan="{{ parent_value|length }}"><b>{{parent_key}}</b></td>
           {% for child_key, child_value in parent_value.items %}
             {% if not forloop.first %}
               <tr>

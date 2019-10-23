@@ -76,6 +76,12 @@ h2, h3, h4, h5, h6 {
   white-space: nowrap;
 }
 
+.dashboard-grouper-td {
+  vertical-align: middle !important;
+  background-color: #f2f2f2;
+  text-align: center;
+}
+
 /* Sidebar */
 #sidebar-wrapper {
   min-width: 220px;
