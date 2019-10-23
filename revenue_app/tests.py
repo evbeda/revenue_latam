@@ -540,10 +540,10 @@ class UtilsTestCase(TestCase):
         ('ARS', 'Totals', 'Organizers', 2),
         ('ARS', 'Totals', 'Events', 2),
         ('ARS', 'Totals', 'PaidTix', 12905),
-        ('ARS', 'Sales', 'GTF', 1480.49),
-        ('ARS', 'Sales', 'GTV', 22971.37),
-        ('ARS', 'Sales', 'ATV', 1.67),
-        ('ARS', 'Sales', 'Avg EB Take Rate', 6.44),
+        ('ARS', 'Gross', 'GTF', 1480.49),
+        ('ARS', 'Gross', 'GTV', 22971.37),
+        ('ARS', 'Gross', 'ATV', 1.67),
+        ('ARS', 'Gross', 'Avg EB Take Rate', 6.44),
         ('ARS', 'Net', 'GTF', 1149.16),
         ('ARS', 'Net', 'GTV', 17830.46),
         ('ARS', 'Net', 'ATV', 1.29),
@@ -551,10 +551,10 @@ class UtilsTestCase(TestCase):
         ('BRL', 'Totals', 'Organizers', 3),
         ('BRL', 'Totals', 'Events', 3),
         ('BRL', 'Totals', 'PaidTix', 18225),
-        ('BRL', 'Sales', 'GTF', 954.0),
-        ('BRL', 'Sales', 'GTV', 12331.0),
-        ('BRL', 'Sales', 'ATV', 0.62),
-        ('BRL', 'Sales', 'Avg EB Take Rate', 7.74),
+        ('BRL', 'Gross', 'GTF', 954.0),
+        ('BRL', 'Gross', 'GTV', 12331.0),
+        ('BRL', 'Gross', 'ATV', 0.62),
+        ('BRL', 'Gross', 'Avg EB Take Rate', 7.74),
         ('BRL', 'Net', 'GTF', 563.55),
         ('BRL', 'Net', 'GTV', 7359.0),
         ('BRL', 'Net', 'ATV', 0.37),
@@ -589,7 +589,7 @@ class UtilsTestCase(TestCase):
 
     @parameterized.expand([
         ('payment_processor', 'organizers'),
-        ('sales_flag', 'gtv'),
+        ('sales_flag', 'gts'),
     ])
     def test_get_charts_data_with_invalid_params(self, type, filter):
         trx = manage_transactions(
@@ -676,10 +676,10 @@ class ViewsTest(TestCase):
             ('ARS', 'Totals', 'Organizers'),
             ('ARS', 'Totals', 'Events'),
             ('ARS', 'Totals', 'PaidTix'),
-            ('ARS', 'Sales', 'GTF'),
-            ('ARS', 'Sales', 'GTV'),
-            ('ARS', 'Sales', 'ATV'),
-            ('ARS', 'Sales', 'Avg EB Take Rate'),
+            ('ARS', 'Gross', 'GTF'),
+            ('ARS', 'Gross', 'GTV'),
+            ('ARS', 'Gross', 'ATV'),
+            ('ARS', 'Gross', 'Avg EB Take Rate'),
             ('ARS', 'Net', 'GTF'),
             ('ARS', 'Net', 'GTV'),
             ('ARS', 'Net', 'ATV'),
@@ -687,10 +687,10 @@ class ViewsTest(TestCase):
             ('BRL', 'Totals', 'Organizers'),
             ('BRL', 'Totals', 'Events'),
             ('BRL', 'Totals', 'PaidTix'),
-            ('BRL', 'Sales', 'GTF'),
-            ('BRL', 'Sales', 'GTV'),
-            ('BRL', 'Sales', 'ATV'),
-            ('BRL', 'Sales', 'Avg EB Take Rate'),
+            ('BRL', 'Gross', 'GTF'),
+            ('BRL', 'Gross', 'GTV'),
+            ('BRL', 'Gross', 'ATV'),
+            ('BRL', 'Gross', 'Avg EB Take Rate'),
             ('BRL', 'Net', 'GTF'),
             ('BRL', 'Net', 'GTV'),
             ('BRL', 'Net', 'ATV'),
@@ -944,6 +944,7 @@ class ViewsTest(TestCase):
         ('payment_processor', 'gtv'),
         ('payment_processor', 'gtf'),
         ('sales_flag', 'gtf'),
+        ('sales_flag', 'gtv'),
         ('sales_flag', 'organizers'),
     ])
     def test_dashboard_summary_with_valid_data_returns_200(self, type, filter):
@@ -960,7 +961,7 @@ class ViewsTest(TestCase):
 
     @parameterized.expand([
         ('payment_processor', 'organizers'),
-        ('sales_flag', 'gtv'),
+        ('sales_flag', 'gts'),
     ])
     def test_dashboard_summary_with_invalid_data_returns_200(self, type, filter):
         URL = '{0}?type={1}&filter={2}'.format(reverse('json_dashboard_summary'), type, filter)
