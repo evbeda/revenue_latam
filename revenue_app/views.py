@@ -334,13 +334,6 @@ class TopOrganizersLatam(QueriesRequiredMixin, TemplateView):
         return context
 
 
-class TopOrganizersLatamPdf(TopOrganizersLatam):
-    def get(self, request, *args, **kwargs):
-        context = super().get_context_data(**kwargs)
-        pdf = render_to_pdf('revenue_app/top_organizers_pdf.html', context)
-        return HttpResponse(pdf, content_type='application/pdf')
-
-
 class TopOrganizersRefundsLatam(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/top_organizers_refunds.html'
 

@@ -8,7 +8,6 @@ function createDonutChart(data, node,legendHeight) {
 
   donutChart
     .isAnimated(true)
-    .highlightSliceById(2).hasFixedHighlightedSlice(true)
     .width(refWidth)
     .height(refWidth)
     .externalRadius(refWidth/2.5)
@@ -30,10 +29,6 @@ function createDonutChart(data, node,legendHeight) {
   donutContainer.datum(data.data).call(donutChart);
   legendContainer = d3.select(`.js-legend-chart-container-${node}`);
   legendContainer.datum(data.data).call(legendChart);
-
-  donutChart.highlightSliceById(3).isAnimated(true);
-  donutContainer.datum(data.data).call(donutChart);
-
 }
 
 function setChart(json) {
