@@ -502,6 +502,8 @@ class UtilsTestCase(TestCase):
             'Organizer ID': '497321858',
             'Organizer Name': 'Fake 1',
             'Email': 'some_fake_mail@gmail.com',
+            'Sales Flag': 'sales',
+            'Sales Vertical': 'Argentina',
         }),
         ('98415193', '98415193', {
             'Event ID': '98415193',
@@ -509,6 +511,8 @@ class UtilsTestCase(TestCase):
             'Organizer ID': '98415193',
             'Organizer Name': 'Fake 2',
             'Email': 'another_fake_mail@gmail.com',
+            'Sales Flag': 'SSO',
+            'Sales Vertical': 'Brazil',
         }),
         ('17471621', '434444537', {
             'Event ID': '17471621',
@@ -516,6 +520,8 @@ class UtilsTestCase(TestCase):
             'Organizer ID': '434444537',
             'Organizer Name': 'Wow Such Fake',
             'Email': 'wow_fake_mail@hotmail.com',
+            'Sales Flag': 'sales',
+            'Sales Vertical': 'Brazil',
         }),
         ('35210860', '506285738', {
             'Event ID': '35210860',
@@ -523,6 +529,8 @@ class UtilsTestCase(TestCase):
             'Organizer ID': '506285738',
             'Organizer Name': 'Br Fake',
             'Email': 'personalized_domain@wowdomain.com.br',
+            'Sales Flag': 'SSO',
+            'Sales Vertical': 'Brazil',
         }),
         ('88128252', '634364434', {
             'Event ID': '88128252',
@@ -530,6 +538,8 @@ class UtilsTestCase(TestCase):
             'Organizer ID': '634364434',
             'Organizer Name': 'Ar Fake',
             'Email': 'arg_domain@superdomain.org.ar',
+            'Sales Flag': 'sales',
+            'Sales Vertical': 'Argentina',
         }),
     ])
     def test_event_details(self, event_id, eventholder_user_id, details_organizer):
@@ -648,8 +658,8 @@ class UtilsTestCase(TestCase):
             self.organizer_sales,
             self.organizer_refunds,
         )
-        trx = convert_dataframe_to_usd(trx, usd)
         filtered = trx[trx['currency'] == currency]
+        filtered = convert_dataframe_to_usd(filtered, usd)
         self.assertEqual(round(filtered['sale__payment_amount__epp'].sum(), 2), sale__payment__amount__epp_usd)
 
 
