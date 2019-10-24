@@ -47,6 +47,8 @@
                         <td><a href="{% url 'event-details' event_id=transaction.event_id %}">{{value}}</a></td>
                     {% elif key in 'eb_perc_take_rate, Take Rate'  %}
                         <td class="text-right text-monospace">{{value|floatformat:2}}%</td>
+                    {% elif key == 'PaidTix' %}
+                        <td class="text-right text-monospace">{{value|floatformat:0|intcomma}}</td>
                     {% elif value|is_numeric %}
                       {% if int %}
                         <td class="text-right text-monospace">{{value|floatformat:0|intcomma}}</td>
