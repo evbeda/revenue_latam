@@ -10,61 +10,72 @@
         {% endif %}
         <div class="dropdown show">
             <h1>
-                <span>Organizer details</span>
+                <span id="title">Organizer details</span>
                 <a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                    <a class="dropdown-item" href="{% url 'download-csv' csv_name='organizer_'|add:eventholder_user_id %}"><i class="fas fa-file-csv"></i> CSV</a>
-                    <a class="dropdown-item" href="{% url 'download-excel' xls_name='organizer_'|add:eventholder_user_id %}"><i class="fas fa-file-excel"></i> Excel</a>
-                    <a class="dropdown-item" href="{% url 'download-organizer-pdf' eventholder_user_id=eventholder_user_id%}" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+                    <a class="dropdown-item" href="{% url 'download-csv' csv_name='organizer_'|add:eventholder_user_id %}"><i class="fas fa-file-csv"></i> CSV (Full Table)</a>
+                    <a class="dropdown-item" href="{% url 'download-excel' xls_name='organizer_'|add:eventholder_user_id %}"><i class="fas fa-file-excel"></i> Excel (Full Table)</a>
+                    <a id="getPdf" href="" class="dropdown-item"><i class="fas fa-file-pdf"></i> PDF (Summary)</a>
                 </div>
             </h1>
         </div>
     </div>
 </div>
-<div class="row m-0">
-    <div class="col-6 mb-3">
-        <table class="table table-striped mt-4 table-sm">
-        {% for key, value in details.items %}
-            <tr>
-                <td class="summarized-key"><b data-toggle="tooltip" data-placement="top" title="{% glossary key %}">{{key}}</b></td>
-                {% if value|is_numeric %}
-                <td class="text-right text-monospace">{{value|floatformat:2}}</td>
-                {% else %}
-                <td class="text-right">{{value}}</td>
-                {% endif %}
-            </tr>
-        {% endfor %}
-        </table>
-    </div>
-    <div class="col-6 mb-3">
-        {% for name, data in net_sales_refunds.items %}
-            <h4>{{name}}</h4>
-            <table class="table table-striped table-sm mt-4">
-                {% for key, value in data.items %}
-                <tr>
-                    <td><b data-toggle="tooltip" data-placement="top" title="{% glossary key %}">{{key}}</b></td>
-                    <td class="text-right text-monospace">{{value|floatformat:2}}</td>
-                </tr>
-                {% endfor %}
-            </table>
-        {% endfor %}
-    </div>
-</div>
-<div class="row m-0">
-    {% for name, data in sales_refunds.items %}
-        <div class="col-xl-6 mb-3">
-            <h4>{{name}}</h4>
-            <table class="table table-striped table-sm mt-4">
-                {% for key, value in data.items %}
-                <tr>
-                    <td><b data-toggle="tooltip" data-placement="top" title="{% glossary key %}">{{key}}</b></td>
-                    <td class="text-right text-monospace">{{value|floatformat:2}}</td>
-                </tr>
-                {% endfor %}
-            </table>
-        </div>
-    {% endfor %}
+<div id="summarized-data">
+  <div class="row m-0">
+      <div class="col-6 mb-3">
+          <table class="table table-striped mt-4 table-sm">
+          {% for key, value in details.items %}
+              <tr>
+                  <td class="summarized-key"><b data-toggle="tooltip" data-placement="top" title="{% glossary key %}">{{key}}</b></td>
+                  {% if value|is_numeric %}
+                  <td class="text-right text-monospace">{{value|floatformat:2}}</td>
+                  {% else %}
+                  <td class="text-right">{{value}}</td>
+                  {% endif %}
+              </tr>
+          {% endfor %}
+          </table>
+      </div>
+      <div class="col-6 mb-3">
+          {% for name, data in net_sales_refunds.items %}
+              <h4>{{name}}</h4>
+              <table class="table table-striped table-sm mt-4">
+                  {% for key, value in data.items %}
+                  <tr>
+                      <td><b data-toggle="tooltip" data-placement="top" title="{% glossary key %}">{{key}}</b></td>
+                      <td class="text-right text-monospace">{{value|floatformat:2}}</td>
+                  </tr>
+                  {% endfor %}
+              </table>
+          {% endfor %}
+      </div>
+  </div>
+  <div class="row m-0">
+      {% for name, data in sales_refunds.items %}
+          <div class="col-xl-6 mb-3">
+              <h4>{{name}}</h4>
+              <table class="table table-striped table-sm mt-4">
+                  {% for key, value in data.items %}
+                  <tr>
+                      <td><b data-toggle="tooltip" data-placement="top" title="{% glossary key %}">{{key}}</b></td>
+                      <td class="text-right text-monospace">{{value|floatformat:2}}</td>
+                  </tr>
+                  {% endfor %}
+              </table>
+          </div>
+      {% endfor %}
+  </div>
 </div>
 {% include 'revenue_app/_dynamic_table.html' %}
 
 {% endblock content %}
+{% block scripts %}
+  {{ block.super }}
+  <script type="text/javascript">
+    document.getElementById("getPdf").addEventListener("click", e => {
+      e.preventDefault();
+      generateDetailPDF('organizer_details_{{eventholder_user_id}}');
+    });
+  </script>
+{% endblock scripts %}

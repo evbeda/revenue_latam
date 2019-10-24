@@ -70,7 +70,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.7.4/d3.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/britecharts@2/dist/bundled/britecharts.min.js"></script>
   <script type="text/javascript" src="{% static 'revenue_app/js/donut_chart.js' %}"></script>
-  <script type="text/javascript" src="{% static 'revenue_app/js/generate_pdf.js' %}"></script>
   <script type="text/javascript">
     fetch('{% url "json_top_organizers" %}')
       .then(res => res.json())
@@ -84,7 +83,7 @@
 
     document.getElementById("getPdf").addEventListener("click", e => {
       e.preventDefault();
-      generatePDF();
+      generateTopPDF('top_organizers');
     });
   </script>
 {% endblock scripts %}
