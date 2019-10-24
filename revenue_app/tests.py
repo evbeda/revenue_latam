@@ -856,30 +856,6 @@ class ViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('make-query'))
 
-    def test_organizer_transactions_pdf(self):
-        URL = reverse('download-organizer-pdf', kwargs={'eventholder_user_id': 497321858})
-        self.load_dataframes()
-        response = self.client.get(URL)
-        self.assertTrue(str(type(response)), "_pdf.reader")
-
-    def test_organizer_transactions_pdf_returns_302_if_doesnt_have_queries(self):
-        URL = reverse('download-organizer-pdf', kwargs={'eventholder_user_id': 497321858})
-        response = self.client.get(URL)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('make-query'))
-
-    def test_event_transactions_pdf(self):
-        URL = reverse('download-event-pdf', kwargs={'event_id': 66220941})
-        self.load_dataframes()
-        response = self.client.get(URL)
-        self.assertTrue(str(type(response)), "_pdf.reader")
-
-    def test_event_transactions_pdf_returns_302_if_doesnt_have_queries(self):
-        URL = reverse('download-event-pdf', kwargs={'event_id': 66220941})
-        response = self.client.get(URL)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('make-query'))
-
     def test_top_events_latam_pdf(self):
         URL = reverse('download-top-events-pdf')
         self.load_dataframes()
@@ -888,18 +864,6 @@ class ViewsTest(TestCase):
 
     def test_top_events_latam_pdf_returns_302_if_doesnt_have_queries(self):
         URL = reverse('download-top-events-pdf')
-        response = self.client.get(URL)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('make-query'))
-
-    def test_top_organizer_refunds_latam_pdf(self):
-        URL = reverse('download-organizer-refunds-pdf')
-        self.load_dataframes()
-        response = self.client.get(URL)
-        self.assertTrue(str(type(response)), "_pdf.reader")
-
-    def test_top_organizer_refunds_latam_pdf_302_if_doesnt_have_queries(self):
-        URL = reverse('download-organizer-refunds-pdf')
         response = self.client.get(URL)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('make-query'))

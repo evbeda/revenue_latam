@@ -1,13 +1,20 @@
-
 {% extends 'revenue_app/base.html' %}
 {% load static %}
 {% load glossary_filters %}
 {% load humanize %}
 
 {% block content %}
-<h1>Dashboard</h1>
+<div class="dropdown show">
+  <h1>
+    <span id="title" >Dashboard</span>
+    <a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
+    <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+      <a id="getPdf" href="" class="dropdown-item"><i class="fas fa-file-pdf"></i>PDF</a>
+    </div>
+  </h1>
+</div>
 <br>
-<div class="row m-0">
+<div id="summarized-data" class="row m-0">
   {% for currency, data in summarized_data.items %}
     <div class="col-xl-6">
       <h4>{{currency}}</h4>
@@ -66,6 +73,7 @@
 </div>
 <br>
 <div class="row mt-4" id="chart-container">
+
 </div>
 {% endblock content %}
 {% block scripts %}
@@ -93,6 +101,11 @@
             setChart(json);
           }
         })
+    });
+
+    document.getElementById("getPdf").addEventListener("click", e => {
+      e.preventDefault();
+      generateDashboardPDF();
     });
   </script>
 {% endblock scripts %}

@@ -35,7 +35,7 @@ function createCanvasData(){
 };
 
 
-function generatePDF() {
+function generateTopPDF(filename) {
 
   let canvasData = createCanvasData()
 
@@ -50,13 +50,41 @@ function generatePDF() {
     doc.addImage(canvasData.ars.imgChart, 'PNG', 80, 240, 180, 180);
     doc.addImage(canvasData.ars.imgLegend, 'PNG', 280, 250, 180, 160);
   }).then(canvas => html2canvas(canvasData.brl.title))
-  .then(canvas => doc.addImage(canvas,60, 440))
+  .then(canvas => doc.addImage(canvas, 60, 440))
   .then(canvas => html2canvas(canvasData.brl.table))
   .then(canvas => {
     doc.addImage(canvas, 60, 480);
     doc.addImage(canvasData.brl.imgChart, 'PNG', 80, 640, 180, 180);
     doc.addImage(canvasData.brl.imgLegend, 'PNG', 280, 650, 180, 160);
-    doc.save('top_organizers.pdf');
+    doc.save(`${filename}.pdf`);
   });
+
+};
+
+function generateDashboardPDF() {
+  var title = document.getElementById('title');
+  var summarizedData = document.getElementById('summarized-data');
+  var doc = new jsPDF('p', 'pt', 'a4');
+  doc.internal.scaleFactor = 3.6;
+
+  html2canvas(title)
+  .then(canvas => doc.addImage(canvas, 60, 40))
+  .then(canvas => html2canvas(summarizedData))
+  .then(canvas => doc.addImage(canvas, 60, 80))
+  .then(canvas => doc.save('dashboard.pdf'));
+
+};
+
+function generateDetailPDF(filename) {
+  var title = document.getElementById('title');
+  var summarizedData = document.getElementById('summarized-data');
+  var doc = new jsPDF('p', 'pt', 'a4');
+  doc.internal.scaleFactor = 3.2;
+
+  html2canvas(title)
+  .then(canvas => doc.addImage(canvas, 40, 40))
+  .then(canvas => html2canvas(summarizedData))
+  .then(canvas => doc.addImage(canvas, 40, 80))
+  .then(canvas => doc.save(`${filename}.pdf`));
 
 };

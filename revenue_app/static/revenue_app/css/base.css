@@ -223,3 +223,7 @@ footer a {
 .tooltip-inner {
   max-width: 300px;
 }
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f2f2f2;
+}

@@ -298,14 +298,6 @@ class OrganizerTransactions(QueriesRequiredMixin, TemplateView):
         return context
 
 
-class OrganizerTransactionsPdf(OrganizerTransactions):
-
-    def get(self, request, *args, **kwargs):
-        context = super().get_context_data(**kwargs)
-        pdf = render_to_pdf('revenue_app/organizer_transactions_pdf.html', context)
-        return HttpResponse(pdf, content_type='application/pdf')
-
-
 class TopOrganizersLatam(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/top_organizers.html'
 
@@ -356,13 +348,6 @@ class TopOrganizersRefundsLatam(QueriesRequiredMixin, TemplateView):
         return context
 
 
-class TopOrganizersRefundsLatamPdf(TopOrganizersRefundsLatam):
-    def get(self, request, *args, **kwargs):
-        context = super().get_context_data(**kwargs)
-        pdf = render_to_pdf('revenue_app/top_organizers_refunds_pdf.html', context)
-        return HttpResponse(pdf, content_type='application/pdf')
-
-
 class TransactionsEvent(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/event.html'
 
@@ -384,13 +369,6 @@ class TransactionsEvent(QueriesRequiredMixin, TemplateView):
         context['transactions'] = transactions[EVENT_COLUMNS]
         self.request.session['export_transactions'] = transactions
         return context
-
-
-class TransactionsEventPdf(TransactionsEvent):
-    def get(self, request, *args, **kwargs):
-        context = super().get_context_data(**kwargs)
-        pdf = render_to_pdf('revenue_app/event_pdf.html', context)
-        return HttpResponse(pdf, content_type='application/pdf')
 
 
 class TopEventsLatam(QueriesRequiredMixin, TemplateView):
