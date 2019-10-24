@@ -80,15 +80,6 @@ BASE_ORGANIZER_SALES_COLUMNS = [
     'PaidTix',
 ]
 
-BASE_ORGANIZER_REFUNDS_COLUMNS = [
-    'transaction_created_date',
-    'email',
-    'event_id',
-    'GTSntv',
-    'GTFntv',
-    'PaidTix',
-]
-
 BASE_TRANSACTION_COLUMNS = [
     'eventholder_user_id',
     'transaction_created_date',
@@ -189,7 +180,7 @@ class UtilsTestCase(TestCase):
         self.assertIsInstance(organizer_refunds, DataFrame)
         self.assertListEqual(
             sorted(organizer_refunds.columns.tolist()),
-            sorted(BASE_ORGANIZER_REFUNDS_COLUMNS),
+            sorted(BASE_ORGANIZER_SALES_COLUMNS),
         )
         self.assertNotIn('organizer_email', organizer_refunds.columns.tolist())
         self.assertEqual(len(organizer_refunds), 5)

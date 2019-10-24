@@ -141,7 +141,10 @@ def filter_transactions(transactions, **kwargs):
 
 
 def merge_transactions(transactions, organizer_sales, organizer_refunds):
-    merged = transactions.merge(
+    sales = transactions[transactions['is_sale'] == 1]
+    refunds = transactions[transactions['is_refund'] == 1]
+
+    sales = sales.merge(
         organizer_sales[[
             'email',
             'event_id',
@@ -154,8 +157,20 @@ def merge_transactions(transactions, organizer_sales, organizer_refunds):
         on=['email', 'event_id'],
         how='left',
     )
-    sales = merged[merged['is_sale'] == 1]
-    refunds = merged[merged['is_refund'] == 1]
+    refunds = refunds.merge(
+        organizer_refunds[[
+            'email',
+            'event_id',
+            'event_title',
+            'sales_flag',
+            'sales_vertical',
+            'vertical',
+            'sub_vertical',
+        ]].drop_duplicates(),
+        on=['email', 'event_id'],
+        how='left',
+    )
+
     merged_sales = sales.merge(
         organizer_sales[[
             'transaction_created_date',

@@ -27,7 +27,13 @@
               <tr>
             {% endif %}
             <td><b data-toggle="tooltip" data-placement="top" title="{% glossary parent_key|add:child_key %}">{{child_key}}</b></td>
-            <td class="text-right text-monospace">{{child_value|intcomma}}</td>
+            {% if parent_key == 'Totals' %}
+              <td class="text-right text-monospace">{{child_value|intcomma}}&nbsp;</td>
+            {% elif 'Rate' in child_key %}
+              <td class="text-right text-monospace">{{child_value|floatformat:2|intcomma}}%</td>
+            {% else %}
+              <td class="text-right text-monospace">{{child_value|floatformat:2|intcomma}}&nbsp;</td>
+            {% endif %}
             {% if not forloop.first %}
               </tr>
             {% endif %}
