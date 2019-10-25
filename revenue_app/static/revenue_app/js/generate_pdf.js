@@ -88,3 +88,17 @@ function generateDetailPDF(filename) {
   .then(canvas => doc.save(`${filename}.pdf`));
 
 };
+
+function generateChartPDF() {
+
+  var chartContainer = document.getElementById('chart-container');
+  var doc = new jsPDF('p', 'pt', 'a4');
+  doc.internal.scaleFactor = 3.2;
+
+  html2canvas(chartContainer)
+  .then(canvas => {
+    doc.addImage(canvas, 40, 40);
+    doc.save('dashboard_charts.pdf')
+  });
+
+}
