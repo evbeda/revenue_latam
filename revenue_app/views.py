@@ -141,6 +141,8 @@ TOP_ORGANIZERS = {
         'sale__gtf_esf__epp',
     ],
     'labels': {
+        'eventholder_user_id': 'Organizer',
+        'email': 'Email',
         'eb_perc_take_rate': 'Take Rate',
         'sale__gtf_esf__epp': 'SalesGTF',
     }
@@ -153,6 +155,8 @@ TOP_ORGANIZERS_REFUNDS = {
         'refund__gtf_epp__gtf_esf__epp',
     ],
     'labels': {
+        'eventholder_user_id': 'Organizer',
+        'email': 'Email',
         'refund__gtf_epp__gtf_esf__epp': 'RefundGTF'
     }
 }
@@ -167,6 +171,8 @@ TOP_EVENTS_COLUMNS = {
         'sale__gtf_esf__epp',
     ],
     'labels': {
+        'eventholder_user_id': 'Organizer',
+        'email': 'Email',
         'event_title': 'Event Title',
         'eb_perc_take_rate': 'Take Rate',
         'sale__gtf_esf__epp': 'SalesGTF',

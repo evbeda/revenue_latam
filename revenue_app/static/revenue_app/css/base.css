@@ -72,7 +72,7 @@ h2, h3, h4, h5, h6 {
   padding-right: 0;
 }
 
-.transactions-table table tr td {
+.transactions-table td {
   white-space: nowrap;
 }
 
@@ -209,7 +209,7 @@ footer a {
 
 /* Summarized Table */
 .summarized-key {
-  min-width: 175px;
+  white-space: nowrap;
 }
 
 .hidden {
