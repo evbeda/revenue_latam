@@ -9,7 +9,7 @@
     <span id="title" >Dashboard</span>
     <a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
     <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-      <a id="getPdf" href="" class="dropdown-item"><i class="fas fa-file-pdf"></i>PDF</a>
+      <a id="getSummaryPdf" href="" class="dropdown-item"><i class="fas fa-file-pdf"></i>PDF</a>
     </div>
   </h1>
 </div>
@@ -45,7 +45,9 @@
   {% endfor %}
 </div>
 <div class="row m-3">
-  <h3>Charts</h3>
+  <h2>Charts</h2>
+  <div id="setButton" class="ml-4">
+  </div>
 </div>
 <div class="row">
   <div class="col-xl-6">
@@ -103,15 +105,23 @@
             msg.classList.add('alert', 'alert-danger', 'col-6');
             msg.textContent = 'Chart does not exist.';
             container.appendChild(msg);
+            document.getElementById('setButton').innerHTML = '';
+
           } else {
+            document.getElementById('setButton').innerHTML = '<a id="getChartPdf" href="" class="btn btn-evb-orange"><i class="fas fa-file-pdf"></i> PDF</a>';
             setChart(json);
           }
         })
     });
 
-    document.getElementById("getPdf").addEventListener("click", e => {
+    document.getElementById("getSummaryPdf").addEventListener("click", e => {
       e.preventDefault();
       generateDashboardPDF();
+    });
+
+    document.getElementById("setButton").addEventListener("click", e => {
+      e.preventDefault();
+      generateChartPDF();
     });
   </script>
 {% endblock scripts %}
