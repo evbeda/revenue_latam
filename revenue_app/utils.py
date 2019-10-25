@@ -423,11 +423,11 @@ def get_top_events(filtered_transactions, usd):
     ).agg({
         'sale__gtf_esf__epp': sum,
         'sale__payment_amount__epp': sum,
-        'eb_perc_take_rate': 'mean',
     }).sort_values(
         by='sale__gtf_esf__epp',
         ascending=False,
     ).round(2).reset_index()
+    ordered = calc_perc_take_rate(ordered)
     top = ordered.head(10).copy()
     top.loc[len(top), ['event_title', 'event_id', 'sale__gtf_esf__epp', 'sale__payment_amount__epp']] = [
         'Others',
