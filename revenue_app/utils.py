@@ -436,12 +436,13 @@ def get_top_events(filtered_transactions, usd):
 
 def get_summarized_data(transactions, corrections, organizer_sales, organizer_refunds, usd):
     trx = manage_transactions(transactions, corrections, organizer_sales, organizer_refunds)
-    currencies = ['ARS', 'BRL']
+    currencies = {'Argentina': 'ARS', 'Brazil': 'BRL'}
     summarized_data = {}
-    for currency in currencies:
+    for country, currency in currencies.items():
         filtered = trx[trx['currency'] == currency]
         filtered = convert_dataframe_to_usd(filtered, usd)
-        summarized_data[currency] = {
+        summarized_data[country] = {
+            'currency': currency if (not usd) or (None in usd.values()) else "USD",
             'Totals': {
                 'Organizers': filtered.eventholder_user_id.nunique(),
                 'Events': filtered.event_id.nunique(),

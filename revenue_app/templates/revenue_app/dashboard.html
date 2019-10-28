@@ -15,11 +15,12 @@
 </div>
 <br>
 <div id="summarized-data" class="row m-0">
-  {% for currency, data in summarized_data.items %}
+  {% for country, data in summarized_data.items %}
     <div class="col-xl-6">
-      <h4>{{currency}}</h4>
+      <h4>{{country}}</h4>
       <table class="table table-striped mt-4">
         {% for parent_key, parent_value in data.items %}
+        {% if not parent_key == 'currency' %}
         <tr>
           <td class="dashboard-grouper-td" rowspan="{{ parent_value|length }}"><b>{{parent_key}}</b></td>
           {% for child_key, child_value in parent_value.items %}
@@ -32,13 +33,14 @@
             {% elif 'Rate' in child_key %}
               <td class="text-right text-monospace">{{child_value|floatformat:2|intcomma}}%</td>
             {% else %}
-              <td class="text-right text-monospace">{{child_value|floatformat:2|intcomma}}&nbsp;</td>
+              <td class="text-right text-monospace">{{data.currency}} {{child_value|floatformat:2|intcomma}}&nbsp;</td>
             {% endif %}
             {% if not forloop.first %}
               </tr>
             {% endif %}
           {% endfor %}
         </tr>
+        {% endif %}
         {% endfor %}
       </table>
     </div>

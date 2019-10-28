@@ -20,7 +20,11 @@
 </div>
 <br>
 <div id="dynamic-table-ars" class="row">
-  {% include 'revenue_app/_dynamic_table.html' with transactions=top_ars int=True %}
+{% if request.session.usd.ARS %}
+  {% include 'revenue_app/_dynamic_table.html' with transactions=top_ars int=True currency='USD' %}
+{% else %}
+  {% include 'revenue_app/_dynamic_table.html' with transactions=top_ars int=True currency='ARS' %}
+{% endif %}
 </div>
 <div class="row">
   <div class="col-6">
@@ -49,7 +53,11 @@
 </div>
 <br>
 <div id="dynamic-table-brl" class="row">
-  {% include 'revenue_app/_dynamic_table.html' with transactions=top_brl int=True %}
+{% if request.session.usd.BRL %}
+  {% include 'revenue_app/_dynamic_table.html' with transactions=top_brl int=True currency='USD' %}
+{% else %}
+  {% include 'revenue_app/_dynamic_table.html' with transactions=top_brl int=True currency='BRL' %}
+{% endif %}
 </div>
 <div class="row">
   <div class="col-6">

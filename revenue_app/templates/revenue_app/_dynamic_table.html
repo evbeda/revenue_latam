@@ -57,11 +57,18 @@
                     {% elif key == 'Event Title' %}
                         <td>{{value|truncatechars:50}}</td>
                     {% elif value|is_numeric %}
-                      {% if int %}
-                        <td class="text-right text-monospace">{{value|floatformat:0|intcomma}}</td>
-                      {% else %}
-                        <td class="text-right text-monospace">{{value|floatformat:2|intcomma}}</td>
+                        <td class="text-right text-monospace">
+                      {% if transaction.currency %}
+                          {{transaction.currency}}
+                      {% elif currency %}
+                          {{currency}}
                       {% endif %}
+                      {% if int %}
+                          {{value|floatformat:0|intcomma}}
+                      {% else %}
+                          {{value|floatformat:2|intcomma}}
+                      {% endif %}
+                        </td>
                     {% else %}
                         <td>{{value}}</td>
                     {% endif %}
