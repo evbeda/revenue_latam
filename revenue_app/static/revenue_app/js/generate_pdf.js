@@ -37,18 +37,24 @@ function createCanvasData(){
 
 function generateTopPDF(filename) {
 
-  let canvasData = createCanvasData()
+  let navBar = document.getElementsByTagName("nav")[0];
+  let canvasData = createCanvasData();
 
   var doc = new jsPDF('p', 'pt', 'a4');
-  doc.internal.scaleFactor = 3.6;
 
-  html2canvas(canvasData.ars.title)
-  .then(canvas => doc.addImage(canvas, 60, 40))
+  html2canvas(navBar)
+  .then(canvas => {
+    doc.internal.scaleFactor = 2.9;
+    doc.addImage(canvas, 0, 0);
+    doc.internal.scaleFactor = 3.6;
+  })
+  .then(canvas => html2canvas(canvasData.ars.title))
+  .then(canvas => doc.addImage(canvas, 60, 45))
   .then(canvas => html2canvas(canvasData.ars.table))
   .then(canvas => {
-    doc.addImage(canvas, 60, 80);
-    doc.addImage(canvasData.ars.imgChart, 'PNG', 80, 240, 180, 180);
-    doc.addImage(canvasData.ars.imgLegend, 'PNG', 280, 250, 180, 160);
+    doc.addImage(canvas, 60, 85);
+    doc.addImage(canvasData.ars.imgChart, 'PNG', 80, 245, 180, 180);
+    doc.addImage(canvasData.ars.imgLegend, 'PNG', 280, 255, 180, 160);
   }).then(canvas => html2canvas(canvasData.brl.title))
   .then(canvas => doc.addImage(canvas, 60, 440))
   .then(canvas => html2canvas(canvasData.brl.table))
@@ -56,49 +62,71 @@ function generateTopPDF(filename) {
     doc.addImage(canvas, 60, 480);
     doc.addImage(canvasData.brl.imgChart, 'PNG', 80, 640, 180, 180);
     doc.addImage(canvasData.brl.imgLegend, 'PNG', 280, 650, 180, 160);
-    doc.save(`${filename}.pdf`);
+    doc.save(`${filename}_${getTimeNow()}.pdf`);
   });
 
 };
 
 function generateDashboardPDF() {
+  let navBar = document.getElementsByTagName("nav")[0];
   var title = document.getElementById('title');
   var summarizedData = document.getElementById('summarized-data');
   var doc = new jsPDF('p', 'pt', 'a4');
-  doc.internal.scaleFactor = 3.6;
 
-  html2canvas(title)
-  .then(canvas => doc.addImage(canvas, 60, 40))
+  html2canvas(navBar)
+  .then(canvas => {
+    doc.internal.scaleFactor = 2.9;
+    doc.addImage(canvas, 0, 0);
+    doc.internal.scaleFactor = 3.6;
+  })
+  .then(canvas => html2canvas(title))
+  .then(canvas => doc.addImage(canvas, 60, 70))
   .then(canvas => html2canvas(summarizedData))
-  .then(canvas => doc.addImage(canvas, 60, 80))
-  .then(canvas => doc.save('dashboard.pdf'));
+  .then(canvas => doc.addImage(canvas, 60, 110))
+  .then(canvas => doc.save(`dashboard_${getTimeNow()}.pdf`));
 
 };
 
 function generateDetailPDF(filename) {
+  let navBar = document.getElementsByTagName("nav")[0];
   var title = document.getElementById('title');
   var summarizedData = document.getElementById('summarized-data');
   var doc = new jsPDF('p', 'pt', 'a4');
-  doc.internal.scaleFactor = 3.2;
 
-  html2canvas(title)
-  .then(canvas => doc.addImage(canvas, 40, 40))
+  html2canvas(navBar)
+  .then(canvas => {
+    doc.internal.scaleFactor = 2.9;
+    doc.addImage(canvas, 0, 0);
+    doc.internal.scaleFactor = 3.2;
+  })
+  .then(canvas => html2canvas(title))
+  .then(canvas => doc.addImage(canvas, 40, 70))
   .then(canvas => html2canvas(summarizedData))
-  .then(canvas => doc.addImage(canvas, 40, 80))
-  .then(canvas => doc.save(`${filename}.pdf`));
+  .then(canvas => doc.addImage(canvas, 40, 110))
+  .then(canvas => doc.save(`${filename}_${getTimeNow()}.pdf`));
 
 };
 
 function generateChartPDF() {
+  let navBar = document.getElementsByTagName("nav")[0];
 
   var chartContainer = document.getElementById('chart-container');
   var doc = new jsPDF('p', 'pt', 'a4');
-  doc.internal.scaleFactor = 3.2;
 
-  html2canvas(chartContainer)
+  html2canvas(navBar)
   .then(canvas => {
-    doc.addImage(canvas, 40, 40);
-    doc.save('dashboard_charts.pdf')
+    doc.internal.scaleFactor = 2.9;
+    doc.addImage(canvas, 0, 0);
+    doc.internal.scaleFactor = 3.2;
+  })
+  .then(canvas => html2canvas(chartContainer))
+  .then(canvas => {
+    doc.addImage(canvas, 40, 70);
+    doc.save(`dashboard_charts_${getTimeNow()}.pdf`);
   });
 
+}
+
+function getTimeNow() {
+  return new Date().toLocaleString('fr-CA').replace(' h ', 'h').replace(" min ", "m").replace(" s", "s").replace(" ", "_");
 }
