@@ -847,17 +847,6 @@ class ViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('make-query'))
 
-    def test_top_events_latam_pdf(self):
-        URL = reverse('download-top-events-pdf')
-        self.load_dataframes()
-        response = self.client.get(URL)
-        self.assertTrue(str(type(response)), "_pdf.reader")
-
-    def test_top_events_latam_pdf_returns_302_if_doesnt_have_queries(self):
-        URL = reverse('download-top-events-pdf')
-        response = self.client.get(URL)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('make-query'))
 
     @parameterized.expand([
         (reverse('organizers-transactions'), 'transactions'),

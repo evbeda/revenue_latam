@@ -1,6 +1,3 @@
-from io import BytesIO
-
-from xhtml2pdf import pisa
 import csv
 from datetime import (
     date,
@@ -15,7 +12,6 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.template.loader import get_template
 from django.views.generic import (
     FormView,
     TemplateView,
@@ -401,13 +397,6 @@ class TopEventsLatam(QueriesRequiredMixin, TemplateView):
         return context
 
 
-class TopEventsLatamPdf(TopEventsLatam):
-    def get(self, request, *args, **kwargs):
-        context = super().get_context_data(**kwargs)
-        pdf = render_to_pdf('revenue_app/top_events_pdf.html', context)
-        return HttpResponse(pdf, content_type='application/pdf')
-
-
 class TransactionsGrouped(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/transactions_grouped.html'
 
@@ -613,14 +602,6 @@ def download_csv(request, csv_name):
     for transaction in values:
         writer.writerow(transaction)
     return response
-
-
-def render_to_pdf(template_src, context_dict={}):
-    template = get_template(template_src)
-    html = template.render(context_dict)
-    result = BytesIO()
-    pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
-    return HttpResponse(result.getvalue(), content_type='application/pdf') if not pdf.err else None
 
 
 def usd(request):

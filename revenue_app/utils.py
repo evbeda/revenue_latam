@@ -41,10 +41,6 @@ NUMBER_COLUMNS = [
 ]
 
 
-def get_rollups():
-    return pd.read_excel('datasets/Revenue Queries.xlsx', sheet_name=0, header=1, usecols=range(0, 53))
-
-
 def clean_transactions(transactions):
     transactions = transactions.replace(np.nan, '', regex=True)
     transactions['transaction_created_date'] = pd.to_datetime(
