@@ -30,6 +30,7 @@ from revenue_app.utils import (
     clean_transactions,
     event_details,
     filter_transactions,
+    generate_transactions_consolidation,
     get_charts_data,
     get_event_transactions,
     get_organizer_transactions,
@@ -105,6 +106,7 @@ MERGED_TRANSACTIONS_COLUMNS = [
     'eventholder_user_id',
     'transaction_created_date',
     'email',
+    'organizer_name',
     'sales_flag',
     'payment_processor',
     'currency',
@@ -126,6 +128,33 @@ MERGED_TRANSACTIONS_COLUMNS = [
     'refund__ap_organizer__royalty__epp',
 ]
 
+TOTAL_TRANSACTIONS_COLUMNS = [
+    'eventholder_user_id',
+    'transaction_created_date',
+    'email',
+    'organizer_name',
+    'sales_flag',
+    'payment_processor',
+    'currency',
+    'PaidTix',
+    'sales_vertical',
+    'vertical',
+    'sub_vertical',
+    'event_id',
+    'event_title',
+    'sale__payment_amount__epp',
+    'sale__gtf_esf__epp',
+    'sale__eb_tax__epp',
+    'sale__ap_organizer__gts__epp',
+    'sale__ap_organizer__royalty__epp',
+    'refund__payment_amount__epp',
+    'refund__gtf_epp__gtf_esf__epp',
+    'refund__eb_tax__epp',
+    'refund__ap_organizer__gts__epp',
+    'refund__ap_organizer__royalty__epp',
+    'eb_perc_take_rate',
+]
+
 
 class UtilsTestCase(TestCase):
 
@@ -144,6 +173,13 @@ class UtilsTestCase(TestCase):
     @property
     def organizer_refunds(self):
         return clean_organizer_refunds(read_csv(ORGANIZER_REFUNDS_EXAMPLE_PATH))
+
+    @property
+    def transactions_consolidation(self):
+        total = merge_corrections(self.transactions, self.corrections)
+        merged = merge_transactions(total, self.organizer_sales, self.organizer_refunds)
+        merged = calc_perc_take_rate(merged)
+        return merged.round(2)
 
     def test_clean_transactions(self):
         transactions = self.transactions
@@ -203,6 +239,20 @@ class UtilsTestCase(TestCase):
             sorted(MERGED_TRANSACTIONS_COLUMNS),
         )
         self.assertEqual(len(merged_transactions), 27)
+
+    def test_generate_transactions_consolidation(self):
+        transactions = generate_transactions_consolidation(
+            self.transactions,
+            self.corrections,
+            self.organizer_sales,
+            self.organizer_refunds,
+        )
+        self.assertIsInstance(transactions, DataFrame)
+        self.assertListEqual(
+            sorted(transactions.columns),
+            sorted(TOTAL_TRANSACTIONS_COLUMNS),
+        )
+        self.assertEqual(len(transactions), 27)
 
     @parameterized.expand([
         ('day', 22),
@@ -282,10 +332,7 @@ class UtilsTestCase(TestCase):
     ])
     def test_manage_transactions(self, kwargs, expected_length):
         organizer_transactions = manage_transactions(
-            self.transactions,
-            self.corrections,
-            self.organizer_sales,
-            self.organizer_refunds,
+            self.transactions_consolidation,
             **kwargs,
         )
         self.assertIsInstance(organizer_transactions, DataFrame)
@@ -300,10 +347,7 @@ class UtilsTestCase(TestCase):
     ])
     def test_get_event_transactions(self, event_id, transactions_qty, tickets_qty, usd):
         transactions, details, sales_refunds, net_sales_refunds = get_event_transactions(
-            self.transactions,
-            self.corrections,
-            self.organizer_sales,
-            self.organizer_refunds,
+            self.transactions_consolidation,
             usd,
             event_id,
         )
@@ -320,10 +364,7 @@ class UtilsTestCase(TestCase):
     ])
     def test_get_organizer_transactions(self, eventholder_user_id, transactions_qty, tickets_qty, usd):
         transactions, details, sales_refunds, net_sales_refunds = get_organizer_transactions(
-            self.transactions,
-            self.corrections,
-            self.organizer_sales,
-            self.organizer_refunds,
+            self.transactions_consolidation,
             eventholder_user_id,
             usd,
         )
@@ -332,12 +373,7 @@ class UtilsTestCase(TestCase):
         self.assertEqual(details['PaidTix'], tickets_qty)
 
     def test_get_top_ten_organizers(self):
-        trx = manage_transactions(
-            self.transactions,
-            self.corrections,
-            self.organizer_sales,
-            self.organizer_refunds,
-        )
+        trx = self.transactions_consolidation
         top_ars = get_top_organizers(
                 trx[trx['currency'] == 'ARS'],
                 usd={'ARS': None, 'BRL': None},
@@ -352,12 +388,7 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(top_brl), 4)
 
     def test_get_top_ten_organizers_refunds(self):
-        trx = manage_transactions(
-            self.transactions,
-            self.corrections,
-            self.organizer_sales,
-            self.organizer_refunds,
-        )
+        trx = self.transactions_consolidation
         top_ars = get_top_organizers_refunds(
                 trx[trx['currency'] == 'ARS'],
                 usd={'ARS': None, 'BRL': None},
@@ -372,12 +403,7 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(top_brl), 4)
 
     def test_get_top_ten_events(self):
-        trx = manage_transactions(
-            self.transactions,
-            self.corrections,
-            self.organizer_sales,
-            self.organizer_refunds,
-        )
+        trx = self.transactions_consolidation
         top_ars = get_top_events(
                 trx[trx['currency'] == 'ARS'],
                 usd={'ARS': None, 'BRL': None},
@@ -418,7 +444,7 @@ class UtilsTestCase(TestCase):
         ({'event_id': '			88128252		'}, 7),
     ])
     def test_filter_transactions(self, kwargs, expected_length):
-        filtered_transactions = filter_transactions(self.transactions, **kwargs)
+        filtered_transactions = filter_transactions(self.transactions_consolidation, **kwargs)
         self.assertEqual(len(filtered_transactions), expected_length)
 
     @parameterized.expand([
@@ -477,10 +503,7 @@ class UtilsTestCase(TestCase):
     ])
     def test_summarize_dataframe(self, eventholder_user_id, expected_total):
         organizer = manage_transactions(
-            self.transactions,
-            self.corrections,
-            self.organizer_sales,
-            self.organizer_refunds,
+            self.transactions_consolidation,
             eventholder_user_id=eventholder_user_id,
         )
         total_organizer = summarize_dataframe(organizer)
@@ -534,7 +557,7 @@ class UtilsTestCase(TestCase):
         }),
     ])
     def test_event_details(self, event_id, eventholder_user_id, details_organizer):
-        response = event_details(event_id, eventholder_user_id, self.organizer_sales)
+        response = event_details(self.transactions_consolidation, event_id, eventholder_user_id)
         self.assertEqual(response, details_organizer)
 
     @parameterized.expand([
@@ -563,10 +586,7 @@ class UtilsTestCase(TestCase):
     ])
     def test_get_summarized_data(self, country, group, data, expected):
         summarized_data = get_summarized_data(
-            self.transactions,
-            self.corrections,
-            self.organizer_sales,
-            self.organizer_refunds,
+            self.transactions_consolidation,
             usd={'ARS': None, 'BRL': None},
         )
         self.assertEqual(summarized_data[country][group][data], expected)
@@ -578,27 +598,17 @@ class UtilsTestCase(TestCase):
         ('sales_flag', 'organizers'),
     ])
     def test_get_charts_data_with_valid_params(self, type, filter):
-        trx = manage_transactions(
-            self.transactions,
-            self.corrections,
-            self.organizer_sales,
-            self.organizer_refunds,
-        )
+        trx = self.transactions_consolidation
         response = get_charts_data(trx, type, filter)
-        self.assertIn('data', response['ARS'])
-        self.assertIn('data', response['BRL'])
+        self.assertIn('data', response['Argentina'])
+        self.assertIn('data', response['Brazil'])
 
     @parameterized.expand([
         ('payment_processor', 'organizers'),
         ('sales_flag', 'gts'),
     ])
     def test_get_charts_data_with_invalid_params(self, type, filter):
-        trx = manage_transactions(
-            self.transactions,
-            self.corrections,
-            self.organizer_sales,
-            self.organizer_refunds,
-        )
+        trx = self.transactions_consolidation
         response = get_charts_data(trx, type, filter)
         self.assertEqual(response, {})
 
@@ -607,34 +617,28 @@ class UtilsTestCase(TestCase):
         ('gtf', ),
     ])
     def test_payment_processor_summary(self, filter):
-        trx = manage_transactions(
-            self.transactions,
-            self.corrections,
-            self.organizer_sales,
-            self.organizer_refunds,
-        )
-        ars = trx[trx['currency'] == 'ARS']
-        brl = trx[trx['currency'] == 'BRL']
-        response = payment_processor_summary([ars, brl], filter)
-        self.assertIsInstance(response['ARS']['data'], list)
-        self.assertIsInstance(response['BRL']['data'], list)
+        trx = self.transactions_consolidation
+        trx_currencies = {
+            'Argentina': trx[trx['currency'] == 'ARS'],
+            'Brazil': trx[trx['currency'] == 'BRL'],
+        }
+        response = payment_processor_summary(trx_currencies, filter)
+        self.assertIsInstance(response['Argentina']['data'], list)
+        self.assertIsInstance(response['Brazil']['data'], list)
 
     @parameterized.expand([
         ('gtf', ),
         ('organizers', ),
     ])
     def test_sales_flag_summary(self, filter):
-        trx = manage_transactions(
-            self.transactions,
-            self.corrections,
-            self.organizer_sales,
-            self.organizer_refunds,
-        )
-        ars = trx[trx['currency'] == 'ARS']
-        brl = trx[trx['currency'] == 'BRL']
-        response = sales_flag_summary([ars, brl], filter)
-        self.assertIsInstance(response['ARS']['data'], list)
-        self.assertIsInstance(response['BRL']['data'], list)
+        trx = self.transactions_consolidation
+        trx_currencies = {
+            'Argentina': trx[trx['currency'] == 'ARS'],
+            'Brazil': trx[trx['currency'] == 'BRL'],
+        }
+        response = sales_flag_summary(trx_currencies, filter)
+        self.assertIsInstance(response['Argentina']['data'], list)
+        self.assertIsInstance(response['Brazil']['data'], list)
 
     @parameterized.expand([
         ('ARS', {'ARS': 60, 'BRL': 5}, 382.86),
@@ -643,12 +647,7 @@ class UtilsTestCase(TestCase):
         ('BRL', {'ARS': 59.95, 'BRL': 4.92}, 2506.30),
     ])
     def test_convert_dataframe_to_usd(self, currency, usd, sale__payment__amount__epp_usd):
-        trx = manage_transactions(
-            self.transactions,
-            self.corrections,
-            self.organizer_sales,
-            self.organizer_refunds,
-        )
+        trx = self.transactions_consolidation
         filtered = trx[trx['currency'] == currency]
         filtered = convert_dataframe_to_usd(filtered, usd)
         self.assertEqual(round(filtered['sale__payment_amount__epp'].sum(), 2), sale__payment__amount__epp_usd)
@@ -660,10 +659,16 @@ class ViewsTest(TestCase):
 
     def load_dataframes(self):
         session = self.client.session
-        session['transactions'] = read_csv(TRANSACTIONS_EXAMPLE_PATH)
-        session['corrections'] = read_csv(CORRECTIONS_EXAMPLE_PATH)
-        session['organizer_sales'] = read_csv(ORGANIZER_SALES_EXAMPLE_PATH)
-        session['organizer_refunds'] = read_csv(ORGANIZER_REFUNDS_EXAMPLE_PATH)
+        transactions = read_csv(TRANSACTIONS_EXAMPLE_PATH)
+        corrections = read_csv(CORRECTIONS_EXAMPLE_PATH)
+        organizer_sales = read_csv(ORGANIZER_SALES_EXAMPLE_PATH)
+        organizer_refunds = read_csv(ORGANIZER_REFUNDS_EXAMPLE_PATH)
+        session['transactions'] = generate_transactions_consolidation(
+            transactions,
+            corrections,
+            organizer_sales,
+            organizer_refunds,
+        )
         session['query_info'] = {
             'run_time': datetime.now(),
             'start_date': date(2018, 8, 1),
@@ -910,8 +915,8 @@ class ViewsTest(TestCase):
             str(response._headers['content-type']),
             "('Content-Type', 'application/json')",
         )
-        self.assertIn('ARS', json.loads(response.content))
-        self.assertIn('BRL', json.loads(response.content))
+        self.assertIn('Argentina', json.loads(response.content))
+        self.assertIn('Brazil', json.loads(response.content))
 
     @parameterized.expand([
         ('payment_processor', 'organizers'),
@@ -991,7 +996,8 @@ class ViewsTest(TestCase):
         self.assertEqual(str(response.context['form'].initial['end_date']), expected)
 
     def test_make_query_view_returns_200_and_makes_queries(self):
-        for query_name in ['organizer_sales', 'transactions', 'corrections']:
+        queries = ['transactions', 'corrections', 'organizer_sales', 'organizer_refunds']
+        for query_name in queries:
             self.assertNotIn(query_name, self.client.session)
         kwargs = {
             'start_date': '2018-08-02',
@@ -1001,20 +1007,23 @@ class ViewsTest(TestCase):
         }
         URL = reverse('make-query')
         with patch('revenue_app.views.make_query', side_effect=(
-            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
-            read_csv(ORGANIZER_REFUNDS_EXAMPLE_PATH),
             read_csv(TRANSACTIONS_EXAMPLE_PATH),
             read_csv(CORRECTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(ORGANIZER_REFUNDS_EXAMPLE_PATH),
         )):
             response = self.client.post(URL, kwargs)
+        expected = generate_transactions_consolidation(
+            read_csv(TRANSACTIONS_EXAMPLE_PATH),
+            read_csv(CORRECTIONS_EXAMPLE_PATH),
+            read_csv(ORGANIZER_SALES_EXAMPLE_PATH),
+            read_csv(ORGANIZER_REFUNDS_EXAMPLE_PATH),
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name[0], MakeQuery.template_name)
-        for query_name in ['organizer_sales', 'organizer_refunds', 'transactions', 'corrections']:
+        for query_name in queries:
             self.assertContains(response, f'{query_name} ran successfully')
-        assert_frame_equal(self.client.session['organizer_sales'], read_csv(ORGANIZER_SALES_EXAMPLE_PATH))
-        assert_frame_equal(self.client.session['organizer_refunds'], read_csv(ORGANIZER_REFUNDS_EXAMPLE_PATH))
-        assert_frame_equal(self.client.session['transactions'], read_csv(TRANSACTIONS_EXAMPLE_PATH))
-        assert_frame_equal(self.client.session['corrections'], read_csv(CORRECTIONS_EXAMPLE_PATH))
+        assert_frame_equal(self.client.session['transactions'], expected)
 
     @parameterized.expand([
         ({}, 'This field is required.'),

@@ -108,34 +108,6 @@ def merge_corrections(transactions, corrections):
     return trx_total
 
 
-def filter_transactions(transactions, **kwargs):
-    conditions = [
-        transactions[key] == kwargs.get(key).strip()
-        for key in kwargs
-        if key in ['event_id', 'email', 'currency', 'eventholder_user_id'] and kwargs.get(key)
-    ]
-    if kwargs.get('start_date'):
-        start_date = np.datetime64(kwargs['start_date'], 'D')
-        if kwargs.get('end_date'):
-            end_date = np.datetime64(kwargs['end_date'], 'D')
-            conditions.insert(
-                0,
-                transactions['transaction_created_date'] >= start_date
-            )
-            conditions.insert(
-                0,
-                transactions['transaction_created_date'] <= end_date
-            )
-        else:
-            conditions.insert(
-                0,
-                transactions['transaction_created_date'] == start_date
-            )
-    if not conditions:
-        return transactions
-    return transactions[reduce(np.logical_and, conditions)]
-
-
 def merge_transactions(transactions, organizer_sales, organizer_refunds):
     sales = transactions[transactions['is_sale'] == 1]
     refunds = transactions[transactions['is_refund'] == 1]
@@ -143,6 +115,7 @@ def merge_transactions(transactions, organizer_sales, organizer_refunds):
     sales = sales.merge(
         organizer_sales[[
             'email',
+            'organizer_name',
             'event_id',
             'event_title',
             'sales_flag',
@@ -156,6 +129,7 @@ def merge_transactions(transactions, organizer_sales, organizer_refunds):
     refunds = refunds.merge(
         organizer_refunds[[
             'email',
+            'organizer_name',
             'event_id',
             'event_title',
             'sales_flag',
@@ -198,6 +172,42 @@ def merge_transactions(transactions, organizer_sales, organizer_refunds):
     return merged_final.drop(columns=['is_sale', 'is_refund'])
 
 
+def calc_perc_take_rate(transactions):
+    transactions['eb_perc_take_rate'] = (
+        transactions['sale__gtf_esf__epp'] / transactions['sale__payment_amount__epp'] * 100
+    ).round(2)
+    transactions.eb_perc_take_rate.replace(np.nan, 0.00, regex=True, inplace=True)
+    return transactions
+
+
+def filter_transactions(transactions, **kwargs):
+    conditions = [
+        transactions[key] == kwargs.get(key).strip()
+        for key in kwargs
+        if key in ['event_id', 'email', 'currency', 'eventholder_user_id'] and kwargs.get(key)
+    ]
+    if kwargs.get('start_date'):
+        start_date = np.datetime64(kwargs['start_date'], 'D')
+        if kwargs.get('end_date'):
+            end_date = np.datetime64(kwargs['end_date'], 'D')
+            conditions.insert(
+                0,
+                transactions['transaction_created_date'] >= start_date
+            )
+            conditions.insert(
+                0,
+                transactions['transaction_created_date'] <= end_date
+            )
+        else:
+            conditions.insert(
+                0,
+                transactions['transaction_created_date'] == start_date
+            )
+    if not conditions:
+        return transactions
+    return transactions[reduce(np.logical_and, conditions)]
+
+
 def group_transactions(transactions, by):
     time_groupby = {
         'day': 'D',
@@ -230,15 +240,7 @@ def group_transactions(transactions, by):
     return grouped
 
 
-def calc_perc_take_rate(transactions):
-    transactions['eb_perc_take_rate'] = (
-        transactions['sale__gtf_esf__epp'] / transactions['sale__payment_amount__epp'] * 100
-    ).round(2)
-    transactions.eb_perc_take_rate.replace(np.nan, 0.00, regex=True, inplace=True)
-    return transactions
-
-
-def manage_transactions(transactions, corrections, organizer_sales, organizer_refunds, usd=None, **kwargs):
+def generate_transactions_consolidation(transactions, corrections, organizer_sales, organizer_refunds):
     transactions = clean_transactions(transactions)
     corrections = clean_corrections(corrections)
     trx_total = merge_corrections(transactions, corrections)
@@ -246,24 +248,27 @@ def manage_transactions(transactions, corrections, organizer_sales, organizer_re
     organizers_refunds = clean_organizer_refunds(organizer_refunds)
     merged = merge_transactions(trx_total, organizers_sales, organizers_refunds)
     merged = calc_perc_take_rate(merged)
-    filtered = filter_transactions(merged, **kwargs)
+    return merged.round(2)
+
+
+def manage_transactions(transactions, usd=None, **kwargs):
+    filtered = filter_transactions(transactions, **kwargs)
     filtered = convert_dataframe_to_usd(filtered, usd)
     if kwargs.get('groupby'):
         filtered = group_transactions(filtered, kwargs.get('groupby'))
     return filtered.round(2)
 
 
-def event_details(event_id, eventholder_user_id, organizer_sales):
-    organizer_sales = clean_organizer_sales(organizer_sales)
-    organizer_sales = organizer_sales[organizer_sales['event_id'] == event_id]
+def event_details(transactions, event_id, eventholder_user_id):
+    transactions = transactions[transactions['event_id'] == event_id]
     details = {
         'Event ID': event_id,
-        'Event Title': organizer_sales.iloc[0]['event_title'] if len(organizer_sales) > 0 else '',
+        'Event Title': transactions.iloc[0]['event_title'] if len(transactions) > 0 else '',
         'Organizer ID': eventholder_user_id,
-        'Organizer Name': organizer_sales.iloc[0]['organizer_name'] if len(organizer_sales) > 0 else '',
-        'Email': organizer_sales.iloc[0]['email'] if len(organizer_sales) > 0 else '',
-        'Sales Flag': organizer_sales.iloc[0]['sales_flag'] if len(organizer_sales) > 0 else '',
-        'Sales Vertical': organizer_sales.iloc[0]['sales_vertical'] if len(organizer_sales) > 0 else '',
+        'Organizer Name': transactions.iloc[0]['organizer_name'] if len(transactions) > 0 else '',
+        'Email': transactions.iloc[0]['email'] if len(transactions) > 0 else '',
+        'Sales Flag': transactions.iloc[0]['sales_flag'] if len(transactions) > 0 else '',
+        'Sales Vertical': transactions.iloc[0]['sales_vertical'] if len(transactions) > 0 else '',
     }
     return details
 
@@ -276,12 +281,9 @@ def summarize_dataframe(dataframe):
     }
 
 
-def get_event_transactions(transactions, corrections, organizer_sales, organizer_refunds, usd, event_id, **kwargs):
+def get_event_transactions(transactions, usd, event_id, **kwargs):
     event_transactions = manage_transactions(
         transactions,
-        corrections,
-        organizer_sales,
-        organizer_refunds,
         usd=usd,
         event_id=event_id,
     )
@@ -289,9 +291,9 @@ def get_event_transactions(transactions, corrections, organizer_sales, organizer
     event_total = summarize_dataframe(filtered)
     if len(event_transactions) > 0:
         details = event_details(
+            transactions,
             event_id,
             event_transactions.iloc[0]['eventholder_user_id'],
-            organizer_sales,
         )
         details['PaidTix'] = event_total['PaidTix']
         details['AVG Ticket Value'] = round(event_total['sale__payment_amount__epp'] / event_total['PaidTix'], 2) \
@@ -319,30 +321,18 @@ def get_event_transactions(transactions, corrections, organizer_sales, organizer
     return filtered, details, sales_refunds, net_sales_refunds
 
 
-def get_organizer_transactions(
-    transactions,
-    corrections,
-    organizer_sales,
-    organizer_refunds,
-    eventholder_user_id,
-    usd,
-    **kwargs
-):
+def get_organizer_transactions(transactions, eventholder_user_id, usd, **kwargs):
     organizer_transactions = manage_transactions(
         transactions,
-        corrections,
-        organizer_sales,
-        organizer_refunds,
         usd=usd,
         eventholder_user_id=eventholder_user_id,
     )
     filtered = filter_transactions(organizer_transactions, **kwargs)
     event_total = summarize_dataframe(filtered)
-    organizer_sales = clean_organizer_sales(organizer_sales)
     if len(organizer_transactions) > 0:
         details = {
             'Organizer ID': eventholder_user_id,
-            'Organizer Name': organizer_sales.iloc[0]['organizer_name'] if len(organizer_sales) > 0 else '',
+            'Organizer Name': transactions.iloc[0]['organizer_name'] if len(transactions) > 0 else '',
             'Email': organizer_transactions.iloc[0]['email'],
             'Sales Flag': organizer_transactions.iloc[0]['sales_flag'],
             'Sales Vertical': organizer_transactions.iloc[0]['sales_vertical'],
@@ -434,12 +424,11 @@ def get_top_events(filtered_transactions, usd):
     return top
 
 
-def get_summarized_data(transactions, corrections, organizer_sales, organizer_refunds, usd):
-    trx = manage_transactions(transactions, corrections, organizer_sales, organizer_refunds)
+def get_summarized_data(transactions, usd):
     currencies = {'Argentina': 'ARS', 'Brazil': 'BRL'}
     summarized_data = {}
     for country, currency in currencies.items():
-        filtered = trx[trx['currency'] == currency]
+        filtered = transactions[transactions['currency'] == currency]
         filtered = convert_dataframe_to_usd(filtered, usd)
         summarized_data[country] = {
             'currency': currency if (not usd) or (None in usd.values()) else "USD",
@@ -479,7 +468,7 @@ def get_summarized_data(transactions, corrections, organizer_sales, organizer_re
     return summarized_data
 
 
-def payment_processor_summary(trx_currencies, filter):
+def payment_processor_summary(trx_currencies, filter, usd=None):
     ids = list(range(0, 10))
     json = {}
     filters = {
@@ -489,14 +478,14 @@ def payment_processor_summary(trx_currencies, filter):
     if filter not in filters:
         return json
     column = filters[filter]
-    for trx_currency in trx_currencies:
-        currency = trx_currency.currency.iloc[0]
+    for country, trx_currency in trx_currencies.items():
+        trx_currency = convert_dataframe_to_usd(trx_currency, usd)
         trx_currency.payment_processor.replace('', 'n/a', regex=True, inplace=True)
         filtered = trx_currency.groupby(['payment_processor']).agg({column: sum}).reset_index().round(2)
         filtered = filtered[filtered[column] != 0]
         filtered_names = filtered.payment_processor.tolist()
         filtered_quantities = filtered[column].tolist()
-        json[currency] = {
+        json[country] = {
             'data': [
                 {'name': name, 'id': id, 'quantity': quantity}
                 for name, id, quantity in zip(filtered_names, ids, filtered_quantities)
@@ -505,42 +494,42 @@ def payment_processor_summary(trx_currencies, filter):
     return json
 
 
-def sales_flag_summary(trx_currencies, filter):
+def sales_flag_summary(trx_currencies, filter, usd=None):
     ids = list(range(0, 10))
     json = {}
     if filter == 'organizers':
-        for trx_currency in trx_currencies:
-            currency = trx_currency.currency.iloc[0]
+        for country, trx_currency in trx_currencies.items():
+            trx_currency = convert_dataframe_to_usd(trx_currency, usd)
             org = trx_currency.groupby(
                 ['eventholder_user_id', 'sales_flag']
             ).sum().reset_index().sales_flag.value_counts()
             org_names = org.index.to_list()
             org_quantities = org.values.tolist()
-            json[currency] = {
+            json[country] = {
                 'data': [
                     {'name': name, 'id': id, 'quantity': quantity}
                     for name, id, quantity in zip(org_names, ids, org_quantities)
                 ]
             }
     elif filter == 'gtf':
-        for trx_currency in trx_currencies:
-            currency = trx_currency.currency.iloc[0]
+        for country, trx_currency in trx_currencies.items():
+            trx_currency = convert_dataframe_to_usd(trx_currency, usd)
             gtf = trx_currency.groupby(['sales_flag']).agg({'sale__gtf_esf__epp': sum}).reset_index().round(2)
             gtf_names = gtf.sales_flag.to_list()
             gtf_quantities = gtf.sale__gtf_esf__epp.tolist()
-            json[currency] = {
+            json[country] = {
                 'data': [
                     {'name': name, 'id': id, 'quantity': quantity}
                     for name, id, quantity in zip(gtf_names, ids, gtf_quantities)
                 ]
             }
     elif filter == 'gtv':
-        for trx_currency in trx_currencies:
-            currency = trx_currency.currency.iloc[0]
+        for country, trx_currency in trx_currencies.items():
+            trx_currency = convert_dataframe_to_usd(trx_currency, usd)
             gtv = trx_currency.groupby(['sales_flag']).agg({'sale__payment_amount__epp': sum}).reset_index().round(2)
             gtv_names = gtv.sales_flag.to_list()
             gtv_quantities = gtv.sale__payment_amount__epp.tolist()
-            json[currency] = {
+            json[country] = {
                 'data': [
                     {'name': name, 'id': id, 'quantity': quantity}
                     for name, id, quantity in zip(gtv_names, ids, gtv_quantities)
@@ -549,16 +538,16 @@ def sales_flag_summary(trx_currencies, filter):
     return json
 
 
-def get_charts_data(transactions, type, filter):
-    trx = transactions.copy()
-    ars = trx[trx['currency'] == 'ARS']
-    brl = trx[trx['currency'] == 'BRL']
-    trx_currencies = [ars, brl]
+def get_charts_data(transactions, type, filter, usd=None):
+    trx_currencies = {
+        'Argentina': transactions[transactions['currency'] == 'ARS'],
+        'Brazil': transactions[transactions['currency'] == 'BRL'],
+    }
     json = {}
     if type == 'payment_processor':
-        json = payment_processor_summary(trx_currencies, filter)
+        json = payment_processor_summary(trx_currencies, filter, usd)
     elif type == 'sales_flag':
-        json = sales_flag_summary(trx_currencies, filter)
+        json = sales_flag_summary(trx_currencies, filter, usd)
     return json
 
 

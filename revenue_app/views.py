@@ -24,6 +24,7 @@ from revenue_app.presto_connection import (
     PrestoError,
 )
 from revenue_app.utils import (
+    generate_transactions_consolidation,
     get_charts_data,
     get_event_transactions,
     get_organizer_transactions,
@@ -178,28 +179,13 @@ TOP_EVENTS_COLUMNS = {
 
 class QueriesRequiredMixin():
     def dispatch(self, request, *args, **kwargs):
-        if any([
-            request.session.get(dataframe) is None
-            for dataframe in ['transactions', 'corrections', 'organizer_sales', 'organizer_refunds']
-        ]) or not request.session.get('query_info') or None in request.session.get('query_info').values():
+        if (
+            request.session.get('transactions') is None
+             or not request.session.get('query_info')
+             or None in request.session.get('query_info').values()
+        ):
             return HttpResponseRedirect(resolve_url('make-query'))
         return super().dispatch(request, *args, **kwargs)
-
-
-class Dashboard(QueriesRequiredMixin, TemplateView):
-    template_name = 'revenue_app/dashboard.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['summarized_data'] = get_summarized_data(
-            self.request.session.get('transactions').copy(),
-            self.request.session.get('corrections').copy(),
-            self.request.session.get('organizer_sales').copy(),
-            self.request.session.get('organizer_refunds').copy(),
-            self.request.session.get('usd'),
-        )
-        context['title'] = 'Dashboard'
-        return context
 
 
 class MakeQuery(FormView):
@@ -223,23 +209,25 @@ class MakeQuery(FormView):
 
         queries_status = []
 
+        dataframes = {
+            'transactions': None,
+            'corrections': None,
+            'organizer_sales': None,
+            'organizer_refunds': None,
+        }
+
         try:
-            for query_name in [
-                'organizer_sales',
-                'organizer_refunds',
-                'transactions',
-                'corrections',
-            ]:
+            for name, value in dataframes.items():
                 dataframe = make_query(
                     start_date=start_date,
                     end_date=end_date,
                     okta_username=okta_username,
                     okta_password=okta_password,
-                    query_name=query_name,
+                    query_name=name,
                 )
-                self.request.session[query_name] = dataframe
+                dataframes[name] = dataframe
                 queries_status.append(
-                    f'{query_name} ran successfully.'
+                    f'{name} ran successfully.'
                 )
         except PrestoError as exception:
             form.add_error(None, exception.args[0])
@@ -249,6 +237,7 @@ class MakeQuery(FormView):
                 'start_date': datetime.strptime(start_date, '%Y-%m-%d').date(),
                 'end_date': datetime.strptime(end_date, '%Y-%m-%d').date(),
             }
+            self.request.session['transactions'] = generate_transactions_consolidation(**dataframes)
 
         return self.render_to_response(
             self.get_context_data(
@@ -258,6 +247,19 @@ class MakeQuery(FormView):
         )
 
 
+class Dashboard(QueriesRequiredMixin, TemplateView):
+    template_name = 'revenue_app/dashboard.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['summarized_data'] = get_summarized_data(
+            self.request.session.get('transactions').copy(),
+            self.request.session.get('usd'),
+        )
+        context['title'] = 'Dashboard'
+        return context
+
+
 class OrganizersTransactions(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/organizers_transactions.html'
 
@@ -265,9 +267,6 @@ class OrganizersTransactions(QueriesRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         trx = manage_transactions(
             self.request.session.get('transactions').copy(),
-            self.request.session.get('corrections').copy(),
-            self.request.session.get('organizer_sales').copy(),
-            self.request.session.get('organizer_refunds').copy(),
             usd=self.request.session.get('usd'),
             **self.request.GET.dict(),
         )[TRANSACTIONS_COLUMNS]
@@ -284,9 +283,6 @@ class OrganizerTransactions(QueriesRequiredMixin, TemplateView):
         context = super().get_context_data(*args, **kwargs)
         transactions, details, sales_refunds, net_sales_refunds = get_organizer_transactions(
             self.request.session.get('transactions').copy(),
-            self.request.session.get('corrections').copy(),
-            self.request.session.get('organizer_sales').copy(),
-            self.request.session.get('organizer_refunds').copy(),
             self.kwargs['eventholder_user_id'],
             self.request.session.get('usd'),
             **self.request.GET.dict(),
@@ -310,9 +306,6 @@ class TopOrganizersLatam(QueriesRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         trx = manage_transactions(
             self.request.session.get('transactions').copy(),
-            self.request.session.get('corrections').copy(),
-            self.request.session.get('organizer_sales').copy(),
-            self.request.session.get('organizer_refunds').copy(),
             **(self.request.GET.dict()),
         )
         context['title'] = 'Top Organizers'
@@ -334,9 +327,6 @@ class TopOrganizersRefundsLatam(QueriesRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         trx = manage_transactions(
             self.request.session.get('transactions').copy(),
-            self.request.session.get('corrections').copy(),
-            self.request.session.get('organizer_sales').copy(),
-            self.request.session.get('organizer_refunds').copy(),
             **(self.request.GET.dict()),
         )
         context['title'] = 'Top Organizers Refunds'
@@ -360,9 +350,6 @@ class TransactionsEvent(QueriesRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         transactions, details, sales_refunds, net_sales_refunds = get_event_transactions(
             self.request.session.get('transactions').copy(),
-            self.request.session.get('corrections').copy(),
-            self.request.session.get('organizer_sales').copy(),
-            self.request.session.get('organizer_refunds').copy(),
             self.request.session.get('usd'),
             self.kwargs['event_id'],
             **(self.request.GET.dict()),
@@ -386,9 +373,6 @@ class TopEventsLatam(QueriesRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         trx = manage_transactions(
             self.request.session.get('transactions').copy(),
-            self.request.session.get('corrections').copy(),
-            self.request.session.get('organizer_sales').copy(),
-            self.request.session.get('organizer_refunds').copy(),
             **(self.request.GET.dict()),
         )
         context['title'] = 'Top Events'
@@ -410,9 +394,6 @@ class TransactionsGrouped(QueriesRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         trx = manage_transactions(
             self.request.session.get('transactions').copy(),
-            self.request.session.get('corrections').copy(),
-            self.request.session.get('organizer_sales').copy(),
-            self.request.session.get('organizer_refunds').copy(),
             usd=self.request.session.get('usd'),
             **(self.request.GET.dict()),
         )
@@ -423,12 +404,7 @@ class TransactionsGrouped(QueriesRequiredMixin, TemplateView):
 
 
 def top_organizers_json_data(request):
-    trx = manage_transactions(
-        request.session.get('transactions'),
-        request.session.get('corrections'),
-        request.session.get('organizer_sales'),
-        request.session.get('organizer_refunds'),
-    )
+    trx = request.session.get('transactions').copy()
     ids = list(range(0, 11))
     top_organizers_ars = get_top_organizers(
         trx[trx['currency'] == 'ARS'],
@@ -460,12 +436,7 @@ def top_organizers_json_data(request):
 
 
 def top_organizers_refunds_json_data(request):
-    trx = manage_transactions(
-        request.session.get('transactions'),
-        request.session.get('corrections'),
-        request.session.get('organizer_sales'),
-        request.session.get('organizer_refunds'),
-    )
+    trx = request.session.get('transactions').copy()
     ids = list(range(0, 11))
     top_organizers_ars = get_top_organizers_refunds(
         trx[trx['currency'] == 'ARS'],
@@ -497,12 +468,7 @@ def top_organizers_refunds_json_data(request):
 
 
 def top_events_json_data(request):
-    trx = manage_transactions(
-        request.session.get('transactions'),
-        request.session.get('corrections'),
-        request.session.get('organizer_sales'),
-        request.session.get('organizer_refunds'),
-    )
+    trx = request.session.get('transactions').copy()
     ids = list(range(0, 11))
     top_events_ars = get_top_events(
             trx[trx['currency'] == 'ARS'],
@@ -534,15 +500,9 @@ def top_events_json_data(request):
 
 
 def dashboard_summary(request):
-    transactions = manage_transactions(
-        request.session.get('transactions'),
-        request.session.get('corrections'),
-        request.session.get('organizer_sales'),
-        request.session.get('organizer_refunds'),
-        usd=request.session.get('usd'),
-    )
+    transactions = request.session.get('transactions').copy()
     if request.GET.get('type') and request.GET.get('filter'):
-        res = get_charts_data(transactions, request.GET.get('type'), request.GET.get('filter'))
+        res = get_charts_data(transactions, request.GET.get('type'), request.GET.get('filter'), usd=request.session.get('usd'))
         return JsonResponse(res, status=200)
     return JsonResponse({}, status=400)
 

@@ -1,9 +1,8 @@
-function createCanvasData(){
+function createCanvasData(ars, brl){
 
-  let canvasData = {
-    'ARS': {},
-    'BRL': {}
-  }
+  let canvasData = {};
+  canvasData[ars] = {};
+  canvasData[brl] = {};
 
   Object.keys(canvasData).forEach(function(key){
 
@@ -37,7 +36,7 @@ function createCanvasData(){
 function generateTopPDF(filename) {
 
   let navBar = document.getElementsByTagName("nav")[0];
-  let canvasData = createCanvasData();
+  let canvasData = createCanvasData('ARS', 'BRL');
 
   let doc = new jsPDF('p', 'pt', 'a4');
 
@@ -113,7 +112,7 @@ function generateDetailPDF(filename) {
 function generateDashboardChartPDF() {
 
   let navBar = document.getElementsByTagName("nav")[0];
-  let canvasData = createCanvasData();
+  let canvasData = createCanvasData('Argentina', 'Brazil');
 
   let doc = new jsPDF('p', 'pt', 'a4');
 
@@ -123,16 +122,16 @@ function generateDashboardChartPDF() {
     doc.addImage(canvas, 0, 0);
     doc.internal.scaleFactor = 3.2;
   })
-  .then(canvas => html2canvas(canvasData.ARS.title))
+  .then(canvas => html2canvas(canvasData.Argentina.title))
   .then(canvas => {
     doc.addImage(canvas, 80, 60);
-    doc.addImage(canvasData.ARS.imgChart, 'PNG', 60, 80, 180, 180);
-    doc.addImage(canvasData.ARS.imgLegend, 'PNG', 60, 260, 180, 60);
-  }).then(canvas => html2canvas(canvasData.BRL.title))
+    doc.addImage(canvasData.Argentina.imgChart, 'PNG', 60, 80, 180, 180);
+    doc.addImage(canvasData.Argentina.imgLegend, 'PNG', 60, 260, 180, 60);
+  }).then(canvas => html2canvas(canvasData.Brazil.title))
   .then(canvas => {
     doc.addImage(canvas, 340, 60);
-    doc.addImage(canvasData.BRL.imgChart, 'PNG', 320, 80, 180, 180);
-    doc.addImage(canvasData.BRL.imgLegend, 'PNG', 320, 260, 180, 60);
+    doc.addImage(canvasData.Brazil.imgChart, 'PNG', 320, 80, 180, 180);
+    doc.addImage(canvasData.Brazil.imgLegend, 'PNG', 320, 260, 180, 60);
     doc.save(`dashboard_charts_${getTimeNow()}.pdf`);
   });
 
