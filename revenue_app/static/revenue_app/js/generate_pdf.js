@@ -1,16 +1,16 @@
 function createCanvasData(){
 
   let canvasData = {
-    'ars': {},
-    'brl': {}
+    'ARS': {},
+    'BRL': {}
   }
 
   Object.keys(canvasData).forEach(function(key){
 
     canvasData[key]['title'] = document.getElementById(`title-${key}`);
     canvasData[key]['table'] = document.getElementById(`dynamic-table-${key}`);
-    var svgChart = document.getElementById(`chart-top-${key}`).innerHTML;
-    var svgLegend = document.getElementById(`legend-top-${key}`).innerHTML;
+    var svgChart = document.getElementById(`chart-${key}`).innerHTML;
+    var svgLegend = document.getElementById(`legend-${key}`).innerHTML;
 
     svgChart = svgChart.replace(/\r?\n|\r/g, '').trim();
     svgLegend = svgLegend.replace(/\r?\n|\r/g, '').trim();
@@ -29,7 +29,6 @@ function createCanvasData(){
     canvasData[key]['imgLegend'] = canvasLegend.toDataURL('image/png');
 
   });
-
   return canvasData;
 
 };
@@ -40,7 +39,7 @@ function generateTopPDF(filename) {
   let navBar = document.getElementsByTagName("nav")[0];
   let canvasData = createCanvasData();
 
-  var doc = new jsPDF('p', 'pt', 'a4');
+  let doc = new jsPDF('p', 'pt', 'a4');
 
   html2canvas(navBar)
   .then(canvas => {
@@ -48,30 +47,32 @@ function generateTopPDF(filename) {
     doc.addImage(canvas, 0, 0);
     doc.internal.scaleFactor = 3.6;
   })
-  .then(canvas => html2canvas(canvasData.ars.title))
+  .then(canvas => html2canvas(canvasData.ARS.title))
   .then(canvas => doc.addImage(canvas, 60, 45))
-  .then(canvas => html2canvas(canvasData.ars.table))
+  .then(canvas => html2canvas(canvasData.ARS.table))
   .then(canvas => {
     doc.addImage(canvas, 60, 85);
-    doc.addImage(canvasData.ars.imgChart, 'PNG', 80, 245, 180, 180);
-    doc.addImage(canvasData.ars.imgLegend, 'PNG', 280, 255, 180, 160);
-  }).then(canvas => html2canvas(canvasData.brl.title))
+    doc.addImage(canvasData.ARS.imgChart, 'PNG', 80, 245, 180, 180);
+    doc.addImage(canvasData.ARS.imgLegend, 'PNG', 280, 255, 180, 160);
+  }).then(canvas => html2canvas(canvasData.BRL.title))
   .then(canvas => doc.addImage(canvas, 60, 440))
-  .then(canvas => html2canvas(canvasData.brl.table))
+  .then(canvas => html2canvas(canvasData.BRL.table))
   .then(canvas => {
     doc.addImage(canvas, 60, 480);
-    doc.addImage(canvasData.brl.imgChart, 'PNG', 80, 640, 180, 180);
-    doc.addImage(canvasData.brl.imgLegend, 'PNG', 280, 650, 180, 160);
+    doc.addImage(canvasData.BRL.imgChart, 'PNG', 80, 640, 180, 180);
+    doc.addImage(canvasData.BRL.imgLegend, 'PNG', 280, 650, 180, 160);
     doc.save(`${filename}_${getTimeNow()}.pdf`);
   });
 
 };
 
 function generateDashboardPDF() {
+
   let navBar = document.getElementsByTagName("nav")[0];
-  var title = document.getElementById('title');
-  var summarizedData = document.getElementById('summarized-data');
-  var doc = new jsPDF('p', 'pt', 'a4');
+  let title = document.getElementById('title');
+  let summarizedData = document.getElementById('summarized-data');
+
+  let doc = new jsPDF('p', 'pt', 'a4');
 
   html2canvas(navBar)
   .then(canvas => {
@@ -88,10 +89,12 @@ function generateDashboardPDF() {
 };
 
 function generateDetailPDF(filename) {
+
   let navBar = document.getElementsByTagName("nav")[0];
-  var title = document.getElementById('title');
-  var summarizedData = document.getElementById('summarized-data');
-  var doc = new jsPDF('p', 'pt', 'a4');
+  let title = document.getElementById('title');
+  let summarizedData = document.getElementById('summarized-data');
+
+  let doc = new jsPDF('p', 'pt', 'a4');
 
   html2canvas(navBar)
   .then(canvas => {
@@ -107,11 +110,12 @@ function generateDetailPDF(filename) {
 
 };
 
-function generateChartPDF() {
-  let navBar = document.getElementsByTagName("nav")[0];
+function generateDashboardChartPDF() {
 
-  var chartContainer = document.getElementById('chart-container');
-  var doc = new jsPDF('p', 'pt', 'a4');
+  let navBar = document.getElementsByTagName("nav")[0];
+  let canvasData = createCanvasData();
+
+  let doc = new jsPDF('p', 'pt', 'a4');
 
   html2canvas(navBar)
   .then(canvas => {
@@ -119,9 +123,16 @@ function generateChartPDF() {
     doc.addImage(canvas, 0, 0);
     doc.internal.scaleFactor = 3.2;
   })
-  .then(canvas => html2canvas(chartContainer))
+  .then(canvas => html2canvas(canvasData.ARS.title))
   .then(canvas => {
-    doc.addImage(canvas, 40, 70);
+    doc.addImage(canvas, 80, 60);
+    doc.addImage(canvasData.ARS.imgChart, 'PNG', 60, 80, 180, 180);
+    doc.addImage(canvasData.ARS.imgLegend, 'PNG', 60, 260, 180, 60);
+  }).then(canvas => html2canvas(canvasData.BRL.title))
+  .then(canvas => {
+    doc.addImage(canvas, 340, 60);
+    doc.addImage(canvasData.BRL.imgChart, 'PNG', 320, 80, 180, 180);
+    doc.addImage(canvasData.BRL.imgLegend, 'PNG', 320, 260, 180, 60);
     doc.save(`dashboard_charts_${getTimeNow()}.pdf`);
   });
 

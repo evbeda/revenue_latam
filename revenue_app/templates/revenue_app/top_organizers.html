@@ -6,7 +6,7 @@
   <div class="col-12">
     <div class="dropdown show">
       <h1 class="text-center">
-        <span id="title-ars">Top 10 Argentina Organizers</span>
+        <span id="title-ARS">Top 10 Argentina Organizers</span>
         <a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
           <a id="getPdf" href="" class="dropdown-item"><i class="fas fa-file-pdf"></i>PDF</a>
@@ -19,7 +19,7 @@
   </div>
 </div>
 <br>
-<div id="dynamic-table-ars" class="row">
+<div id="dynamic-table-ARS" class="row">
 {% if request.session.usd.ARS %}
   {% include 'revenue_app/_dynamic_table.html' with transactions=top_ars int=True currency='USD' %}
 {% else %}
@@ -29,12 +29,12 @@
 <div class="row">
   <div class="col-6">
     <div class="card--chart">
-      <div id="chart-top-ars" class="js-donut-chart-container-ars donut-chart-container"></div>
+      <div id="chart-ARS" class="js-donut-chart-container-ars donut-chart-container"></div>
     </div>
   </div>
   <div class="col-6">
     <div class="card--chart">
-      <div id="legend-top-ars" class="js-legend-chart-container-ars legend-chart-container"></div>
+      <div id="legend-ARS" class="js-legend-chart-container-ars legend-chart-container"></div>
     </div>
   </div>
 </div>
@@ -44,7 +44,7 @@
 <div class="row m-0">
   <div class="col-12">
     <h1 class="text-center">
-      <span id="title-brl">Top 10 Brazil Organizers</span>
+      <span id="title-BRL">Top 10 Brazil Organizers</span>
     </h1>
     {% if request.GET.start_date %}
       <h5 class="text-center">from {{request.GET.start_date}} to {{request.GET.end_date|default:request.GET.start_date}}</h5>
@@ -52,7 +52,7 @@
   </div>
 </div>
 <br>
-<div id="dynamic-table-brl" class="row">
+<div id="dynamic-table-BRL" class="row">
 {% if request.session.usd.BRL %}
   {% include 'revenue_app/_dynamic_table.html' with transactions=top_brl int=True currency='USD' %}
 {% else %}
@@ -62,12 +62,12 @@
 <div class="row">
   <div class="col-6">
     <div class="card--chart">
-      <div id="chart-top-brl" class="js-donut-chart-container-brl donut-chart-container"></div>
+      <div id="chart-BRL" class="js-donut-chart-container-brl donut-chart-container"></div>
     </div>
   </div>
   <div class="col-6">
     <div class="card--chart">
-      <div id="legend-top-brl" class="js-legend-chart-container-brl legend-chart-container"></div>
+      <div id="legend-BRL" class="js-legend-chart-container-brl legend-chart-container"></div>
     </div>
   </div>
 </div>

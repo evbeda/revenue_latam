@@ -6,7 +6,7 @@
   <div class="col-12">
     <div class="dropdown show">
       <h1 class="text-center">
-        <span id="title-ars" >
+        <span id="title-ARS" >
           Top 10 Argentina Organizers with most refunds
         </span>
         <a class="btn btn-evb-orange dropdown-toggle fa fa-download" href="#" role="button" data-toggle="dropdown"></a>
@@ -21,7 +21,7 @@
   </div>
 </div>
 <br>
-<div id="dynamic-table-ars" class="row">
+<div id="dynamic-table-ARS" class="row">
 {% if request.session.usd.ARS %}
   {% include 'revenue_app/_dynamic_table.html' with transactions=top_ars int=True currency='USD' %}
 {% else %}
@@ -31,12 +31,12 @@
 <div class="row">
   <div class="col-6">
     <div class="card--chart">
-      <div id="chart-top-ars" class="js-donut-chart-container-ars donut-chart-container"></div>
+      <div id="chart-ARS" class="js-donut-chart-container-ars donut-chart-container"></div>
     </div>
   </div>
   <div class="col-6">
     <div class="card--chart">
-      <div id="legend-top-ars" class="js-legend-chart-container-ars legend-chart-container"></div>
+      <div id="legend-ARS" class="js-legend-chart-container-ars legend-chart-container"></div>
     </div>
   </div>
 </div>
@@ -46,7 +46,7 @@
 <div class="row m-0">
   <div class="col-12">
     <h1 class="text-center">
-      <span id="title-brl">
+      <span id="title-BRL">
         Top 10 Brazil Organizers with most refunds
       </span>
     </h1>
@@ -56,7 +56,7 @@
   </div>
 </div>
 <br>
-<div id="dynamic-table-brl" class="row">
+<div id="dynamic-table-BRL" class="row">
 {% if request.session.usd.BRL %}
   {% include 'revenue_app/_dynamic_table.html' with transactions=top_brl int=True currency='USD' %}
 {% else %}
@@ -66,12 +66,12 @@
 <div class="row">
   <div class="col-6">
     <div class="card--chart">
-      <div id="chart-top-brl" class="js-donut-chart-container-brl donut-chart-container"></div>
+      <div id="chart-BRL" class="js-donut-chart-container-brl donut-chart-container"></div>
     </div>
   </div>
   <div class="col-6">
     <div class="card--chart">
-      <div id="legend-top-brl" class="js-legend-chart-container-brl legend-chart-container"></div>
+      <div id="legend-BRL" class="js-legend-chart-container-brl legend-chart-container"></div>
     </div>
   </div>
 </div>
