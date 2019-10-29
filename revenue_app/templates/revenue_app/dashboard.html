@@ -95,9 +95,9 @@
     document.getElementById('chart-selector').addEventListener('submit', e => {
 
       e.preventDefault();
-      let type = document.getElementById('type-selector').value;
-      let filter = document.getElementById('filter-selector').value;
-      fetch(`{% url "json_dashboard_summary" %}?type=${type}&filter=${filter}`)
+      let type = document.getElementById('type-selector');
+      let filter = document.getElementById('filter-selector');
+      fetch(`{% url "json_dashboard_summary" %}?type=${type.value}&filter=${filter.value}`)
         .then(res => res.json())
         .then(json => {
           if (jQuery.isEmptyObject(json)){
@@ -110,7 +110,7 @@
             document.getElementById('setButton').innerHTML = '';
           } else {
             document.getElementById('setButton').innerHTML = '<a id="getChartPdf" href="" class="btn btn-evb-orange"><i class="fas fa-file-pdf"></i> PDF</a>';
-            setChart(json);
+            setChart(json, type, filter);
           }
         })
     });

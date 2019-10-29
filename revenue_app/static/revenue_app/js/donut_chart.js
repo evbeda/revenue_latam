@@ -31,7 +31,7 @@ function createDonutChart(data, node,legendHeight) {
   legendContainer.datum(data.data).call(legendChart);
 }
 
-function setChart(json) {
+function setChart(json, type, filter) {
   const container = document.getElementById('chart-container');
   container.innerHTML = '';
   let legendHeight = 150;
@@ -43,7 +43,7 @@ function setChart(json) {
     let chart = document.createElement('div');
     let legend = document.createElement('div');
 
-    chartTitle.innerText = key;
+    chartTitle.innerText = `${type.selectedOptions[0].text} referred to ${filter.selectedOptions[0].text} for ${key}`;
     chartTitle.id = `title-${key}`;
     chartWrapper.classList.add('dashboard-chart-container', 'col-xl-6');
     chartCard.classList.add('card--chart');
