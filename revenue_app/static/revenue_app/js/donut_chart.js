@@ -44,10 +44,13 @@ function setChart(json) {
     let legend = document.createElement('div');
 
     chartTitle.innerText = key;
+    chartTitle.id = `title-${key}`;
     chartWrapper.classList.add('dashboard-chart-container', 'col-xl-6');
     chartCard.classList.add('card--chart');
     chart.classList.add(`js-donut-chart-container-${key}`, 'donut-chart-container');
+    chart.id = `chart-${key}`;
     legend.classList.add(`js-legend-chart-container-${key}`, 'legend-chart-container');
+    legend.id = `legend-${key}`;
 
     chartCard.appendChild(chartTitle);
     chartCard.appendChild(chart);
