@@ -181,8 +181,8 @@ class QueriesRequiredMixin():
     def dispatch(self, request, *args, **kwargs):
         if (
             request.session.get('transactions') is None
-             or not request.session.get('query_info')
-             or None in request.session.get('query_info').values()
+            or not request.session.get('query_info')
+            or None in request.session.get('query_info').values()
         ):
             return HttpResponseRedirect(resolve_url('make-query'))
         return super().dispatch(request, *args, **kwargs)
@@ -404,28 +404,31 @@ class TransactionsGrouped(QueriesRequiredMixin, TemplateView):
 
 
 def top_organizers_json_data(request):
+    usd = request.session.get('usd')
     trx = request.session.get('transactions').copy()
     ids = list(range(0, 11))
     top_organizers_ars = get_top_organizers(
         trx[trx['currency'] == 'ARS'],
-        request.session.get('usd'),
+        usd,
     )
     ars_names = top_organizers_ars['email'].tolist()
     ars_quantities = top_organizers_ars['sale__gtf_esf__epp'].tolist()
     top_organizers_brl = get_top_organizers(
         trx[trx['currency'] == 'BRL'],
-        request.session.get('usd'),
+        usd,
     )
     brl_names = top_organizers_brl['email'].tolist()
     brl_quantities = top_organizers_brl['sale__gtf_esf__epp'].tolist()
     res = json.dumps({
         'ars_data': {
+            'unit': 'ARS' if (not usd) or (None in usd.values()) else "USD",
             'data': [
                 {'name': name, 'id': id, 'quantity': quantity}
                 for name, id, quantity in zip(ars_names, ids, ars_quantities)
             ]
         },
         'brl_data': {
+            'unit': 'BRL' if (not usd) or (None in usd.values()) else "USD",
             'data': [
                 {'name': name, 'id': id, 'quantity': quantity}
                 for name, id, quantity in zip(brl_names, ids, brl_quantities)
@@ -436,28 +439,31 @@ def top_organizers_json_data(request):
 
 
 def top_organizers_refunds_json_data(request):
+    usd = request.session.get('usd')
     trx = request.session.get('transactions').copy()
     ids = list(range(0, 11))
     top_organizers_ars = get_top_organizers_refunds(
         trx[trx['currency'] == 'ARS'],
-        request.session.get('usd'),
+        usd,
     )
     ars_names = top_organizers_ars['email'].tolist()
     ars_quantities = top_organizers_ars['refund__gtf_epp__gtf_esf__epp'].tolist()
     top_organizers_brl = get_top_organizers_refunds(
         trx[trx['currency'] == 'BRL'],
-        request.session.get('usd'),
+        usd,
     )
     brl_names = top_organizers_brl['email'].tolist()
     brl_quantities = top_organizers_brl['refund__gtf_epp__gtf_esf__epp'].tolist()
     res = json.dumps({
         'ars_data': {
+            'unit': 'ARS' if (not usd) or (None in usd.values()) else "USD",
             'data': [
                 {'name': name, 'id': id, 'quantity': abs(quantity)}
                 for name, id, quantity in zip(ars_names, ids, ars_quantities)
             ]
         },
         'brl_data': {
+            'unit': 'BRL' if (not usd) or (None in usd.values()) else "USD",
             'data': [
                 {'name': name, 'id': id, 'quantity': abs(quantity)}
                 for name, id, quantity in zip(brl_names, ids, brl_quantities)
@@ -468,28 +474,31 @@ def top_organizers_refunds_json_data(request):
 
 
 def top_events_json_data(request):
+    usd = request.session.get('usd')
     trx = request.session.get('transactions').copy()
     ids = list(range(0, 11))
     top_events_ars = get_top_events(
-            trx[trx['currency'] == 'ARS'],
-            request.session.get('usd'),
-        )
+        trx[trx['currency'] == 'ARS'],
+        usd,
+    )
     ars_names = [f'[{id}] {title[:20]}' for id, title in zip(top_events_ars['event_id'], top_events_ars['event_title'])]
     ars_quantities = top_events_ars['sale__gtf_esf__epp'].tolist()
     top_events_brl = get_top_events(
-            trx[trx['currency'] == 'BRL'],
-            request.session.get('usd'),
-        )
+        trx[trx['currency'] == 'BRL'],
+        usd,
+    )
     brl_names = [f'[{id}] {title[:20]}' for id, title in zip(top_events_brl['event_id'], top_events_brl['event_title'])]
     brl_quantities = top_events_brl['sale__gtf_esf__epp'].tolist()
     res = json.dumps({
         'ars_data': {
+            'unit': 'ARS' if (not usd) or (None in usd.values()) else "USD",
             'data': [
                 {'name': name, 'id': id, 'quantity': quantity}
                 for name, id, quantity in zip(ars_names, ids, ars_quantities)
             ]
         },
         'brl_data': {
+            'unit': 'BRL' if (not usd) or (None in usd.values()) else "USD",
             'data': [
                 {'name': name, 'id': id, 'quantity': quantity}
                 for name, id, quantity in zip(brl_names, ids, brl_quantities)
@@ -502,7 +511,12 @@ def top_events_json_data(request):
 def dashboard_summary(request):
     transactions = request.session.get('transactions').copy()
     if request.GET.get('type') and request.GET.get('filter'):
-        res = get_charts_data(transactions, request.GET.get('type'), request.GET.get('filter'), usd=request.session.get('usd'))
+        res = get_charts_data(
+            transactions,
+            request.GET.get('type'),
+            request.GET.get('filter'),
+            usd=request.session.get('usd'),
+        )
         return JsonResponse(res, status=200)
     return JsonResponse({}, status=400)
 
@@ -548,10 +562,11 @@ def download_excel(request, xls_name):
         row_num += 1
         for col_num, row_value in enumerate(row_list):
             worksheet.write(row_num, col_num, row_value)
-    if not 'transactions' in xls_name:
+    if 'transactions' not in xls_name:
         workbook = excel_summary(request, workbook, title_style, col_header_style)
     workbook.save(response)
     return response
+
 
 def excel_summary(request, workbook, title_style, col_header_style):
     worksheet = workbook.add_sheet('Summary')

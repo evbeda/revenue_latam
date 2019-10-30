@@ -23,7 +23,8 @@ function createDonutChart(data, node,legendHeight) {
   legendChart
     .width(refWidth)
     .height(legendHeight)
-    .numberFormat('s')
+    .numberFormat(',.0f')
+    .unit(' ' + data.unit)
     .colorSchema(colors);
 
   donutContainer.datum(data.data).call(donutChart);

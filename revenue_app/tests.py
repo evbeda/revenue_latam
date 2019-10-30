@@ -852,7 +852,6 @@ class ViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('make-query'))
 
-
     @parameterized.expand([
         (reverse('organizers-transactions'), 'transactions'),
         (reverse('organizer-transactions', kwargs={'eventholder_user_id': 497321858}), 'organizer_497321858'),
