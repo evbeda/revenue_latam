@@ -480,12 +480,14 @@ def payment_processor_summary(trx_currencies, filter, usd=None):
     column = filters[filter]
     for country, trx_currency in trx_currencies.items():
         trx_currency = convert_dataframe_to_usd(trx_currency, usd)
+        currency = trx_currency.currency.iloc[0]
         trx_currency.payment_processor.replace('', 'n/a', regex=True, inplace=True)
         filtered = trx_currency.groupby(['payment_processor']).agg({column: sum}).reset_index().round(2)
         filtered = filtered[filtered[column] != 0]
         filtered_names = filtered.payment_processor.tolist()
         filtered_quantities = filtered[column].tolist()
         json[country] = {
+            'unit': currency,
             'data': [
                 {'name': name, 'id': id, 'quantity': quantity}
                 for name, id, quantity in zip(filtered_names, ids, filtered_quantities)
@@ -506,6 +508,7 @@ def sales_flag_summary(trx_currencies, filter, usd=None):
             org_names = org.index.to_list()
             org_quantities = org.values.tolist()
             json[country] = {
+                'unit': 'organizers',
                 'data': [
                     {'name': name, 'id': id, 'quantity': quantity}
                     for name, id, quantity in zip(org_names, ids, org_quantities)
@@ -514,10 +517,12 @@ def sales_flag_summary(trx_currencies, filter, usd=None):
     elif filter == 'gtf':
         for country, trx_currency in trx_currencies.items():
             trx_currency = convert_dataframe_to_usd(trx_currency, usd)
+            currency = trx_currency.currency.iloc[0]
             gtf = trx_currency.groupby(['sales_flag']).agg({'sale__gtf_esf__epp': sum}).reset_index().round(2)
             gtf_names = gtf.sales_flag.to_list()
             gtf_quantities = gtf.sale__gtf_esf__epp.tolist()
             json[country] = {
+                'unit': currency,
                 'data': [
                     {'name': name, 'id': id, 'quantity': quantity}
                     for name, id, quantity in zip(gtf_names, ids, gtf_quantities)
@@ -526,10 +531,12 @@ def sales_flag_summary(trx_currencies, filter, usd=None):
     elif filter == 'gtv':
         for country, trx_currency in trx_currencies.items():
             trx_currency = convert_dataframe_to_usd(trx_currency, usd)
+            currency = trx_currency.currency.iloc[0]
             gtv = trx_currency.groupby(['sales_flag']).agg({'sale__payment_amount__epp': sum}).reset_index().round(2)
             gtv_names = gtv.sales_flag.to_list()
             gtv_quantities = gtv.sale__payment_amount__epp.tolist()
             json[country] = {
+                'unit': currency,
                 'data': [
                     {'name': name, 'id': id, 'quantity': quantity}
                     for name, id, quantity in zip(gtv_names, ids, gtv_quantities)
