@@ -362,7 +362,7 @@ def get_organizer_transactions(
     }
     net_sales_refunds = {
         'Total Net Detail': {
-            net: sale + refund
+            net: round(sale + refund, 2)
             for net, sale, refund in zip(
                 NET_COLUMNS,
                 sales_refunds['Total Sales Detail'].values(),

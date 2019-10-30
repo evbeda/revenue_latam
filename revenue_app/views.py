@@ -297,6 +297,9 @@ class OrganizerTransactions(QueriesRequiredMixin, TemplateView):
         context['net_sales_refunds'] = net_sales_refunds
         context['transactions'] = transactions[ORGANIZER_COLUMNS]
         self.request.session['export_transactions'] = transactions
+        self.request.session['export_details'] = details
+        self.request.session['export_sales_refunds'] = sales_refunds
+        self.request.session['export_net_sales_refunds'] = net_sales_refunds
         return context
 
 
@@ -370,6 +373,9 @@ class TransactionsEvent(QueriesRequiredMixin, TemplateView):
         context['net_sales_refunds'] = net_sales_refunds
         context['transactions'] = transactions[EVENT_COLUMNS]
         self.request.session['export_transactions'] = transactions
+        self.request.session['export_details'] = details
+        self.request.session['export_sales_refunds'] = sales_refunds
+        self.request.session['export_net_sales_refunds'] = net_sales_refunds
         return context
 
 
@@ -582,8 +588,42 @@ def download_excel(request, xls_name):
         row_num += 1
         for col_num, row_value in enumerate(row_list):
             worksheet.write(row_num, col_num, row_value)
+    if not 'transactions' in xls_name:
+        workbook = excel_summary(request, workbook, title_style, col_header_style)
     workbook.save(response)
     return response
+
+def excel_summary(request, workbook, title_style, col_header_style):
+    worksheet = workbook.add_sheet('Summary')
+    details = request.session.get('export_details')
+    sales_refunds = request.session.get('export_sales_refunds')
+    net_sales_refunds = request.session.get('export_net_sales_refunds')
+    worksheet.write(1, 1, "Details", title_style)
+    row_num = 2
+    col_num = 1
+    for key, value in details.items():
+        worksheet.write(row_num, col_num, key, col_header_style)
+        worksheet.write(row_num, col_num + 1, str(value))
+        row_num += 1
+    row_num = 2
+    col_num = 5
+    for parent_key, parent_value in sales_refunds.items():
+        worksheet.write(1, col_num, parent_key, title_style)
+        for key, value in parent_value.items():
+            worksheet.write(row_num, col_num, key, col_header_style)
+            worksheet.write(row_num, col_num + 1, str(value))
+            row_num += 1
+        row_num = 2
+        col_num += 2
+    row_num = 2
+    col_num = 9
+    for parent_key, parent_value in net_sales_refunds.items():
+        worksheet.write(1, col_num, parent_key, title_style)
+        for key, value in parent_value.items():
+            worksheet.write(row_num, col_num, key, col_header_style)
+            worksheet.write(row_num, col_num + 1, str(value))
+            row_num += 1
+    return workbook
 
 
 def download_csv(request, csv_name):
