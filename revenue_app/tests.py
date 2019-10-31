@@ -28,6 +28,7 @@ from revenue_app.utils import (
     clean_organizer_refunds,
     clean_organizer_sales,
     clean_transactions,
+    dataframe_to_usd,
     event_details,
     filter_transactions,
     generate_transactions_consolidation,
@@ -43,13 +44,14 @@ from revenue_app.utils import (
     merge_corrections,
     merge_transactions,
     payment_processor_summary,
+    restore_currency,
     sales_flag_summary,
     summarize_dataframe,
-    convert_dataframe_to_usd,
 )
 
 from revenue_app.views import (
     Dashboard,
+    Exchange,
     MakeQuery,
     OrganizerTransactions,
     OrganizersTransactions,
@@ -153,6 +155,21 @@ TOTAL_TRANSACTIONS_COLUMNS = [
     'refund__ap_organizer__gts__epp',
     'refund__ap_organizer__royalty__epp',
     'eb_perc_take_rate',
+]
+
+NEW_EXCHANGE_COLUMNS = [
+    'local_sale__payment_amount__epp',
+    'local_sale__gtf_esf__epp',
+    'local_sale__eb_tax__epp',
+    'local_sale__ap_organizer__gts__epp',
+    'local_sale__ap_organizer__royalty__epp',
+    'local_refund__payment_amount__epp',
+    'local_refund__gtf_epp__gtf_esf__epp',
+    'local_refund__eb_tax__epp',
+    'local_refund__ap_organizer__gts__epp',
+    'local_refund__ap_organizer__royalty__epp',
+    'local_currency',
+    'exchange_rate',
 ]
 
 
@@ -339,16 +356,15 @@ class UtilsTestCase(TestCase):
         self.assertEqual(len(organizer_transactions), expected_length)
 
     @parameterized.expand([
-        ('66220941', 5, 10500, {'ARS': 60, 'BRL': 5}),
-        ('98415193', 6, 13608, {'ARS': 60, 'BRL': 5}),
-        ('17471621', 4, 4500, {'ARS': 60, 'BRL': 5}),
-        ('35210860', 5, 117, {'ARS': 60, 'BRL': 5}),
-        ('88128252', 7, 2405, {'ARS': 60, 'BRL': 5}),
+        ('66220941', 5, 10500),
+        ('98415193', 6, 13608),
+        ('17471621', 4, 4500),
+        ('35210860', 5, 117),
+        ('88128252', 7, 2405),
     ])
-    def test_get_event_transactions(self, event_id, transactions_qty, tickets_qty, usd):
+    def test_get_event_transactions(self, event_id, transactions_qty, tickets_qty):
         transactions, details, sales_refunds, net_sales_refunds = get_event_transactions(
             self.transactions_consolidation,
-            usd,
             event_id,
         )
         self.assertIsInstance(transactions, DataFrame)
@@ -356,17 +372,16 @@ class UtilsTestCase(TestCase):
         self.assertEqual(details['PaidTix'], tickets_qty)
 
     @parameterized.expand([
-        ('497321858', 5, 10500, {'ARS': 60, 'BRL': 5}),
-        ('696421958', 6, 13608, {'ARS': 60, 'BRL': 5}),
-        ('434444537', 4, 4500, {'ARS': 60, 'BRL': 5}),
-        ('506285738', 5, 117, {'ARS': 60, 'BRL': 5}),
-        ('634364434', 7, 2405, {'ARS': 60, 'BRL': 5}),
+        ('497321858', 5, 10500),
+        ('696421958', 6, 13608),
+        ('434444537', 4, 4500),
+        ('506285738', 5, 117),
+        ('634364434', 7, 2405),
     ])
-    def test_get_organizer_transactions(self, eventholder_user_id, transactions_qty, tickets_qty, usd):
+    def test_get_organizer_transactions(self, eventholder_user_id, transactions_qty, tickets_qty):
         transactions, details, sales_refunds, net_sales_refunds = get_organizer_transactions(
             self.transactions_consolidation,
             eventholder_user_id,
-            usd,
         )
         self.assertIsInstance(transactions, DataFrame)
         self.assertEqual(len(transactions), transactions_qty)
@@ -376,11 +391,9 @@ class UtilsTestCase(TestCase):
         trx = self.transactions_consolidation
         top_ars = get_top_organizers(
                 trx[trx['currency'] == 'ARS'],
-                usd={'ARS': None, 'BRL': None},
             )
         top_brl = get_top_organizers(
                 trx[trx['currency'] == 'BRL'],
-                usd={'ARS': None, 'BRL': None},
             )
         self.assertIsInstance(top_ars, DataFrame)
         self.assertIsInstance(top_brl, DataFrame)
@@ -391,11 +404,9 @@ class UtilsTestCase(TestCase):
         trx = self.transactions_consolidation
         top_ars = get_top_organizers_refunds(
                 trx[trx['currency'] == 'ARS'],
-                usd={'ARS': None, 'BRL': None},
             )
         top_brl = get_top_organizers_refunds(
                 trx[trx['currency'] == 'BRL'],
-                usd={'ARS': None, 'BRL': None},
             )
         self.assertIsInstance(top_ars, DataFrame)
         self.assertIsInstance(top_brl, DataFrame)
@@ -406,11 +417,9 @@ class UtilsTestCase(TestCase):
         trx = self.transactions_consolidation
         top_ars = get_top_events(
                 trx[trx['currency'] == 'ARS'],
-                usd={'ARS': None, 'BRL': None},
             )
         top_brl = get_top_events(
                 trx[trx['currency'] == 'BRL'],
-                usd={'ARS': None, 'BRL': None},
             )
         self.assertIsInstance(top_ars, DataFrame)
         self.assertIsInstance(top_brl, DataFrame)
@@ -459,6 +468,19 @@ class UtilsTestCase(TestCase):
             'refund__gtf_epp__gtf_esf__epp': -58.72,
             'refund__ap_organizer__gts__epp': -840.0,
             'refund__eb_tax__epp': -12.34,
+            'refund__ap_organizer__royalty__epp': 0,
+        }),
+        ('634364434', {
+            'PaidTix': 2405,
+            'sale__payment_amount__epp': 21149.25,
+            'sale__eb_tax__epp': 286.2,
+            'sale__ap_organizer__gts__epp': 19500,
+            'sale__ap_organizer__royalty__epp': 0,
+            'sale__gtf_esf__epp': 1363.05,
+            'refund__payment_amount__epp': -4229.85,
+            'refund__gtf_epp__gtf_esf__epp': -272.61,
+            'refund__ap_organizer__gts__epp': -3900,
+            'refund__eb_tax__epp': -57.24,
             'refund__ap_organizer__royalty__epp': 0,
         }),
         ('696421958', {
@@ -587,7 +609,6 @@ class UtilsTestCase(TestCase):
     def test_get_summarized_data(self, country, group, data, expected):
         summarized_data = get_summarized_data(
             self.transactions_consolidation,
-            usd={'ARS': None, 'BRL': None},
         )
         self.assertEqual(summarized_data[country][group][data], expected)
 
@@ -641,16 +662,39 @@ class UtilsTestCase(TestCase):
         self.assertIsInstance(response['Brazil']['data'], list)
 
     @parameterized.expand([
-        ('ARS', {'ARS': 60, 'BRL': 5}, 382.86),
-        ('BRL', {'ARS': 60, 'BRL': 5}, 2466.2),
-        ('ARS', {'ARS': 59.95, 'BRL': 4.92}, 383.18),
-        ('BRL', {'ARS': 59.95, 'BRL': 4.92}, 2506.30),
+        (60.01, 5, 2848.99),
+        (59.95, 4.90, 2899.71),
     ])
-    def test_convert_dataframe_to_usd(self, currency, usd, sale__payment__amount__epp_usd):
+    def test_dataframe_to_usd(self, ars, brl, expected_sum_gtv):
         trx = self.transactions_consolidation
-        filtered = trx[trx['currency'] == currency]
-        filtered = convert_dataframe_to_usd(filtered, usd)
-        self.assertEqual(round(filtered['sale__payment_amount__epp'].sum(), 2), sale__payment__amount__epp_usd)
+        exchange_data = {
+            'August': {
+                'ars_to_usd': ars,
+                'brl_to_usd': brl,
+            }
+        }
+        converted = dataframe_to_usd(trx, exchange_data)
+        for column in NEW_EXCHANGE_COLUMNS:
+            self.assertNotIn(column, trx.columns)
+            self.assertIn(column, converted.columns)
+        self.assertIsInstance(converted, DataFrame)
+        self.assertEqual(converted.sale__payment_amount__epp.sum().round(2), expected_sum_gtv)
+
+    def test_restore_currency(self):
+        TEST_VALUE = 1
+        trx = self.transactions_consolidation
+        exchange_data = {
+            'August': {
+                'ars_to_usd': TEST_VALUE,
+                'brl_to_usd': TEST_VALUE,
+            }
+        }
+        converted = dataframe_to_usd(trx, exchange_data)
+        restored = restore_currency(converted)
+        for column in NEW_EXCHANGE_COLUMNS:
+            self.assertIn(column, converted.columns)
+            self.assertNotIn(column, restored.columns)
+        self.assertIsInstance(restored, DataFrame)
 
 
 class ViewsTest(TestCase):
@@ -674,6 +718,7 @@ class ViewsTest(TestCase):
             'start_date': date(2018, 8, 1),
             'end_date': date(2018, 8, 30),
         }
+        session['exchange_data'] = None
         session.save()
 
     def test_dashboard_view_returns_200(self):
@@ -1060,28 +1105,80 @@ class ViewsTest(TestCase):
             response = self.client.post(URL, kwargs)
         self.assertContains(response, error_message)
 
-    @parameterized.expand([
-        ('Apply', '60', '5', {'ARS': 60, 'BRL': 5}),
-        ('Apply', '59.95', '4.92', {'ARS': 59.95, 'BRL': 4.92}),
-        ('Cancel', None, None, {'ARS': None, 'BRL': None}),
-    ])
-    def test_usd_view_returns_302(self, action, usd_ars, usd_brl, expected_usd):
-        URL = reverse('usd')
-        self.load_dataframes()
-        response = self.client.post(URL, {'apply': action, 'usd_ars': usd_ars, 'usd_brl': usd_brl})
+    def test_exchange_view_returns_302_if_doesnt_have_queries(self):
+        URL = reverse('exchange')
+        response = self.client.get(URL)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.client.session['usd'], expected_usd)
+        self.assertEqual(response.url, reverse('make-query'))
+
+    def test_exchange_view_returns_200(self):
+        URL = reverse('exchange')
+        self.load_dataframes()
+        response = self.client.get(URL)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.template_name[0], Exchange.template_name)
 
     @parameterized.expand([
-        ('/', '/'),
-        ('/events/top', '/events/top'),
+        ({}, 'This field is required.'),
+        (
+            {
+                'August-ars_to_usd': 'invalid',
+                'August-brl_to_usd': 'invalid',
+            },
+            'Enter a number.',
+        ),
+        (
+            {
+                'August-ars_to_usd': -23,
+                'August-brl_to_usd': -45,
+            },
+            'Ensure this value is greater than or equal to 0.01.',
+        ),
     ])
-    def test_usd_view_redirects_to_next(self, next, expected_redirect):
-        URL = reverse('usd')
+    def test_exchange_view_with_invalid_data(self, kwargs, error_message):
+        URL = reverse('exchange')
         self.load_dataframes()
-        response = self.client.post(URL, {'apply': 'Cancel', 'usd_ars': None, 'usd_brl': None, 'next': next})
+        response = self.client.post(URL, kwargs)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.template_name[0], Exchange.template_name)
+        self.assertContains(response, error_message)
+
+
+    def test_exchange_view_returns_200_and_makes_conversion(self):
+        kwargs = {
+            'August-ars_to_usd': 60.01,
+            'August-brl_to_usd': 5.02,
+        }
+
+        URL = reverse('exchange')
+        self.load_dataframes()
+        response = self.client.post(URL, kwargs)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.template_name[0], Exchange.template_name)
+        trx = self.client.session['transactions'].copy()
+        for column in NEW_EXCHANGE_COLUMNS:
+            self.assertIn(column, trx.columns)
+
+    def test_restore_local_currency_view_redirects_to_dashboard(self):
+        TEST_VALUE = 1
+        exchange_data = {
+            'August': {
+                'ars_to_usd': TEST_VALUE,
+                'brl_to_usd': TEST_VALUE,
+            }
+        }
+        URL = reverse('restore-currency')
+        self.load_dataframes()
+        session = self.client.session
+        trx = session.get('transactions').copy()
+        converted = dataframe_to_usd(trx, exchange_data)
+        session['transactions'] = converted
+        session.save()
+        response = self.client.get(URL)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, expected_redirect)
+        self.assertEqual(response.url, '/')
+        for column in NEW_EXCHANGE_COLUMNS:
+            self.assertIn(column, session['transactions'].columns)
 
 
 class TemplateTagsTest(TestCase):

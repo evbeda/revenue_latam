@@ -5,9 +5,11 @@ from revenue_app.views import (
     dashboard_summary,
     download_csv,
     download_excel,
+    Exchange,
     MakeQuery,
     OrganizerTransactions,
     OrganizersTransactions,
+    restore_local_currency,
     TransactionsEvent,
     TransactionsGrouped,
     top_events_json_data,
@@ -16,14 +18,14 @@ from revenue_app.views import (
     TopOrganizersLatam,
     top_organizers_refunds_json_data,
     TopOrganizersRefundsLatam,
-    usd,
 )
 
 
 urlpatterns = [
     url(r'^$', Dashboard.as_view(), name='dashboard'),
     url(r'queries/$', MakeQuery.as_view(), name='make-query'),
-    url(r'usd/$', usd, name='usd'),
+    url(r'exchange/$', Exchange.as_view(), name='exchange'),
+    url(r'restore_currency/$', restore_local_currency, name='restore-currency'),
     url(r'^transactions/$', OrganizersTransactions.as_view(), name='organizers-transactions'),
     url(
         r'^organizer/(?P<eventholder_user_id>[0-9]+)/$',

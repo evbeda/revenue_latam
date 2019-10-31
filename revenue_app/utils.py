@@ -237,7 +237,8 @@ def group_transactions(transactions, by):
             grouped = transactions.groupby(custom_groupby[by], as_index=False).sum()
     else:
         grouped = transactions.groupby(by, as_index=False).sum()
-    return grouped
+    columns_to_drop = [column for column in grouped.columns if 'local_' in column]
+    return grouped.drop(columns_to_drop, axis=1)
 
 
 def generate_transactions_consolidation(transactions, corrections, organizer_sales, organizer_refunds):
@@ -251,9 +252,8 @@ def generate_transactions_consolidation(transactions, corrections, organizer_sal
     return merged.round(2)
 
 
-def manage_transactions(transactions, usd=None, **kwargs):
+def manage_transactions(transactions, **kwargs):
     filtered = filter_transactions(transactions, **kwargs)
-    filtered = convert_dataframe_to_usd(filtered, usd)
     if kwargs.get('groupby'):
         filtered = group_transactions(filtered, kwargs.get('groupby'))
     return filtered.round(2)
@@ -281,10 +281,9 @@ def summarize_dataframe(dataframe):
     }
 
 
-def get_event_transactions(transactions, usd, event_id, **kwargs):
+def get_event_transactions(transactions, event_id, **kwargs):
     event_transactions = manage_transactions(
         transactions,
-        usd=usd,
         event_id=event_id,
     )
     filtered = filter_transactions(event_transactions, **kwargs)
@@ -321,10 +320,9 @@ def get_event_transactions(transactions, usd, event_id, **kwargs):
     return filtered, details, sales_refunds, net_sales_refunds
 
 
-def get_organizer_transactions(transactions, eventholder_user_id, usd, **kwargs):
+def get_organizer_transactions(transactions, eventholder_user_id, **kwargs):
     organizer_transactions = manage_transactions(
         transactions,
-        usd=usd,
         eventholder_user_id=eventholder_user_id,
     )
     filtered = filter_transactions(organizer_transactions, **kwargs)
@@ -363,8 +361,7 @@ def get_organizer_transactions(transactions, eventholder_user_id, usd, **kwargs)
     return filtered, details, sales_refunds, net_sales_refunds
 
 
-def get_top_organizers(filtered_transactions, usd):
-    filtered_transactions = convert_dataframe_to_usd(filtered_transactions, usd)
+def get_top_organizers(filtered_transactions):
     ordered = filtered_transactions.groupby(
         ['eventholder_user_id', 'email'],
     ).agg({
@@ -384,8 +381,7 @@ def get_top_organizers(filtered_transactions, usd):
     return top
 
 
-def get_top_organizers_refunds(filtered_transactions, usd):
-    filtered_transactions = convert_dataframe_to_usd(filtered_transactions, usd)
+def get_top_organizers_refunds(filtered_transactions):
     ordered = filtered_transactions.groupby(
         ['eventholder_user_id', 'email'],
     ).agg({
@@ -402,8 +398,7 @@ def get_top_organizers_refunds(filtered_transactions, usd):
     return top
 
 
-def get_top_events(filtered_transactions, usd):
-    filtered_transactions = convert_dataframe_to_usd(filtered_transactions, usd)
+def get_top_events(filtered_transactions):
     ordered = filtered_transactions.groupby(
         ['event_id', 'event_title', 'eventholder_user_id', 'email'],
     ).agg({
@@ -424,14 +419,14 @@ def get_top_events(filtered_transactions, usd):
     return top
 
 
-def get_summarized_data(transactions, usd):
+def get_summarized_data(transactions):
     currencies = {'Argentina': 'ARS', 'Brazil': 'BRL'}
     summarized_data = {}
+    ref_currency = 'local_currency' if 'local_currency' in transactions.columns else 'currency'
     for country, currency in currencies.items():
-        filtered = transactions[transactions['currency'] == currency]
-        filtered = convert_dataframe_to_usd(filtered, usd)
+        filtered = transactions[transactions[ref_currency] == currency]
         summarized_data[country] = {
-            'currency': currency if (not usd) or (None in usd.values()) else "USD",
+            'currency': filtered.iloc[0]['currency'],
             'Totals': {
                 'Organizers': filtered.eventholder_user_id.nunique(),
                 'Events': filtered.event_id.nunique(),
@@ -468,7 +463,7 @@ def get_summarized_data(transactions, usd):
     return summarized_data
 
 
-def payment_processor_summary(trx_currencies, filter, usd=None):
+def payment_processor_summary(trx_currencies, filter):
     ids = list(range(0, 10))
     json = {}
     filters = {
@@ -479,7 +474,6 @@ def payment_processor_summary(trx_currencies, filter, usd=None):
         return json
     column = filters[filter]
     for country, trx_currency in trx_currencies.items():
-        trx_currency = convert_dataframe_to_usd(trx_currency, usd)
         currency = trx_currency.currency.iloc[0]
         trx_currency.payment_processor.replace('', 'n/a', regex=True, inplace=True)
         filtered = trx_currency.groupby(['payment_processor']).agg({column: sum}).reset_index().round(2)
@@ -501,12 +495,11 @@ def payment_processor_summary(trx_currencies, filter, usd=None):
     return json
 
 
-def sales_flag_summary(trx_currencies, filter, usd=None):
+def sales_flag_summary(trx_currencies, filter):
     ids = list(range(0, 10))
     json = {}
     if filter == 'organizers':
         for country, trx_currency in trx_currencies.items():
-            trx_currency = convert_dataframe_to_usd(trx_currency, usd)
             org = trx_currency.groupby(
                 ['eventholder_user_id', 'sales_flag']
             ).sum().reset_index().sales_flag.value_counts()
@@ -526,7 +519,6 @@ def sales_flag_summary(trx_currencies, filter, usd=None):
             }
     elif filter == 'gtf':
         for country, trx_currency in trx_currencies.items():
-            trx_currency = convert_dataframe_to_usd(trx_currency, usd)
             currency = trx_currency.currency.iloc[0]
             gtf = trx_currency.groupby(['sales_flag']).agg({'sale__gtf_esf__epp': sum}).reset_index().round(2)
             gtf_names = gtf.sales_flag.to_list()
@@ -545,7 +537,6 @@ def sales_flag_summary(trx_currencies, filter, usd=None):
             }
     elif filter == 'gtv':
         for country, trx_currency in trx_currencies.items():
-            trx_currency = convert_dataframe_to_usd(trx_currency, usd)
             currency = trx_currency.currency.iloc[0]
             gtv = trx_currency.groupby(['sales_flag']).agg({'sale__payment_amount__epp': sum}).reset_index().round(2)
             gtv_names = gtv.sales_flag.to_list()
@@ -565,24 +556,44 @@ def sales_flag_summary(trx_currencies, filter, usd=None):
     return json
 
 
-def get_charts_data(transactions, type, filter, usd=None):
+def get_charts_data(transactions, type, filter):
+    ref_currency = 'local_currency' if 'local_currency' in transactions.columns else 'currency'
     trx_currencies = {
-        'Argentina': transactions[transactions['currency'] == 'ARS'],
-        'Brazil': transactions[transactions['currency'] == 'BRL'],
+        'Argentina': transactions[transactions[ref_currency] == 'ARS'],
+        'Brazil': transactions[transactions[ref_currency] == 'BRL'],
     }
     json = {}
     if type == 'payment_processor':
-        json = payment_processor_summary(trx_currencies, filter, usd)
+        json = payment_processor_summary(trx_currencies, filter)
     elif type == 'sales_flag':
-        json = sales_flag_summary(trx_currencies, filter, usd)
+        json = sales_flag_summary(trx_currencies, filter)
     return json
 
 
-def convert_dataframe_to_usd(dataframe, usd):
-    if (not usd) or (None in usd.values()):
-        return dataframe
-    for currency in dataframe['currency'].unique():
-        dataframe.loc[dataframe['currency'] == currency, MONEY_COLUMNS] = \
-            dataframe[dataframe['currency'] == currency][MONEY_COLUMNS] / float(usd[currency])
-    dataframe['currency'] = 'USD'
-    return dataframe
+def dataframe_to_usd(transactions, exchange_data):
+    trx = []
+    for month, values in exchange_data.items():
+        trx_month = transactions[transactions['transaction_created_date'].dt.month_name() == month]
+        ars = trx_month[trx_month['currency'] == 'ARS']
+        brl = trx_month[trx_month['currency'] == 'BRL']
+        ars['exchange_rate'] = values['ars_to_usd']
+        brl['exchange_rate'] = values['brl_to_usd']
+        trx.append(pd.concat([ars, brl]))
+    converted = pd.concat(trx)
+    converted.sort_values(
+        by=['transaction_created_date', 'eventholder_user_id', 'event_id'],
+        inplace=True,
+    )
+    renamed_columns = {column: f'local_{column}' for column in (MONEY_COLUMNS + ['currency'])}
+    converted.rename(columns=renamed_columns, inplace=True)
+    for column in MONEY_COLUMNS:
+        converted[column] = converted[f'local_{column}'] / converted['exchange_rate']
+    converted['currency'] = 'USD'
+    return converted
+
+def restore_currency(transactions):
+    deleted_columns = MONEY_COLUMNS + ['currency', 'exchange_rate']
+    restored = transactions.drop(deleted_columns, axis=1)
+    restored_columns = {f'local_{column}': column for column in (MONEY_COLUMNS + ['currency'])}
+    restored.rename(columns=restored_columns, inplace=True)
+    return restored
