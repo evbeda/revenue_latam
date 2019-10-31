@@ -35,3 +35,8 @@ class QueryForm(forms.Form):
                 error = forms.ValidationError("Time between End and Start date can't be over 3 months.")
                 self.add_error('start_date', error)
                 self.add_error('end_date', error)
+
+
+class ExchangeForm(forms.Form):
+    ars_to_usd = forms.FloatField(label='ARS to USD', required=True, min_value=0.01)
+    brl_to_usd = forms.FloatField(label='BRL to USD', required=True, min_value=0.01)

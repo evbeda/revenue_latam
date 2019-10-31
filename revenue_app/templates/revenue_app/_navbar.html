@@ -7,20 +7,21 @@
   </button>
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav">
-      {% if request.session.usd.ARS %}
-      <li class="navbar-text">
-        in USD (
-          {% for key, value in request.session.usd.items %}
-          {{ key }} {{value}}{% if not forloop.last %},{% endif %}
-          {% endfor %}
-        )
-      </li>
-      {% endif %}
       {% if query_info %}
       <li class="navbar-text">Query ran at {{ query_info.run_time }}</li>
       <li class="navbar-text">from {{ query_info.start_date }} to {{ query_info.end_date }}</li>
       {% endif %}
     </ul>
   </div>
+  {% if exchange_data %}
+    <div class="navbar-text">
+      {% for month, values in exchange_data.items %}
+        <div class="navbar-currency">{{month}}: ARS {{values.ars_to_usd}} | BRL {{values.brl_to_usd}}</div>
+      {% endfor %}
+    </div>
+    <div class="navbar-text pull-right pl-3">
+      <a href="{% url 'restore-currency' %}">Restore local Currency</a>
+    </div>
+  {% endif %}
 </nav>
 <!--/.Navbar -->

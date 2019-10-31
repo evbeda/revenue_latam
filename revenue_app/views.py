@@ -18,12 +18,16 @@ from django.views.generic import (
 )
 from django.shortcuts import resolve_url, redirect
 
-from revenue_app.forms import QueryForm
+from revenue_app.forms import (
+    ExchangeForm,
+    QueryForm,
+)
 from revenue_app.presto_connection import (
     make_query,
     PrestoError,
 )
 from revenue_app.utils import (
+    dataframe_to_usd,
     generate_transactions_consolidation,
     get_charts_data,
     get_event_transactions,
@@ -33,6 +37,7 @@ from revenue_app.utils import (
     get_top_organizers,
     get_top_organizers_refunds,
     manage_transactions,
+    restore_currency,
 )
 
 FULL_COLUMNS = [
@@ -247,6 +252,75 @@ class MakeQuery(FormView):
         )
 
 
+class Exchange(QueriesRequiredMixin, FormView):
+    template_name = 'revenue_app/exchange.html'
+
+    def get(self, request, *args, **kwargs):
+        transactions = self.request.session.get('transactions').copy()
+        months = list(transactions.transaction_created_date.dt.month_name().unique())
+        forms = {}
+        for month in months:
+            forms[month] = ExchangeForm(prefix=month)
+        return self.render_to_response({'forms': forms})
+
+    def post(self, request, *args, **kwargs):
+        transactions = self.request.session.get('transactions').copy()
+        if self.request.session['exchange_data']:
+            transactions = restore_currency(transactions)
+        months = list(transactions.transaction_created_date.dt.month_name().unique())
+        forms = {}
+        for month in months:
+            forms[month] = ExchangeForm(self.request.POST, prefix=month)
+        if all([forms[form].is_valid() for form in forms]):
+            exchange_data = self.get_exchange_data(forms)
+            converted = dataframe_to_usd(transactions, exchange_data)
+            self.request.session['exchange_data'] = exchange_data
+            self.request.session['transactions'] = converted
+            return self.form_valid(forms)
+        else:
+            return self.form_invalid(forms)
+
+    def get_context_data(self, forms, status, **kwargs):
+        if 'forms' not in kwargs:
+            kwargs['forms'] = forms
+        if 'status' not in kwargs:
+            kwargs['status'] = status
+        return kwargs
+
+    def form_valid(self, forms):
+        status = {
+            'msg': 'Exchange rate applied successfully.',
+            'success': True,
+        }
+        return self.render_to_response(
+            self.get_context_data(
+                forms=forms,
+                status=status,
+            )
+        )
+
+    def form_invalid(self, forms):
+        status = {
+            'msg': 'Invalid exchange rate. Unable to apply.',
+            'success': False,
+        }
+        return self.render_to_response(
+            self.get_context_data(
+                forms=forms,
+                status=status,
+            )
+        )
+
+    def get_exchange_data(self, forms):
+        exchange_data = {}
+        for month, form in forms.items():
+            exchange_data[month] = {
+                'ars_to_usd': float(form.data.get(f'{month}-ars_to_usd')),
+                'brl_to_usd': float(form.data.get(f'{month}-brl_to_usd')),
+            }
+        return exchange_data
+
+
 class Dashboard(QueriesRequiredMixin, TemplateView):
     template_name = 'revenue_app/dashboard.html'
 
@@ -254,7 +328,6 @@ class Dashboard(QueriesRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context['summarized_data'] = get_summarized_data(
             self.request.session.get('transactions').copy(),
-            self.request.session.get('usd'),
         )
         context['title'] = 'Dashboard'
         return context
@@ -267,7 +340,6 @@ class OrganizersTransactions(QueriesRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         trx = manage_transactions(
             self.request.session.get('transactions').copy(),
-            usd=self.request.session.get('usd'),
             **self.request.GET.dict(),
         )[TRANSACTIONS_COLUMNS]
         self.request.session['export_transactions'] = trx
@@ -284,7 +356,6 @@ class OrganizerTransactions(QueriesRequiredMixin, TemplateView):
         transactions, details, sales_refunds, net_sales_refunds = get_organizer_transactions(
             self.request.session.get('transactions').copy(),
             self.kwargs['eventholder_user_id'],
-            self.request.session.get('usd'),
             **self.request.GET.dict(),
         )
         context['details'] = details
@@ -292,7 +363,7 @@ class OrganizerTransactions(QueriesRequiredMixin, TemplateView):
         context['sales_refunds'] = sales_refunds
         context['net_sales_refunds'] = net_sales_refunds
         context['transactions'] = transactions[ORGANIZER_COLUMNS]
-        self.request.session['export_transactions'] = transactions
+        self.request.session['export_transactions'] = transactions[ORGANIZER_COLUMNS]
         self.request.session['export_details'] = details
         self.request.session['export_sales_refunds'] = sales_refunds
         self.request.session['export_net_sales_refunds'] = net_sales_refunds
@@ -308,14 +379,13 @@ class TopOrganizersLatam(QueriesRequiredMixin, TemplateView):
             self.request.session.get('transactions').copy(),
             **(self.request.GET.dict()),
         )
+        ref_currency = 'local_currency' if 'local_currency' in trx.columns else 'currency'
         context['title'] = 'Top Organizers'
         context['top_ars'] = get_top_organizers(
-            trx[trx['currency'] == 'ARS'],
-            self.request.session.get('usd'),
+            trx[trx[ref_currency] == 'ARS'],
         )[:10][TOP_ORGANIZERS['columns']].rename(columns=TOP_ORGANIZERS['labels'])
         context['top_brl'] = get_top_organizers(
-            trx[trx['currency'] == 'BRL'],
-            self.request.session.get('usd'),
+            trx[trx[ref_currency] == 'BRL'],
         )[:10][TOP_ORGANIZERS['columns']].rename(columns=TOP_ORGANIZERS['labels'])
         return context
 
@@ -329,16 +399,15 @@ class TopOrganizersRefundsLatam(QueriesRequiredMixin, TemplateView):
             self.request.session.get('transactions').copy(),
             **(self.request.GET.dict()),
         )
+        ref_currency = 'local_currency' if 'local_currency' in trx.columns else 'currency'
         context['title'] = 'Top Organizers Refunds'
         context['top_ars'] = \
             get_top_organizers_refunds(
-                trx[trx['currency'] == 'ARS'],
-                self.request.session.get('usd'),
+                trx[trx[ref_currency] == 'ARS'],
             )[:10][TOP_ORGANIZERS_REFUNDS['columns']].rename(columns=TOP_ORGANIZERS_REFUNDS['labels'])
         context['top_brl'] = \
             get_top_organizers_refunds(
-                trx[trx['currency'] == 'BRL'],
-                self.request.session.get('usd'),
+                trx[trx[ref_currency] == 'BRL'],
             )[:10][TOP_ORGANIZERS_REFUNDS['columns']].rename(columns=TOP_ORGANIZERS_REFUNDS['labels'])
         return context
 
@@ -350,7 +419,6 @@ class TransactionsEvent(QueriesRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         transactions, details, sales_refunds, net_sales_refunds = get_event_transactions(
             self.request.session.get('transactions').copy(),
-            self.request.session.get('usd'),
             self.kwargs['event_id'],
             **(self.request.GET.dict()),
         )
@@ -359,7 +427,7 @@ class TransactionsEvent(QueriesRequiredMixin, TemplateView):
         context['sales_refunds'] = sales_refunds
         context['net_sales_refunds'] = net_sales_refunds
         context['transactions'] = transactions[EVENT_COLUMNS]
-        self.request.session['export_transactions'] = transactions
+        self.request.session['export_transactions'] = transactions[EVENT_COLUMNS]
         self.request.session['export_details'] = details
         self.request.session['export_sales_refunds'] = sales_refunds
         self.request.session['export_net_sales_refunds'] = net_sales_refunds
@@ -375,14 +443,13 @@ class TopEventsLatam(QueriesRequiredMixin, TemplateView):
             self.request.session.get('transactions').copy(),
             **(self.request.GET.dict()),
         )
+        ref_currency = 'local_currency' if 'local_currency' in trx.columns else 'currency'
         context['title'] = 'Top Events'
         context['top_event_ars'] = get_top_events(
-            trx[trx['currency'] == 'ARS'],
-            self.request.session.get('usd'),
+            trx[trx[ref_currency] == 'ARS'],
         )[:10][TOP_EVENTS_COLUMNS['columns']].rename(columns=TOP_EVENTS_COLUMNS['labels'])
         context['top_event_brl'] = get_top_events(
-            trx[trx['currency'] == 'BRL'],
-            self.request.session.get('usd'),
+            trx[trx[ref_currency] == 'BRL'],
         )[:10][TOP_EVENTS_COLUMNS['columns']].rename(columns=TOP_EVENTS_COLUMNS['labels'])
         return context
 
@@ -394,7 +461,6 @@ class TransactionsGrouped(QueriesRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         trx = manage_transactions(
             self.request.session.get('transactions').copy(),
-            usd=self.request.session.get('usd'),
             **(self.request.GET.dict()),
         )
         context['title'] = 'Transactions Grouped'
@@ -404,26 +470,24 @@ class TransactionsGrouped(QueriesRequiredMixin, TemplateView):
 
 
 def top_organizers_json_data(request):
-    usd = request.session.get('usd')
     trx = request.session.get('transactions').copy()
     ids = list(range(0, 11))
+    ref_currency = 'local_currency' if 'local_currency' in trx.columns else 'currency'
     top_organizers_ars = get_top_organizers(
-        trx[trx['currency'] == 'ARS'],
-        usd,
+        trx[trx[ref_currency] == 'ARS'],
     )
     ars_quantities = top_organizers_ars['sale__gtf_esf__epp'].tolist()
     ars_percent = [str(round(qty/sum(ars_quantities) * 100, 1)) + '% ' for qty in ars_quantities]
     ars_names = top_organizers_ars['email'].tolist()
     top_organizers_brl = get_top_organizers(
-        trx[trx['currency'] == 'BRL'],
-        usd,
+        trx[trx[ref_currency] == 'BRL'],
     )
     brl_quantities = top_organizers_brl['sale__gtf_esf__epp'].tolist()
     brl_percent = [str(round(qty/sum(brl_quantities) * 100, 1)) + '% ' for qty in brl_quantities]
     brl_names = top_organizers_brl['email'].tolist()
     res = json.dumps({
         'ars_data': {
-            'unit': 'ARS' if (not usd) or (None in usd.values()) else "USD",
+            'unit': 'USD' if 'local_currency' in trx.columns else 'ARS',
             'data': [
                 {'name': name, 'id': id, 'quantity': quantity}
                 for name, id, quantity in zip(ars_names, ids, ars_quantities)
@@ -434,7 +498,7 @@ def top_organizers_json_data(request):
             ]
         },
         'brl_data': {
-            'unit': 'BRL' if (not usd) or (None in usd.values()) else "USD",
+            'unit': 'USD' if 'local_currency' in trx.columns else 'BRL',
             'data': [
                 {'name': name, 'id': id, 'quantity': quantity}
                 for name, id, quantity in zip(brl_names, ids, brl_quantities)
@@ -449,26 +513,24 @@ def top_organizers_json_data(request):
 
 
 def top_organizers_refunds_json_data(request):
-    usd = request.session.get('usd')
     trx = request.session.get('transactions').copy()
     ids = list(range(0, 11))
+    ref_currency = 'local_currency' if 'local_currency' in trx.columns else 'currency'
     top_organizers_ars = get_top_organizers_refunds(
-        trx[trx['currency'] == 'ARS'],
-        usd,
+        trx[trx[ref_currency] == 'ARS'],
     )
     ars_quantities = top_organizers_ars['refund__gtf_epp__gtf_esf__epp'].tolist()
     ars_percent = [str(round(qty/sum(ars_quantities) * 100, 1)) + '% ' for qty in ars_quantities]
     ars_names = top_organizers_ars['email'].tolist()
     top_organizers_brl = get_top_organizers_refunds(
-        trx[trx['currency'] == 'BRL'],
-        usd,
+        trx[trx[ref_currency] == 'BRL'],
     )
     brl_quantities = top_organizers_brl['refund__gtf_epp__gtf_esf__epp'].tolist()
     brl_percent = [str(round(qty/sum(brl_quantities) * 100, 1)) + '% ' for qty in brl_quantities]
     brl_names = top_organizers_brl['email'].tolist()
     res = json.dumps({
         'ars_data': {
-            'unit': 'ARS' if (not usd) or (None in usd.values()) else "USD",
+            'unit': 'USD' if 'local_currency' in trx.columns else 'ARS',
             'data': [
                 {'name': name, 'id': id, 'quantity': abs(quantity)}
                 for name, id, quantity in zip(ars_names, ids, ars_quantities)
@@ -479,7 +541,7 @@ def top_organizers_refunds_json_data(request):
             ]
         },
         'brl_data': {
-            'unit': 'BRL' if (not usd) or (None in usd.values()) else "USD",
+            'unit': 'USD' if 'local_currency' in trx.columns else 'BRL',
             'data': [
                 {'name': name, 'id': id, 'quantity': abs(quantity)}
                 for name, id, quantity in zip(brl_names, ids, brl_quantities)
@@ -494,26 +556,24 @@ def top_organizers_refunds_json_data(request):
 
 
 def top_events_json_data(request):
-    usd = request.session.get('usd')
     trx = request.session.get('transactions').copy()
     ids = list(range(0, 11))
+    ref_currency = 'local_currency' if 'local_currency' in trx.columns else 'currency'
     top_events_ars = get_top_events(
-        trx[trx['currency'] == 'ARS'],
-        usd,
-    )
+            trx[trx[ref_currency] == 'ARS'],
+        )
     ars_quantities = top_events_ars['sale__gtf_esf__epp'].tolist()
     ars_percent = [str(round(qty/sum(ars_quantities) * 100, 1)) + '% ' for qty in ars_quantities]
     ars_names = [f'[{id}] {title[:20]}' for id, title in zip(top_events_ars['event_id'], top_events_ars['event_title'])]
     top_events_brl = get_top_events(
-        trx[trx['currency'] == 'BRL'],
-        usd,
-    )
+            trx[trx[ref_currency] == 'BRL'],
+        )
     brl_quantities = top_events_brl['sale__gtf_esf__epp'].tolist()
     brl_percent = [str(round(qty/sum(brl_quantities) * 100, 1)) + '% ' for qty in brl_quantities]
     brl_names = [f'[{id}] {title[:20]}' for id, title in zip(top_events_brl['event_id'], top_events_brl['event_title'])]
     res = json.dumps({
         'ars_data': {
-            'unit': 'ARS' if (not usd) or (None in usd.values()) else "USD",
+            'unit': 'USD' if 'local_currency' in trx.columns else 'ARS',
             'data': [
                 {'name': name, 'id': id, 'quantity': quantity}
                 for name, id, quantity in zip(ars_names, ids, ars_quantities)
@@ -524,7 +584,7 @@ def top_events_json_data(request):
             ]
         },
         'brl_data': {
-            'unit': 'BRL' if (not usd) or (None in usd.values()) else "USD",
+            'unit': 'USD' if 'local_currency' in trx.columns else 'BRL',
             'data': [
                 {'name': name, 'id': id, 'quantity': quantity}
                 for name, id, quantity in zip(brl_names, ids, brl_quantities)
@@ -545,7 +605,6 @@ def dashboard_summary(request):
             transactions,
             request.GET.get('type'),
             request.GET.get('filter'),
-            usd=request.session.get('usd'),
         )
         return JsonResponse(res, status=200)
     return JsonResponse({}, status=400)
@@ -558,7 +617,6 @@ def download_excel(request, xls_name):
     worksheet = workbook.add_sheet('Transactions')
     organizers_transactions = request.session.get('export_transactions')
     query_info = request.session.get('query_info')
-    usd_info = request.session.get('usd')
     transactions_list = organizers_transactions.values.tolist()
     columns = organizers_transactions.columns.tolist()
     date_column_idx = columns.index('transaction_created_date')
@@ -573,10 +631,7 @@ def download_excel(request, xls_name):
     worksheet.write(1, 0, "Query ran at:", col_header_style)
     worksheet.write(1, 1, query_info['run_time'].strftime("%Y-%m-%d, %X"))
     worksheet.write(1, 2, "Currency:", col_header_style)
-    if not usd_info or None in usd_info.values():
-        usd_msg = "Local currency"
-    else:
-        usd_msg = "USD"
+    usd_msg = 'USD' if request.session['exchange_data'] else 'Local currency'
     worksheet.write(1, 3, usd_msg)
     worksheet.write(2, 0, "Start date:", col_header_style)
     worksheet.write(2, 1, query_info['start_date'].strftime("%Y-%m-%d"))
@@ -649,15 +704,9 @@ def download_csv(request, csv_name):
     return response
 
 
-def usd(request):
-    if ('Apply' in request.POST['apply']) and request.POST.get('usd_ars') and request.POST.get('usd_brl'):
-        request.session['usd'] = {
-            'ARS': float(request.POST.get('usd_ars')),
-            'BRL': float(request.POST.get('usd_brl')),
-        }
-    else:
-        request.session['usd'] = {
-            'ARS': None,
-            'BRL': None,
-        }
-    return redirect(request.POST.get('next', '/'))
+def restore_local_currency(request):
+    transactions = request.session.get('transactions').copy()
+    restored = restore_currency(transactions)
+    request.session['transactions'] = restored
+    request.session['exchange_data'] = None
+    return redirect('dashboard')

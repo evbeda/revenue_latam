@@ -43,6 +43,10 @@ body {
   border-left: rgba(255,255,255,.5) 1px solid;
 }
 
+.navbar-currency {
+  font-size: .7rem;
+}
+
 /* Content */
 
 h1 {

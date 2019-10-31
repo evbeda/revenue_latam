@@ -4,6 +4,7 @@
     <div class="sidebar-heading">Menu</div>
     <div class="list-group list-group-flush bg-light">
         <a href="{% url 'make-query' %}" class="list-group-item list-group-item-action">Queries</a>
+        <a href="{% url 'exchange' %}" class="list-group-item list-group-item-action">Exchange Rate</a>
         <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action">Dashboard</a>
         <a href="{% url 'organizers-transactions' %}" class="list-group-item list-group-item-action">Transactions</a>
         <a href="{% url 'top-organizers' %}" class="list-group-item list-group-item-action">Top Organizers</a>
@@ -41,18 +42,6 @@
                 <input type="date" class="form-control" name="end_date" value={{request.GET.end_date}}>
                 {% csrf_token %}
                 <button type="submit" class="mt-1 btn btn-evb-orange btn-sm">Apply</button>
-            </form>
-        </a>
-        <a href="#" class="list-group-item list-group-item-action flex-column cursor-default">
-            <form action="{% url 'usd' %}"  method="POST">
-                <input type="hidden" name="next" value="{{ request.path }}">
-                ARS-USD
-                <input type="number" step="0.01" min="0.01" class="form-control" name="usd_ars">
-                BRL-USD
-                <input type="number" step="0.01" min="0.01" class="form-control" name="usd_brl">
-                {% csrf_token %}
-                <input type="submit" name="apply" class="mt-1 btn btn-evb-orange btn-sm" value="Apply">
-                <input type="submit" name="apply" class="mt-1 btn btn-evb-orange btn-sm" value="Cancel">
             </form>
         </a>
         <hr class="sidebar-divider my-0">
