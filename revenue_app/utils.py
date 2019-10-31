@@ -486,11 +486,16 @@ def payment_processor_summary(trx_currencies, filter, usd=None):
         filtered = filtered[filtered[column] != 0]
         filtered_names = filtered.payment_processor.tolist()
         filtered_quantities = filtered[column].tolist()
+        filtered_percent = [str(round(qty/sum(filtered_quantities) * 100, 1)) + '% ' for qty in filtered_quantities]
         json[country] = {
             'unit': currency,
             'data': [
                 {'name': name, 'id': id, 'quantity': quantity}
                 for name, id, quantity in zip(filtered_names, ids, filtered_quantities)
+            ],
+            'legend': [
+                {'name': str(percent) + name, 'id': id, 'quantity': quantity}
+                for name, id, quantity, percent in zip(filtered_names, ids, filtered_quantities, filtered_percent)
             ]
         }
     return json
@@ -507,11 +512,16 @@ def sales_flag_summary(trx_currencies, filter, usd=None):
             ).sum().reset_index().sales_flag.value_counts()
             org_names = org.index.to_list()
             org_quantities = org.values.tolist()
+            org_percent = [str(round(qty/sum(org_quantities) * 100, 1)) + '% ' for qty in org_quantities]
             json[country] = {
                 'unit': 'organizers',
                 'data': [
                     {'name': name, 'id': id, 'quantity': quantity}
                     for name, id, quantity in zip(org_names, ids, org_quantities)
+                ],
+                'legend': [
+                    {'name': str(percent) + name, 'id': id, 'quantity': quantity}
+                    for name, id, quantity, percent in zip(org_names, ids, org_quantities, org_percent)
                 ]
             }
     elif filter == 'gtf':
@@ -521,11 +531,16 @@ def sales_flag_summary(trx_currencies, filter, usd=None):
             gtf = trx_currency.groupby(['sales_flag']).agg({'sale__gtf_esf__epp': sum}).reset_index().round(2)
             gtf_names = gtf.sales_flag.to_list()
             gtf_quantities = gtf.sale__gtf_esf__epp.tolist()
+            gtf_percent = [str(round(qty/sum(gtf_quantities) * 100, 1)) + '% ' for qty in gtf_quantities]
             json[country] = {
                 'unit': currency,
                 'data': [
                     {'name': name, 'id': id, 'quantity': quantity}
                     for name, id, quantity in zip(gtf_names, ids, gtf_quantities)
+                ],
+                'legend': [
+                    {'name': str(percent) + name, 'id': id, 'quantity': quantity}
+                    for name, id, quantity, percent in zip(gtf_names, ids, gtf_quantities, gtf_percent)
                 ]
             }
     elif filter == 'gtv':
@@ -535,11 +550,16 @@ def sales_flag_summary(trx_currencies, filter, usd=None):
             gtv = trx_currency.groupby(['sales_flag']).agg({'sale__payment_amount__epp': sum}).reset_index().round(2)
             gtv_names = gtv.sales_flag.to_list()
             gtv_quantities = gtv.sale__payment_amount__epp.tolist()
+            gtv_percent = [str(round(qty/sum(gtv_quantities) * 100, 1)) + '% ' for qty in gtv_quantities]
             json[country] = {
                 'unit': currency,
                 'data': [
                     {'name': name, 'id': id, 'quantity': quantity}
                     for name, id, quantity in zip(gtv_names, ids, gtv_quantities)
+                ],
+                'legend': [
+                    {'name': str(percent) + name, 'id': id, 'quantity': quantity}
+                    for name, id, quantity, percent in zip(gtv_names, ids, gtv_quantities, gtv_percent)
                 ]
             }
     return json
