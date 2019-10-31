@@ -29,7 +29,7 @@ function createDonutChart(data, node,legendHeight) {
 
   donutContainer.datum(data.data).call(donutChart);
   legendContainer = d3.select(`.js-legend-chart-container-${node}`);
-  legendContainer.datum(data.data).call(legendChart);
+  legendContainer.datum(data.legend).call(legendChart);
 }
 
 function setChart(json, type, filter) {

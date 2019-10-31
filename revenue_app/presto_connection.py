@@ -11,7 +11,7 @@ class PrestoError(Exception):
         if 'NewConnectionError' in error_message:
             # Raised when not connected to the VPN
             message = error_message.split('>:')[1].split("'))")[0].strip()
-            message += '.<br>Check you are connected to the VPN.'
+            message += '.<br>Make sure you are connected to the VPN.'
         elif 'SSLCertVerificationError' in error_message:
             # Raised when certificate not in env var
             message = error_message.split("(1, '")[1].split("')))")[0].strip()
