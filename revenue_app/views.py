@@ -265,7 +265,7 @@ class Exchange(QueriesRequiredMixin, FormView):
 
     def post(self, request, *args, **kwargs):
         transactions = self.request.session.get('transactions').copy()
-        if self.request.session['exchange_data']:
+        if self.request.session.get('exchange_data'):
             transactions = restore_currency(transactions)
         months = list(transactions.transaction_created_date.dt.month_name().unique())
         forms = {}
@@ -631,7 +631,7 @@ def download_excel(request, xls_name):
     worksheet.write(1, 0, "Query ran at:", col_header_style)
     worksheet.write(1, 1, query_info['run_time'].strftime("%Y-%m-%d, %X"))
     worksheet.write(1, 2, "Currency:", col_header_style)
-    usd_msg = 'USD' if request.session['exchange_data'] else 'Local currency'
+    usd_msg = 'USD' if request.session.get('exchange_data') else 'Local currency'
     worksheet.write(1, 3, usd_msg)
     worksheet.write(2, 0, "Start date:", col_header_style)
     worksheet.write(2, 1, query_info['start_date'].strftime("%Y-%m-%d"))
