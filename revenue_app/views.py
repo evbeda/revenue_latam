@@ -256,12 +256,18 @@ class MakeQuery(FormView):
 class Exchange(QueriesRequiredMixin, FormView):
     template_name = 'revenue_app/exchange.html'
 
+    def get_initial(self, month):
+        exchange_data = self.request.session.get('exchange_data')
+        if not exchange_data:
+            return {}
+        return exchange_data[month]
+
     def get(self, request, *args, **kwargs):
         transactions = self.request.session.get('transactions').copy()
         months = list(transactions.transaction_created_date.dt.month_name().unique())
         forms = {}
         for month in months:
-            forms[month] = ExchangeForm(prefix=month)
+            forms[month] = ExchangeForm(prefix=month, initial=self.get_initial(month))
         return self.render_to_response({'forms': forms})
 
     def post(self, request, *args, **kwargs):
