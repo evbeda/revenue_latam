@@ -1143,6 +1143,18 @@ class ViewsTest(TestCase):
         self.assertEqual(response.template_name[0], Exchange.template_name)
         self.assertContains(response, error_message)
 
+    def test_exchange_view_populates_form_if_already_loaded(self):
+        kwargs = {
+            'August-ars_to_usd': 60.01,
+            'August-brl_to_usd': 5.02,
+        }
+
+        URL = reverse('exchange')
+        self.load_dataframes()
+        self.client.post(URL, kwargs)
+        response = self.client.get(URL)
+        self.assertEqual(response.context['forms']['August'].initial['ars_to_usd'], 60.01)
+        self.assertEqual(response.context['forms']['August'].initial['brl_to_usd'], 5.02)
 
     def test_exchange_view_returns_200_and_makes_conversion(self):
         kwargs = {
