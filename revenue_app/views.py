@@ -36,6 +36,7 @@ from revenue_app.utils import (
     get_top_events,
     get_top_organizers,
     get_top_organizers_refunds,
+    get_chart_json_data,
     manage_transactions,
     restore_currency,
 )
@@ -471,42 +472,29 @@ class TransactionsGrouped(QueriesRequiredMixin, TemplateView):
 
 def top_organizers_json_data(request):
     trx = request.session.get('transactions').copy()
-    ids = list(range(0, 11))
     ref_currency = 'local_currency' if 'local_currency' in trx.columns else 'currency'
     top_organizers_ars = get_top_organizers(
         trx[trx[ref_currency] == 'ARS'],
     )
     ars_quantities = top_organizers_ars['sale__gtf_esf__epp'].tolist()
-    ars_percent = [str(round(qty/sum(ars_quantities) * 100, 1)) + '% ' for qty in ars_quantities]
     ars_names = top_organizers_ars['email'].tolist()
+    data_ars, legend_ars = get_chart_json_data(ars_names, ars_quantities)
     top_organizers_brl = get_top_organizers(
         trx[trx[ref_currency] == 'BRL'],
     )
     brl_quantities = top_organizers_brl['sale__gtf_esf__epp'].tolist()
-    brl_percent = [str(round(qty/sum(brl_quantities) * 100, 1)) + '% ' for qty in brl_quantities]
     brl_names = top_organizers_brl['email'].tolist()
+    data_brl, legend_brl = get_chart_json_data(brl_names, brl_quantities)
     res = json.dumps({
         'ars_data': {
             'unit': 'USD' if 'local_currency' in trx.columns else 'ARS',
-            'data': [
-                {'name': name, 'id': id, 'quantity': quantity}
-                for name, id, quantity in zip(ars_names, ids, ars_quantities)
-            ],
-            'legend': [
-                {'name': str(percent) + name, 'id': id, 'quantity': quantity}
-                for name, id, quantity, percent in zip(ars_names, ids, ars_quantities, ars_percent)
-            ]
+            'data': data_ars,
+            'legend': legend_ars,
         },
         'brl_data': {
             'unit': 'USD' if 'local_currency' in trx.columns else 'BRL',
-            'data': [
-                {'name': name, 'id': id, 'quantity': quantity}
-                for name, id, quantity in zip(brl_names, ids, brl_quantities)
-            ],
-            'legend': [
-                {'name': str(percent) + name, 'id': id, 'quantity': quantity}
-                for name, id, quantity, percent in zip(brl_names, ids, brl_quantities, brl_percent)
-            ]
+            'data': data_brl,
+            'legend': legend_brl,
         },
     })
     return HttpResponse(res, content_type="application/json")
@@ -522,34 +510,24 @@ def top_organizers_refunds_json_data(request):
     ars_quantities = top_organizers_ars['refund__gtf_epp__gtf_esf__epp'].tolist()
     ars_percent = [str(round(qty/sum(ars_quantities) * 100, 1)) + '% ' for qty in ars_quantities]
     ars_names = top_organizers_ars['email'].tolist()
+    data_ars, legend_ars = get_chart_json_data(ars_names, ars_quantities)
     top_organizers_brl = get_top_organizers_refunds(
         trx[trx[ref_currency] == 'BRL'],
     )
     brl_quantities = top_organizers_brl['refund__gtf_epp__gtf_esf__epp'].tolist()
     brl_percent = [str(round(qty/sum(brl_quantities) * 100, 1)) + '% ' for qty in brl_quantities]
     brl_names = top_organizers_brl['email'].tolist()
+    data_brl, legend_brl = get_chart_json_data(brl_names, brl_quantities)
     res = json.dumps({
         'ars_data': {
             'unit': 'USD' if 'local_currency' in trx.columns else 'ARS',
-            'data': [
-                {'name': name, 'id': id, 'quantity': abs(quantity)}
-                for name, id, quantity in zip(ars_names, ids, ars_quantities)
-            ],
-            'legend': [
-                {'name': str(percent) + name, 'id': id, 'quantity': quantity}
-                for name, id, quantity, percent in zip(ars_names, ids, ars_quantities, ars_percent)
-            ]
+            'data': data_ars,
+            'legend': legend_ars,
         },
         'brl_data': {
             'unit': 'USD' if 'local_currency' in trx.columns else 'BRL',
-            'data': [
-                {'name': name, 'id': id, 'quantity': abs(quantity)}
-                for name, id, quantity in zip(brl_names, ids, brl_quantities)
-            ],
-            'legend': [
-                {'name': str(percent) + name, 'id': id, 'quantity': quantity}
-                for name, id, quantity, percent in zip(brl_names, ids, brl_quantities, brl_percent)
-            ]
+            'data': data_brl,
+            'legend': legend_brl,
         },
     })
     return HttpResponse(res, content_type="application/json")
@@ -557,42 +535,29 @@ def top_organizers_refunds_json_data(request):
 
 def top_events_json_data(request):
     trx = request.session.get('transactions').copy()
-    ids = list(range(0, 11))
     ref_currency = 'local_currency' if 'local_currency' in trx.columns else 'currency'
     top_events_ars = get_top_events(
             trx[trx[ref_currency] == 'ARS'],
         )
     ars_quantities = top_events_ars['sale__gtf_esf__epp'].tolist()
-    ars_percent = [str(round(qty/sum(ars_quantities) * 100, 1)) + '% ' for qty in ars_quantities]
     ars_names = [f'[{id}] {title[:20]}' for id, title in zip(top_events_ars['event_id'], top_events_ars['event_title'])]
+    data_ars, legend_ars = get_chart_json_data(ars_names, ars_quantities)
     top_events_brl = get_top_events(
             trx[trx[ref_currency] == 'BRL'],
         )
     brl_quantities = top_events_brl['sale__gtf_esf__epp'].tolist()
-    brl_percent = [str(round(qty/sum(brl_quantities) * 100, 1)) + '% ' for qty in brl_quantities]
     brl_names = [f'[{id}] {title[:20]}' for id, title in zip(top_events_brl['event_id'], top_events_brl['event_title'])]
+    data_brl, legend_brl = get_chart_json_data(brl_names, brl_quantities)
     res = json.dumps({
         'ars_data': {
             'unit': 'USD' if 'local_currency' in trx.columns else 'ARS',
-            'data': [
-                {'name': name, 'id': id, 'quantity': quantity}
-                for name, id, quantity in zip(ars_names, ids, ars_quantities)
-            ],
-            'legend': [
-                {'name': str(percent) + name, 'id': id, 'quantity': quantity}
-                for name, id, quantity, percent in zip(ars_names, ids, ars_quantities, ars_percent)
-            ]
+            'data': data_ars,
+            'legend': legend_ars,
         },
         'brl_data': {
             'unit': 'USD' if 'local_currency' in trx.columns else 'BRL',
-            'data': [
-                {'name': name, 'id': id, 'quantity': quantity}
-                for name, id, quantity in zip(brl_names, ids, brl_quantities)
-            ],
-            'legend': [
-                {'name': str(percent) + name, 'id': id, 'quantity': quantity}
-                for name, id, quantity, percent in zip(brl_names, ids, brl_quantities, brl_percent)
-            ]
+            'data': data_brl,
+            'legend': legend_brl,
         },
     })
     return HttpResponse(res, content_type="application/json")
