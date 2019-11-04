@@ -231,3 +231,11 @@ footer a {
 .table-striped tbody tr:nth-of-type(odd) {
     background-color: #f2f2f2;
 }
+
+/* Print helper */
+.print-table {
+  width: 1124px;
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+}

@@ -7,7 +7,15 @@ function createCanvasData(ars, brl){
   Object.keys(canvasData).forEach(function(key){
 
     canvasData[key]['title'] = document.getElementById(`title-${key}`);
-    canvasData[key]['table'] = document.getElementById(`dynamic-table-${key}`);
+
+    let table = document.getElementById(`dynamic-table-${key}`);
+    if (table !== null) {
+      let tableCloned = table.cloneNode(true);
+      tableCloned.classList.add("print-table");
+      document.getElementsByClassName('wrapper')[0].appendChild(tableCloned);
+      canvasData[key]['table'] = tableCloned;
+    }
+
     var svgChart = document.getElementById(`chart-${key}`).innerHTML;
     var svgLegend = document.getElementById(`legend-${key}`).innerHTML;
 
@@ -61,6 +69,7 @@ function generateTopPDF(filename) {
     doc.addImage(canvasData.BRL.imgChart, 'PNG', 80, 640, 180, 180);
     doc.addImage(canvasData.BRL.imgLegend, 'PNG', 280, 650, 180, 160);
     doc.save(`${filename}_${getTimeNow()}.pdf`);
+    Array.from(document.getElementsByClassName('print-table')).map(e => e.remove());
   });
 
 };
@@ -69,7 +78,10 @@ function generateDashboardPDF() {
 
   let navBar = document.getElementsByTagName("nav")[0];
   let title = document.getElementById('title');
-  let summarizedData = document.getElementById('summarized-data');
+
+  let summarizedData = document.getElementById('summarized-data').cloneNode(true);
+  summarizedData.classList.add("print-table");
+  document.getElementsByClassName('wrapper')[0].appendChild(summarizedData);
 
   let doc = new jsPDF('p', 'pt', 'a4');
 
@@ -83,7 +95,10 @@ function generateDashboardPDF() {
   .then(canvas => doc.addImage(canvas, 60, 70))
   .then(canvas => html2canvas(summarizedData))
   .then(canvas => doc.addImage(canvas, 60, 110))
-  .then(canvas => doc.save(`dashboard_${getTimeNow()}.pdf`));
+  .then(canvas => {
+    doc.save(`dashboard_${getTimeNow()}.pdf`);
+    Array.from(document.getElementsByClassName('print-table')).map(e => e.remove());
+  });
 
 };
 
@@ -91,7 +106,10 @@ function generateDetailPDF(filename) {
 
   let navBar = document.getElementsByTagName("nav")[0];
   let title = document.getElementById('title');
-  let summarizedData = document.getElementById('summarized-data');
+
+  let summarizedData = document.getElementById('summarized-data').cloneNode(true);
+  summarizedData.classList.add("print-table");
+  document.getElementsByClassName('wrapper')[0].appendChild(summarizedData);
 
   let doc = new jsPDF('p', 'pt', 'a4');
 
@@ -105,7 +123,11 @@ function generateDetailPDF(filename) {
   .then(canvas => doc.addImage(canvas, 40, 70))
   .then(canvas => html2canvas(summarizedData))
   .then(canvas => doc.addImage(canvas, 40, 110))
-  .then(canvas => doc.save(`${filename}_${getTimeNow()}.pdf`));
+  .then(canvas => {
+    doc.save(`${filename}_${getTimeNow()}.pdf`);
+    Array.from(document.getElementsByClassName('print-table')).map(e => e.remove());
+  });
+
 
 };
 
