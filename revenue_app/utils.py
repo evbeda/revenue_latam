@@ -2,6 +2,12 @@ from functools import reduce
 import numpy as np
 import pandas as pd
 
+from revenue_app.const import (
+    ARS,
+    BRL,
+    USD,
+)
+
 
 MONEY_COLUMNS = [
     'sale__payment_amount__epp',
@@ -420,7 +426,7 @@ def get_top_events(filtered_transactions):
 
 
 def get_summarized_data(transactions):
-    currencies = {'Argentina': 'ARS', 'Brazil': 'BRL'}
+    currencies = {'Argentina': ARS, 'Brazil': BRL}
     summarized_data = {}
     ref_currency = 'local_currency' if 'local_currency' in transactions.columns else 'currency'
     for country, currency in currencies.items():
@@ -481,7 +487,7 @@ def payment_processor_summary(trx_currencies, filter):
         filtered_quantities = filtered[column].tolist()
         filtered_data, filtered_legend = get_chart_json_data(filtered_names, filtered_quantities)
         json[country] = {
-            'unit': 'organizers',
+            'unit': currency,
             'data': filtered_data,
             'legend': filtered_legend,
         }
@@ -511,7 +517,7 @@ def sales_flag_summary(trx_currencies, filter):
             gtf_quantities = gtf.sale__gtf_esf__epp.tolist()
             gtf_data, gtf_legend = get_chart_json_data(gtf_names, gtf_quantities)
             json[country] = {
-                'unit': 'organizers',
+                'unit': currency,
                 'data': gtf_data,
                 'legend': gtf_legend,
             }
@@ -523,7 +529,7 @@ def sales_flag_summary(trx_currencies, filter):
             gtv_quantities = gtv.sale__payment_amount__epp.tolist()
             gtv_data, gtv_legend = get_chart_json_data(gtv_names, gtv_quantities)
             json[country] = {
-                'unit': 'organizers',
+                'unit': currency,
                 'data': gtv_data,
                 'legend': gtv_legend,
             }
@@ -548,8 +554,8 @@ def get_chart_json_data(names, quantities):
 def get_charts_data(transactions, type, filter):
     ref_currency = 'local_currency' if 'local_currency' in transactions.columns else 'currency'
     trx_currencies = {
-        'Argentina': transactions[transactions[ref_currency] == 'ARS'],
-        'Brazil': transactions[transactions[ref_currency] == 'BRL'],
+        'Argentina': transactions[transactions[ref_currency] == ARS],
+        'Brazil': transactions[transactions[ref_currency] == BRL],
     }
     json = {}
     if type == 'payment_processor':
@@ -563,8 +569,8 @@ def dataframe_to_usd(transactions, exchange_data):
     trx = []
     for month, values in exchange_data.items():
         trx_month = transactions[transactions['transaction_created_date'].dt.month_name() == month]
-        ars = trx_month[trx_month['currency'] == 'ARS']
-        brl = trx_month[trx_month['currency'] == 'BRL']
+        ars = trx_month[trx_month['currency'] == ARS]
+        brl = trx_month[trx_month['currency'] == BRL]
         ars['exchange_rate'] = values['ars_to_usd']
         brl['exchange_rate'] = values['brl_to_usd']
         trx.append(pd.concat([ars, brl]))
@@ -577,7 +583,7 @@ def dataframe_to_usd(transactions, exchange_data):
     converted.rename(columns=renamed_columns, inplace=True)
     for column in MONEY_COLUMNS:
         converted[column] = converted[f'local_{column}'] / converted['exchange_rate']
-    converted['currency'] = 'USD'
+    converted['currency'] = USD
     return converted
 
 def restore_currency(transactions):
