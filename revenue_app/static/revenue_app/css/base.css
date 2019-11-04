@@ -46,6 +46,9 @@ body {
 .navbar-currency {
   font-size: .7rem;
 }
+.navbar-query-info {
+  font-size: .95rem;
+}
 
 /* Content */
 
