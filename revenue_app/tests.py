@@ -20,8 +20,12 @@ from pandas.core.frame import DataFrame
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 
-from revenue_app.presto_connection import read_sql
 
+from revenue_app.const import (
+    ARS,
+    BRL,
+)
+from revenue_app.presto_connection import read_sql
 from revenue_app.utils import (
     calc_perc_take_rate,
     clean_corrections,
@@ -390,10 +394,10 @@ class UtilsTestCase(TestCase):
     def test_get_top_ten_organizers(self):
         trx = self.transactions_consolidation
         top_ars = get_top_organizers(
-                trx[trx['currency'] == 'ARS'],
+                trx[trx['currency'] == ARS],
             )
         top_brl = get_top_organizers(
-                trx[trx['currency'] == 'BRL'],
+                trx[trx['currency'] == BRL],
             )
         self.assertIsInstance(top_ars, DataFrame)
         self.assertIsInstance(top_brl, DataFrame)
@@ -403,10 +407,10 @@ class UtilsTestCase(TestCase):
     def test_get_top_ten_organizers_refunds(self):
         trx = self.transactions_consolidation
         top_ars = get_top_organizers_refunds(
-                trx[trx['currency'] == 'ARS'],
+                trx[trx['currency'] == ARS],
             )
         top_brl = get_top_organizers_refunds(
-                trx[trx['currency'] == 'BRL'],
+                trx[trx['currency'] == BRL],
             )
         self.assertIsInstance(top_ars, DataFrame)
         self.assertIsInstance(top_brl, DataFrame)
@@ -416,10 +420,10 @@ class UtilsTestCase(TestCase):
     def test_get_top_ten_events(self):
         trx = self.transactions_consolidation
         top_ars = get_top_events(
-                trx[trx['currency'] == 'ARS'],
+                trx[trx['currency'] == ARS],
             )
         top_brl = get_top_events(
-                trx[trx['currency'] == 'BRL'],
+                trx[trx['currency'] == BRL],
             )
         self.assertIsInstance(top_ars, DataFrame)
         self.assertIsInstance(top_brl, DataFrame)
@@ -640,8 +644,8 @@ class UtilsTestCase(TestCase):
     def test_payment_processor_summary(self, filter):
         trx = self.transactions_consolidation
         trx_currencies = {
-            'Argentina': trx[trx['currency'] == 'ARS'],
-            'Brazil': trx[trx['currency'] == 'BRL'],
+            'Argentina': trx[trx['currency'] == ARS],
+            'Brazil': trx[trx['currency'] == BRL],
         }
         response = payment_processor_summary(trx_currencies, filter)
         self.assertIsInstance(response['Argentina']['data'], list)
@@ -654,8 +658,8 @@ class UtilsTestCase(TestCase):
     def test_sales_flag_summary(self, filter):
         trx = self.transactions_consolidation
         trx_currencies = {
-            'Argentina': trx[trx['currency'] == 'ARS'],
-            'Brazil': trx[trx['currency'] == 'BRL'],
+            'Argentina': trx[trx['currency'] == ARS],
+            'Brazil': trx[trx['currency'] == BRL],
         }
         response = sales_flag_summary(trx_currencies, filter)
         self.assertIsInstance(response['Argentina']['data'], list)

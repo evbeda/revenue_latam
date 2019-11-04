@@ -18,6 +18,11 @@ from django.views.generic import (
 )
 from django.shortcuts import resolve_url, redirect
 
+from revenue_app.const import (
+    ARS,
+    BRL,
+    USD,
+)
 from revenue_app.forms import (
     ExchangeForm,
     QueryForm,
@@ -244,6 +249,7 @@ class MakeQuery(FormView):
                 'end_date': datetime.strptime(end_date, '%Y-%m-%d').date(),
             }
             self.request.session['transactions'] = generate_transactions_consolidation(**dataframes)
+            self.request.session['exchange_data'] = None
 
         return self.render_to_response(
             self.get_context_data(
@@ -389,10 +395,10 @@ class TopOrganizersLatam(QueriesRequiredMixin, TemplateView):
         ref_currency = 'local_currency' if 'local_currency' in trx.columns else 'currency'
         context['title'] = 'Top Organizers'
         context['top_ars'] = get_top_organizers(
-            trx[trx[ref_currency] == 'ARS'],
+            trx[trx[ref_currency] == ARS],
         )[:10][TOP_ORGANIZERS['columns']].rename(columns=TOP_ORGANIZERS['labels'])
         context['top_brl'] = get_top_organizers(
-            trx[trx[ref_currency] == 'BRL'],
+            trx[trx[ref_currency] == BRL],
         )[:10][TOP_ORGANIZERS['columns']].rename(columns=TOP_ORGANIZERS['labels'])
         return context
 
@@ -410,11 +416,11 @@ class TopOrganizersRefundsLatam(QueriesRequiredMixin, TemplateView):
         context['title'] = 'Top Organizers Refunds'
         context['top_ars'] = \
             get_top_organizers_refunds(
-                trx[trx[ref_currency] == 'ARS'],
+                trx[trx[ref_currency] == ARS],
             )[:10][TOP_ORGANIZERS_REFUNDS['columns']].rename(columns=TOP_ORGANIZERS_REFUNDS['labels'])
         context['top_brl'] = \
             get_top_organizers_refunds(
-                trx[trx[ref_currency] == 'BRL'],
+                trx[trx[ref_currency] == BRL],
             )[:10][TOP_ORGANIZERS_REFUNDS['columns']].rename(columns=TOP_ORGANIZERS_REFUNDS['labels'])
         return context
 
@@ -453,10 +459,10 @@ class TopEventsLatam(QueriesRequiredMixin, TemplateView):
         ref_currency = 'local_currency' if 'local_currency' in trx.columns else 'currency'
         context['title'] = 'Top Events'
         context['top_event_ars'] = get_top_events(
-            trx[trx[ref_currency] == 'ARS'],
+            trx[trx[ref_currency] == ARS],
         )[:10][TOP_EVENTS_COLUMNS['columns']].rename(columns=TOP_EVENTS_COLUMNS['labels'])
         context['top_event_brl'] = get_top_events(
-            trx[trx[ref_currency] == 'BRL'],
+            trx[trx[ref_currency] == BRL],
         )[:10][TOP_EVENTS_COLUMNS['columns']].rename(columns=TOP_EVENTS_COLUMNS['labels'])
         return context
 
@@ -480,25 +486,25 @@ def top_organizers_json_data(request):
     trx = request.session.get('transactions').copy()
     ref_currency = 'local_currency' if 'local_currency' in trx.columns else 'currency'
     top_organizers_ars = get_top_organizers(
-        trx[trx[ref_currency] == 'ARS'],
+        trx[trx[ref_currency] == ARS],
     )
     ars_quantities = top_organizers_ars['sale__gtf_esf__epp'].tolist()
     ars_names = top_organizers_ars['email'].tolist()
     data_ars, legend_ars = get_chart_json_data(ars_names, ars_quantities)
     top_organizers_brl = get_top_organizers(
-        trx[trx[ref_currency] == 'BRL'],
+        trx[trx[ref_currency] == BRL],
     )
     brl_quantities = top_organizers_brl['sale__gtf_esf__epp'].tolist()
     brl_names = top_organizers_brl['email'].tolist()
     data_brl, legend_brl = get_chart_json_data(brl_names, brl_quantities)
     res = json.dumps({
         'ars_data': {
-            'unit': 'USD' if 'local_currency' in trx.columns else 'ARS',
+            'unit': USD if 'local_currency' in trx.columns else ARS,
             'data': data_ars,
             'legend': legend_ars,
         },
         'brl_data': {
-            'unit': 'USD' if 'local_currency' in trx.columns else 'BRL',
+            'unit': USD if 'local_currency' in trx.columns else BRL,
             'data': data_brl,
             'legend': legend_brl,
         },
@@ -508,30 +514,27 @@ def top_organizers_json_data(request):
 
 def top_organizers_refunds_json_data(request):
     trx = request.session.get('transactions').copy()
-    ids = list(range(0, 11))
     ref_currency = 'local_currency' if 'local_currency' in trx.columns else 'currency'
     top_organizers_ars = get_top_organizers_refunds(
-        trx[trx[ref_currency] == 'ARS'],
+        trx[trx[ref_currency] == ARS],
     )
     ars_quantities = top_organizers_ars['refund__gtf_epp__gtf_esf__epp'].tolist()
-    ars_percent = [str(round(qty/sum(ars_quantities) * 100, 1)) + '% ' for qty in ars_quantities]
     ars_names = top_organizers_ars['email'].tolist()
     data_ars, legend_ars = get_chart_json_data(ars_names, ars_quantities)
     top_organizers_brl = get_top_organizers_refunds(
-        trx[trx[ref_currency] == 'BRL'],
+        trx[trx[ref_currency] == BRL],
     )
     brl_quantities = top_organizers_brl['refund__gtf_epp__gtf_esf__epp'].tolist()
-    brl_percent = [str(round(qty/sum(brl_quantities) * 100, 1)) + '% ' for qty in brl_quantities]
     brl_names = top_organizers_brl['email'].tolist()
     data_brl, legend_brl = get_chart_json_data(brl_names, brl_quantities)
     res = json.dumps({
         'ars_data': {
-            'unit': 'USD' if 'local_currency' in trx.columns else 'ARS',
+            'unit': USD if 'local_currency' in trx.columns else ARS,
             'data': data_ars,
             'legend': legend_ars,
         },
         'brl_data': {
-            'unit': 'USD' if 'local_currency' in trx.columns else 'BRL',
+            'unit': USD if 'local_currency' in trx.columns else BRL,
             'data': data_brl,
             'legend': legend_brl,
         },
@@ -543,25 +546,25 @@ def top_events_json_data(request):
     trx = request.session.get('transactions').copy()
     ref_currency = 'local_currency' if 'local_currency' in trx.columns else 'currency'
     top_events_ars = get_top_events(
-            trx[trx[ref_currency] == 'ARS'],
+            trx[trx[ref_currency] == ARS],
         )
     ars_quantities = top_events_ars['sale__gtf_esf__epp'].tolist()
     ars_names = [f'[{id}] {title[:20]}' for id, title in zip(top_events_ars['event_id'], top_events_ars['event_title'])]
     data_ars, legend_ars = get_chart_json_data(ars_names, ars_quantities)
     top_events_brl = get_top_events(
-            trx[trx[ref_currency] == 'BRL'],
+            trx[trx[ref_currency] == BRL],
         )
     brl_quantities = top_events_brl['sale__gtf_esf__epp'].tolist()
     brl_names = [f'[{id}] {title[:20]}' for id, title in zip(top_events_brl['event_id'], top_events_brl['event_title'])]
     data_brl, legend_brl = get_chart_json_data(brl_names, brl_quantities)
     res = json.dumps({
         'ars_data': {
-            'unit': 'USD' if 'local_currency' in trx.columns else 'ARS',
+            'unit': USD if 'local_currency' in trx.columns else ARS,
             'data': data_ars,
             'legend': legend_ars,
         },
         'brl_data': {
-            'unit': 'USD' if 'local_currency' in trx.columns else 'BRL',
+            'unit': USD if 'local_currency' in trx.columns else BRL,
             'data': data_brl,
             'legend': legend_brl,
         },
@@ -602,7 +605,7 @@ def download_excel(request, xls_name):
     worksheet.write(1, 0, "Query ran at:", col_header_style)
     worksheet.write(1, 1, query_info['run_time'].strftime("%Y-%m-%d, %X"))
     worksheet.write(1, 2, "Currency:", col_header_style)
-    usd_msg = 'USD' if request.session.get('exchange_data') else 'Local currency'
+    usd_msg = USD if request.session.get('exchange_data') else 'Local currency'
     worksheet.write(1, 3, usd_msg)
     worksheet.write(2, 0, "Start date:", col_header_style)
     worksheet.write(2, 1, query_info['start_date'].strftime("%Y-%m-%d"))
