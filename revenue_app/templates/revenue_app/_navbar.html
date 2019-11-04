@@ -6,19 +6,27 @@
     <span class="navbar-toggler-icon"></span>
   </button>
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
-    <ul class="navbar-nav">
+    <ul class="navbar-nav align-items-center">
       {% if query_info %}
-      <li class="navbar-text">Query ran at {{ query_info.run_time }}</li>
-      <li class="navbar-text">from {{ query_info.start_date }} to {{ query_info.end_date }}</li>
+      <li class="navbar-text">
+        <div class="navbar-query-info">Query ran at </div>
+        <div class="navbar-query-info">{{ query_info.run_time }}</div>
+      </li>
+      <li class="navbar-text">
+        <div class="navbar-query-info">from {{ query_info.start_date }}</div>
+        <div class="navbar-query-info">to {{ query_info.end_date }}</div>
+      </li>
+      {% endif %}
+      {% if exchange_data %}
+        <li class="navbar-text">
+          {% for month, values in exchange_data.items %}
+            <div class="navbar-currency">{{month}}: ARS {{values.ars_to_usd}} | BRL {{values.brl_to_usd}}</div>
+          {% endfor %}
+        </li>
       {% endif %}
     </ul>
   </div>
   {% if exchange_data %}
-    <div class="navbar-text">
-      {% for month, values in exchange_data.items %}
-        <div class="navbar-currency">{{month}}: ARS {{values.ars_to_usd}} | BRL {{values.brl_to_usd}}</div>
-      {% endfor %}
-    </div>
     <div class="navbar-text pull-right pl-3">
       <a href="{% url 'restore-currency' %}">Restore local Currency</a>
     </div>
