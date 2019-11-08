@@ -20,7 +20,7 @@
       {% if exchange_data %}
         <li class="navbar-text">
           {% for month, values in exchange_data.items %}
-            <div class="navbar-currency">{{month}}: ARS {{values.ars_to_usd}} | BRL {{values.brl_to_usd}}</div>
+          <div class="navbar-{{class_exchange}}">{{month}}: ARS {{values.ars_to_usd}} | BRL {{values.brl_to_usd}}</div>
           {% endfor %}
         </li>
       {% endif %}
