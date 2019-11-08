@@ -288,6 +288,7 @@ class Exchange(QueriesRequiredMixin, FormView):
             exchange_data = self.get_exchange_data(forms)
             converted = dataframe_to_usd(transactions, exchange_data)
             self.request.session['exchange_data'] = exchange_data
+            self.request.session['class_exchange'] = 'query-info' if len(exchange_data) > 3 else 'currency'
             self.request.session['transactions'] = converted
             return self.form_valid(forms)
         else:
