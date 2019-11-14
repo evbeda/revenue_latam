@@ -221,12 +221,10 @@ def group_transactions(transactions, by):
         'semi_month': 'SMS',  # quincena del 1 al 14 y del 15 a fin de mes, consultar con finanzas
         'month': 'M',
         'quarter': 'Q',  # trimestre
-        'year': 'Y',
     }
     custom_groupby = {
         'event_id': ['eventholder_user_id', 'email', 'event_id', 'event_title', 'currency'],
         'eventholder_user_id': ['eventholder_user_id', 'email', 'currency'],
-        'email': ['eventholder_user_id', 'email', 'currency'],
         'payment_processor': ['payment_processor', 'currency'],
         'sales_flag': ['sales_flag', 'currency'],
         'sales_vertical': ['sales_vertical', 'currency'],

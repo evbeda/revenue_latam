@@ -17,6 +17,12 @@ class PrestoError(Exception):
             message = error_message.split("(1, '")[1].split("')))")[0].strip()
             message += '.<br>Update your certificate '
             message += '(<a href="https://docs.evbhome.com/intro/self_signed_certs.html">link</a>).'
+        elif 'Could not find a suitable TLS CA certificate' in error_message:
+            # Raised when certificate file not found
+            message = error_message
+            message += '.<br>Download the certificate '
+            message += '(<a href="https://docs.evbhome.com/intro/self_signed_certs.html">link</a>) '
+            message += 'and save in the previous path.'
         elif ('Invalid credentials' in error_message) or ('Malformed decoded credentials' in error_message):
             # Raised when wrong or empty okta username/password
             message = error_message.split('<pre>')[1].split('</pre>')[0].strip()
@@ -48,13 +54,13 @@ def query_presto(start_date, end_date, okta_username, okta_password, query, quer
         raise PrestoError(error)
     except DatabaseError as exception:
         # Raised when you don't have permissions to a specific table
-        # TODO: this 'if' should dissapear once we know what to do with the transactions query
-        if query_name == 'transactions':
-            dataframe = pd.read_csv('datasets/transactions.csv')
-            return dataframe
+
+        # Uncomment this if you are a developer with no access to the finance database
+        # if query_name == 'transactions':
+        #     dataframe = pd.read_csv('datasets/transactions.csv')
+        #     return dataframe
         message = exception.args[0]['message']
         raise PrestoError(message)
-        # TODO: call method that deletes (rollbacks) the other queries if done
     except Exception as exception:
         message = "Unknown error.<br>" + str(exception)
         raise PrestoError(message)
