@@ -1,4 +1,4 @@
-eventholder_user_id,transaction_created_date,payment_processor,currency,event_id,email,is_refund,is_sale,sale__payment_amount__epp,sale__eb_tax__epp,sale__ap_organizer__gts__epp,sale__ap_organizer__royalty__epp,sale__gtf_esf__epp,refund__payment_amount__epp,refund__gtf_epp__gtf_esf__epp,refund__eb_tax__epp,refund__ap_organizer__gts__epp,refund__ap_organizer__royalty__epp
+eventholder_user_id,transaction_effective_at,payment_processor,currency,event_id,email,is_refund,is_sale,sale__payment_amount__epp,sale__eb_tax__epp,sale__ap_organizer__gts__epp,sale__ap_organizer__royalty__epp,sale__gtf_esf__epp,refund__payment_amount__epp,refund__gtf_epp__gtf_esf__epp,refund__eb_tax__epp,refund__ap_organizer__gts__epp,refund__ap_organizer__royalty__epp
 497321858,8/1/2018,ADYEN,ARS,66220941,some_fake_mail@gmail.com,0,1,911.06,12.34,840,0,58.72,0,0,0,0,0
 497321858,8/2/2018,ADYEN,ARS,66220941,some_fake_mail@gmail.com,0,1,911.06,12.34,840,0,58.72,0,0,0,0,0
 497321858,8/3/2018,ADYEN,ARS,66220941,some_fake_mail@gmail.com,0,1,911.06,12.34,840,0,58.72,0,0,0,0,0

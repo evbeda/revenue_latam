@@ -17,7 +17,7 @@
             {% for index, transaction in transactions.iterrows %}
             <tr>
                 {% for key, value in transaction.items %}
-                    {% if key == 'transaction_created_date' %}
+                    {% if key == 'transaction_effective_at' %}
                         {% if request.GET.groupby == 'week' %}
                             <td><a href="{% url 'organizers-transactions' %}?start_date={{value|week_start|date:'Y-m-d'}}&end_date={{value|date:'Y-m-d'}}">
                                 from {{value|week_start|date}}<br/>to {{value|date}}

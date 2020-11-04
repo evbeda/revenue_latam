@@ -49,8 +49,8 @@ NUMBER_COLUMNS = [
 
 def clean_transactions(transactions):
     transactions = transactions.replace(np.nan, '', regex=True)
-    transactions['transaction_created_date'] = pd.to_datetime(
-        transactions['transaction_created_date'],
+    transactions['transaction_effective_at'] = pd.to_datetime(
+        transactions['transaction_effective_at'],
     )
     transactions['eventholder_user_id'] = transactions['eventholder_user_id'].apply(str)
     transactions['event_id'] = transactions['event_id'].apply(str)
@@ -60,8 +60,8 @@ def clean_transactions(transactions):
 
 def clean_corrections(corrections):
     corrections = corrections.replace(np.nan, '', regex=True)
-    corrections['transaction_created_date'] = pd.to_datetime(
-        corrections['transaction_created_date'],
+    corrections['transaction_effective_at'] = pd.to_datetime(
+        corrections['transaction_effective_at'],
     )
     corrections['eventholder_user_id'] = corrections['eventholder_user_id'].apply(str)
     corrections['event_id'] = corrections['event_id'].apply(str)
@@ -74,9 +74,9 @@ def clean_organizer_sales(organizer_sales):
     if 'organizer_email' in organizer_sales.columns:
         organizer_sales.rename(columns={'organizer_email': 'email'}, inplace=True)
     if 'trx_date' in organizer_sales.columns:
-        organizer_sales.rename(columns={'trx_date': 'transaction_created_date'}, inplace=True)
-    organizer_sales['transaction_created_date'] = pd.to_datetime(
-        organizer_sales['transaction_created_date'],
+        organizer_sales.rename(columns={'trx_date': 'transaction_effective_at'}, inplace=True)
+    organizer_sales['transaction_effective_at'] = pd.to_datetime(
+        organizer_sales['transaction_effective_at'],
     )
     organizer_sales['event_id'] = organizer_sales['event_id'].apply(str)
     organizer_sales[['GTSntv', 'GTFntv']] = organizer_sales[['GTSntv', 'GTFntv']].astype(float)
@@ -89,9 +89,9 @@ def clean_organizer_refunds(organizer_refunds):
     if 'organizer_email' in organizer_refunds.columns:
         organizer_refunds.rename(columns={'organizer_email': 'email'}, inplace=True)
     if 'trx_date' in organizer_refunds.columns:
-        organizer_refunds.rename(columns={'trx_date': 'transaction_created_date'}, inplace=True)
-    organizer_refunds['transaction_created_date'] = pd.to_datetime(
-        organizer_refunds['transaction_created_date'],
+        organizer_refunds.rename(columns={'trx_date': 'transaction_effective_at'}, inplace=True)
+    organizer_refunds['transaction_effective_at'] = pd.to_datetime(
+        organizer_refunds['transaction_effective_at'],
     )
     organizer_refunds['event_id'] = organizer_refunds['event_id'].apply(str)
     organizer_refunds[['GTSntv', 'GTFntv']] = organizer_refunds[['GTSntv', 'GTFntv']].astype(float)
@@ -102,7 +102,7 @@ def clean_organizer_refunds(organizer_refunds):
 def merge_corrections(transactions, corrections):
     trx_total = pd.concat([transactions, corrections])
     trx_total = trx_total.groupby([
-        'transaction_created_date',
+        'transaction_effective_at',
         'eventholder_user_id',
         'email',
         'event_id',
@@ -149,27 +149,27 @@ def merge_transactions(transactions, organizer_sales, organizer_refunds):
 
     merged_sales = sales.merge(
         organizer_sales[[
-            'transaction_created_date',
+            'transaction_effective_at',
             'email',
             'event_id',
             'PaidTix',
         ]].drop_duplicates(),
-        on=['transaction_created_date', 'email', 'event_id'],
+        on=['transaction_effective_at', 'email', 'event_id'],
         how='left',
     )
     merged_refunds = refunds.merge(
         organizer_refunds[[
-            'transaction_created_date',
+            'transaction_effective_at',
             'email',
             'event_id',
             'PaidTix',
         ]].drop_duplicates(),
-        on=['transaction_created_date', 'email', 'event_id'],
+        on=['transaction_effective_at', 'email', 'event_id'],
         how='left',
     )
     merged_final = pd.concat([merged_sales, merged_refunds])
     merged_final.sort_values(
-        by=['transaction_created_date', 'eventholder_user_id', 'event_id'],
+        by=['transaction_effective_at', 'eventholder_user_id', 'event_id'],
         inplace=True,
     )
     merged_final.PaidTix.replace(np.nan, 0, regex=True, inplace=True)
@@ -198,16 +198,16 @@ def filter_transactions(transactions, **kwargs):
             end_date = np.datetime64(kwargs['end_date'], 'D')
             conditions.insert(
                 0,
-                transactions['transaction_created_date'] >= start_date
+                transactions['transaction_effective_at'] >= start_date
             )
             conditions.insert(
                 0,
-                transactions['transaction_created_date'] <= end_date
+                transactions['transaction_effective_at'] <= end_date
             )
         else:
             conditions.insert(
                 0,
-                transactions['transaction_created_date'] == start_date
+                transactions['transaction_effective_at'] == start_date
             )
     if not conditions:
         return transactions
@@ -234,7 +234,7 @@ def group_transactions(transactions, by):
     }
     if isinstance(by, str):
         if by in time_groupby:
-            grouped = transactions.set_index("transaction_created_date").groupby(
+            grouped = transactions.set_index("transaction_effective_at").groupby(
                 ['currency', pd.Grouper(freq=time_groupby[by])]
             ).sum().reset_index()
         elif by in custom_groupby:
@@ -566,7 +566,7 @@ def get_charts_data(transactions, type, filter):
 def dataframe_to_usd(transactions, exchange_data):
     trx = []
     for month, values in exchange_data.items():
-        trx_month = transactions[transactions['transaction_created_date'].dt.month_name() == month]
+        trx_month = transactions[transactions['transaction_effective_at'].dt.month_name() == month]
         ars = trx_month[trx_month['currency'] == ARS]
         brl = trx_month[trx_month['currency'] == BRL]
         ars['exchange_rate'] = values['ars_to_usd']
@@ -574,7 +574,7 @@ def dataframe_to_usd(transactions, exchange_data):
         trx.append(pd.concat([ars, brl]))
     converted = pd.concat(trx)
     converted.sort_values(
-        by=['transaction_created_date', 'eventholder_user_id', 'event_id'],
+        by=['transaction_effective_at', 'eventholder_user_id', 'event_id'],
         inplace=True,
     )
     renamed_columns = {column: f'local_{column}' for column in (MONEY_COLUMNS + ['currency'])}
