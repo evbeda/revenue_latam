@@ -47,7 +47,7 @@ from revenue_app.utils import (
 )
 
 FULL_COLUMNS = [
-    'transaction_created_date',
+    'transaction_effective_at',
     'eventholder_user_id',
     'email',
     'sales_flag',
@@ -73,7 +73,7 @@ FULL_COLUMNS = [
 ]
 
 TRANSACTIONS_COLUMNS = [
-    'transaction_created_date',
+    'transaction_effective_at',
     'eventholder_user_id',
     'email',
     'sales_flag',
@@ -99,7 +99,7 @@ TRANSACTIONS_COLUMNS = [
 ]
 
 ORGANIZER_COLUMNS = [
-    'transaction_created_date',
+    'transaction_effective_at',
     'event_id',
     'event_title',
     'payment_processor',
@@ -121,7 +121,7 @@ ORGANIZER_COLUMNS = [
 ]
 
 EVENT_COLUMNS = [
-    'transaction_created_date',
+    'transaction_effective_at',
     'eventholder_user_id',
     'payment_processor',
     'currency',
@@ -270,7 +270,7 @@ class Exchange(QueriesRequiredMixin, FormView):
 
     def get(self, request, *args, **kwargs):
         transactions = self.request.session.get('transactions').copy()
-        months = list(transactions.transaction_created_date.dt.month_name().unique())
+        months = list(transactions.transaction_effective_at.dt.month_name().unique())
         forms = {}
         for month in months:
             forms[month] = ExchangeForm(prefix=month, initial=self.get_initial(month))
@@ -280,7 +280,7 @@ class Exchange(QueriesRequiredMixin, FormView):
         transactions = self.request.session.get('transactions').copy()
         if self.request.session.get('exchange_data'):
             transactions = restore_currency(transactions)
-        months = list(transactions.transaction_created_date.dt.month_name().unique())
+        months = list(transactions.transaction_effective_at.dt.month_name().unique())
         forms = {}
         for month in months:
             forms[month] = ExchangeForm(self.request.POST, prefix=month)
@@ -594,7 +594,7 @@ def download_excel(request, xls_name):
     query_info = request.session.get('query_info')
     transactions_list = organizers_transactions.values.tolist()
     columns = organizers_transactions.columns.tolist()
-    date_column_idx = columns.index('transaction_created_date')
+    date_column_idx = columns.index('transaction_effective_at')
 
     title_style = xlwt.XFStyle()
     title_style.font.bold = True

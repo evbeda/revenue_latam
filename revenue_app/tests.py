@@ -73,7 +73,7 @@ ORGANIZER_REFUNDS_EXAMPLE_PATH = 'revenue_app/tests/organizer_refunds_example.cs
 TRANSACTIONS_SQL_EXAMPLE_PATH = 'revenue_app/tests/transactions_example.sql'
 
 BASE_ORGANIZER_SALES_COLUMNS = [
-    'transaction_created_date',
+    'transaction_effective_at',
     'email',
     'organizer_name',
     'event_id',
@@ -89,7 +89,7 @@ BASE_ORGANIZER_SALES_COLUMNS = [
 
 BASE_TRANSACTION_COLUMNS = [
     'eventholder_user_id',
-    'transaction_created_date',
+    'transaction_effective_at',
     'email',
     'payment_processor',
     'currency',
@@ -110,7 +110,7 @@ BASE_TRANSACTION_COLUMNS = [
 
 MERGED_TRANSACTIONS_COLUMNS = [
     'eventholder_user_id',
-    'transaction_created_date',
+    'transaction_effective_at',
     'email',
     'organizer_name',
     'sales_flag',
@@ -136,7 +136,7 @@ MERGED_TRANSACTIONS_COLUMNS = [
 
 TOTAL_TRANSACTIONS_COLUMNS = [
     'eventholder_user_id',
-    'transaction_created_date',
+    'transaction_effective_at',
     'email',
     'organizer_name',
     'sales_flag',

@@ -1,7 +1,7 @@
 from django import template
 
 GLOSSARY = {
-    'transaction_created_date': 'from all queries',
+    'transaction_effective_at': 'from all queries',
     'eventholder_user_id': 'from transactions query',
     'Organizer ID': 'from transactions query',
     'Organizer Name': 'from organizer sales/refunds queries',
